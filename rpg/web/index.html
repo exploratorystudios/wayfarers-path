@@ -147,6 +147,9 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 .atlas-view.dragging { cursor: grabbing; }
 .atlas-view canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; }
 #atlasTrail { pointer-events: none; }
+#atlasTip { position: absolute; pointer-events: none; max-width: 280px; padding: 6px 10px; border-radius: 5px; background: rgba(40,28,16,.92); color: #f1e6cc;
+  font: .85rem/1.35 var(--sans); box-shadow: 0 4px 14px rgba(0,0,0,.4); z-index: 2; }
+#atlasTip b { font-family: var(--serif); font-weight: normal; font-style: italic; color: #f6d99a; }
 .atlas-bar .tog { display: flex; align-items: center; gap: 6px; font: .85rem var(--sans); font-style: normal; cursor: pointer; padding: 0 6px; }
 .atlas-bar .zoom { min-width: 34px; }
 #mapwrap { position: relative; width: fit-content; margin: 0 auto; }
@@ -158,6 +161,8 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 #map.painted .cell > span.site { display: none; }
 #map.painted .cell > span { color: #7a1e16; text-shadow: 0 0 2px #f3e7cc, 0 0 2px #f3e7cc; font-weight: 800; }
 #map.painted .cell.go:hover { box-shadow: inset 0 0 0 2px rgba(140, 40, 30, .7); }
+#map.painted .cell.tmark { position: relative; }
+#map.painted .cell.tmark::after { content: ""; position: absolute; inset: 2px; border: 2px dashed rgba(165, 32, 25, .9); border-radius: 50%; pointer-events: none; }
 .journal { font-size: .82rem; line-height: 1.4; color: var(--ink-soft); }
 .journal li { margin: 0 0 6px; } .journal ul { margin: 0; padding-left: 16px; }
 .journal .fx { font-size: .74rem; color: var(--ink-faint); margin-top: 6px; }
@@ -321,7 +326,7 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
         <span><i style="background:var(--b-forest)"></i>forest</span><span><i style="background:var(--b-plains)"></i>open land</span>
         <span><i style="background:var(--b-marsh)"></i>marsh</span><span><i style="background:var(--b-hills)"></i>hills</span>
         <span><i style="background:var(--b-peaks)"></i>peaks</span><span><i style="background:var(--b-lake)"></i>water</span>
-        <span>V village · R ruin · + shrine · c camp · ? quest · <i style="box-shadow:inset 0 0 0 2px #e8b84a"></i>journal goal · <i style="background:var(--accent);border-radius:50%;width:6px;height:6px"></i>suggested route</span>
+        <span>V village · R ruin · + shrine · c camp · ? quest · <i style="border:2px dashed #a52019;border-radius:50%;box-sizing:border-box"></i>journal goal · <i style="background:var(--accent);border-radius:50%;width:6px;height:6px"></i>suggested route</span>
       </div>
     </div>
     <div class="panel" id="statusPanel"><h2>Traveller</h2><div id="status"></div></div>
@@ -360,7 +365,7 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
       <button type="button" class="zoom" id="atlasIn" title="Zoom in (+)" aria-label="Zoom in">+</button>
       <button type="button" id="atlasFit" title="Fit the whole map (0)">Fit</button>
       <button type="button" id="atlasSave">Save image</button><button type="button" id="atlasClose" aria-label="Close map">Close</button></div>
-    <div class="atlas-view" id="atlasView"><canvas id="atlasCanvas"></canvas><canvas id="atlasTrail"></canvas></div>
+    <div class="atlas-view" id="atlasView"><canvas id="atlasCanvas"></canvas><canvas id="atlasTrail"></canvas><div id="atlasTip" hidden></div></div>
   </div>
 </div>
 
@@ -583,7 +588,7 @@ function renderMap(g) {
     const dir = steps[x + "," + y];
     let tip = c.b ? (c.n ? `${c.n}, ${c.r}` : c.r) + (c.b === "lake" ? " (water)" : "") : (c.q ? "Somewhere out here lies the relic." : "Unexplored");
     if (c.q && c.b) tip += " — the relic is here";
-    if (c.t) tip += " — a goal from your journal";
+    if (c.t) tip += " — journal: " + (Array.isArray(c.t) ? c.t.join("; ") : "a goal from your journal");
     if (c.me) tip = "You are here — " + tip;
     if (dir && !g.over) { d.classList.add("go"); tip = `Go ${dir}: ${tip}`; d.onclick = () => send(dir); }
     d.onmouseenter = () => { $("maptip").textContent = tip.charAt(0).toUpperCase() + tip.slice(1); };
@@ -898,6 +903,7 @@ window.addEventListener("resize", () => { if (!$("atlasDlg").hidden && atlasData
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; }
   });
   v.addEventListener("pointermove", (e) => {
+    atlasHover(e);
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, [e.clientX, e.clientY]);
     const r = v.getBoundingClientRect();
@@ -911,6 +917,27 @@ window.addEventListener("resize", () => { if (!$("atlasDlg").hidden && atlasData
   });
   const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { v.classList.remove("dragging"); last = null; } else last = [...pts.values()][0]; };
   v.addEventListener("pointerup", up); v.addEventListener("pointercancel", up);
+  v.addEventListener("pointerleave", () => { $("atlasTip").hidden = true; });
+}
+// hovering a marker says what it is: which errand, the relic, a village, you
+function atlasHover(e) {
+  const tip = $("atlasTip"), v = $("atlasView"), A = atlasData;
+  if (!A || e.buttons || e.pointerType === "touch") { tip.hidden = true; return; }
+  const r = v.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  const at = window.atlasTileAt(A, (mx - view.x) / view.z, (my - view.y) / view.z);
+  const lines = [];
+  if (at) {
+    const [x, y] = at, c = A.cells[y][x];
+    const goal = A.goals.find(g => g.x === x && g.y === y);
+    if (A.pos[0] === x && A.pos[1] === y) lines.push("<b>You are here</b>");
+    if (goal) goal.titles.forEach(t => lines.push("Journal: <b>" + esc(t) + "</b>"));
+    if (A.relic && !A.relic_found && A.relic[0] === x && A.relic[1] === y) lines.push(`The <b>${esc(A.relic_name)}</b> lies hereabouts`);
+    if (lines.length && c.n) lines.push(esc(c.n));
+  }
+  if (!lines.length) { tip.hidden = true; return; }
+  tip.innerHTML = lines.join("<br>"); tip.hidden = false;
+  const left = Math.min(mx + 16, v.clientWidth - tip.offsetWidth - 8), top = my + 18 + tip.offsetHeight > v.clientHeight ? my - tip.offsetHeight - 10 : my + 18;
+  tip.style.left = left + "px"; tip.style.top = top + "px";
 }
 $("atlasSave").onclick = () => {
   const c = $("atlasCanvas"), out = document.createElement("canvas");     // the map, plus your road if it's showing

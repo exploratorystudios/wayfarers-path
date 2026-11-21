@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from .world import DIRS
 from . import mind
 from . import classes as K
+from . import goods as GOODS
 
 
 @dataclass
@@ -192,6 +193,10 @@ def suggest(g, n=6):
                 "You haven't met. People share rumours, and they remember you.")
         elif x.mem["last_day"] < w.day:
             add(38, f"talk {x.ref()}", f"Catch up with {x.name}", f"{x.pronouns()['he'].capitalize()} may have fresh news since you last spoke.")
+    for s_ in g.sellers():
+        if s_.role != "merchant" and not s_.mem.get("wares_seen"):
+            add(46, f"trade {s_.ref()}", f"See {s_.name}'s wares", f"{s_.pronouns()['he'].capitalize()} sells {GOODS.WARES_WORDS.get(s_.job, 'a few things')}.")
+            break
     m = g.merchant()
     if m and not m.mem.get("wares_seen"):
         add(50, "trade", f"See what {m.called()} sells", f"Merchants buy as well as sell. You have {p.gold} coins.")
@@ -207,7 +212,8 @@ def suggest(g, n=6):
     for it in t.items:
         why = {"relic": "This is what you came for!" if g.has_quest else "It looks old, and important to someone.", "weapon": "A weapon - possibly better than yours.",
                "armour": "Armour reduces the damage you take.", "potion": "Potions heal a lot, fast.",
-               "herb": "Herbs heal a little.", "food": "Food heals a little.", "trinket": "Worth coin to a merchant."}[it.kind]
+               "herb": "Herbs heal a little.", "food": "Food heals a little.", "trinket": "Worth coin to a merchant.",
+               "book": "A book - perhaps something you could learn from.", "scroll": "A scroll: one spell or prayer, if you can read it."}.get(it.kind, "Might be useful.")
         add(99 if it.kind == "relic" else 70, f"take {it.name}", f"Pick up the {it.name}", why)
     cur_dmg = p.weapon.dmg if p.weapon else 0
     best_w = max((i for i in p.inv if i.kind == "weapon"), key=lambda i: i.dmg, default=None)
@@ -410,8 +416,67 @@ def _living(g, add, t, route_to, novice):
 
 
 def _can(g, key):
-    p, s = g.player, K.spec(g.player)
-    return bool(s and key in s["abilities"] and p.res >= K.ABILITIES[key]["cost"])
+    p = g.player
+    return key in K.known(p) and p.res >= K.ABILITIES[key]["cost"]
+
+
+def _learned_combat(g, add, c, risk, hp):
+    """The arts learned from books: suggest them by what they do."""
+    from . import arts as ARTS
+    p, res = g.player, K.res_name(g.player)
+    for key in K.known(p):
+        if key not in ARTS.ARTS or not _can(g, key) or ARTS.ARTS[key].get("peace_only"):
+            continue
+        a = ARTS.ARTS[key]
+        kinds = {k for k, _ in a["fx"]}
+        tip = f"{a['desc']} ({a['cost']} {res})"
+        if "heal" in kinds and hp < 0.45:
+            add(95, key, a["label"], tip)
+        elif ("ward" in kinds or "guard" in kinds) and hp < 0.5 and not p.ward:
+            add(90, key, a["label"], tip)
+        elif "escape" in kinds and (risk >= 1.0 or hp < 0.3):
+            add(93, key, a["label"], tip)
+        elif "flee" in kinds and risk >= 0.8 and not c.boss:
+            add(91, key, a["label"], tip)
+        elif "execute" in kinds and c.hp <= c.maxhp * 0.4 and not c.boss:
+            add(94, key, a["label"], tip)
+        elif "stun" in kinds and not c.mind.get("stunned"):
+            add(84, key, a["label"], tip)
+        elif "dmg" in kinds:
+            add(82 + min(8, ARTS.school_of(key)[1] * 2), key, a["label"], tip)
+
+
+def _study(g, add):
+    """Books you could learn from now, and growth points waiting."""
+    from . import arts as ARTS
+    p = g.player
+    if g.combat:
+        return
+    for it in p.inv:
+        if it.kind == "book" and ARTS.can_read(p, it):
+            key = ARTS._settle(g, it)
+            if ARTS.can_learn(p, key)[0]:
+                add(58, f"read {it.name}", f"Study the {it.name}", f"It teaches {K.ABILITIES[key]['label']}; a few quiet hours would do it.")
+                break
+    from . import crafts as CR
+    for k, opts in CR.honeable(p):
+        add(43, f"hone {k} {opts[0][1].split()[0].lower()}", f"Hone your {K.ABILITIES[k]['label']}",
+            f"You've practised it enough: it could become {opts[0][1]} or {opts[1][1]}. ('hone' to compare.)")
+        break
+    for school in ("arcane", "divine"):
+        wv = CR.WEAVES[school]
+        if ARTS.literate(p, school) and any(i.name == wv["material"] for i in p.inv):
+            made = {s["label"] for s in p.crafted.values()}
+            fresh = [r for r in CR.recipes(p, school) if r[4]["label"] not in made and r[4]["label"] not in {K.ABILITIES[x]["label"] for x in p.known}]
+            if fresh and len(p.crafted) < 2:
+                pr, sh, tw, sec, spec = max(fresh, key=lambda r: r[4]["circle"])
+                add(36, f"{wv['verb']} {' '.join(x for x in (pr, sh, tw, sec) if x)}", f"{wv['craft']}: {spec['label']}",
+                    f"Your {wv['material']} could make something new: {spec['desc']}")
+    room = [k for k in ARTS.STATS if ARTS.stat(p, k) < ARTS.STAT_MAX]
+    if getattr(p, "points", 0) and room:
+        mine = ARTS.SCHOOLS.get(ARTS.own_school(p) or "", {}).get("stat")
+        best = max(room, key=lambda k: (bool(ARTS.near_hint(p, k)), k == mine, -ARTS.stat(p, k)))
+        add(44, f"improve {best}", "Spend your growth point", f"You've a point to spend on might, grace, wits or spirit ({best} looks promising).")
 
 
 def _class_combat(g, add, c, risk, hp):
@@ -440,6 +505,15 @@ def _class_combat(g, add, c, risk, hp):
         add(95, "backstab", "Backstab", f"You're hidden: triple damage {cost('backstab')}.")
     if _can(g, "shoot"):
         add(81, "shoot", "Shoot", f"A solid arrow at close range {cost('shoot')}.")
+    _learned_combat(g, add, c, risk, hp)
+    for it in p.inv:
+        use = it.facts.get("use") if it.kind in ("tool", "potion", "charm") else None
+        if use == "holy" and undead:
+            add(92, f"use {it.name}", f"Throw the {it.name}", "Holy water scalds the dead.")
+        elif use == "smoke" and (risk >= 1.0 or hp < 0.25):
+            add(95, f"use {it.name}", f"Smash the {it.name}", "Vanish in a cloud of smoke.")
+        elif use == "clarity" and p.res < p.res_max // 3:
+            add(80, f"use {it.name}", f"Drink the {it.name}", "Refill your well of power.")
 
 
 def _class_peace(g, add, t, hp):
@@ -449,6 +523,17 @@ def _class_peace(g, add, t, hp):
     res = s["res"]
     if _can(g, "heal") and hp < 0.6:
         add(87, "heal", "Heal", f"Mend your wounds ({K.ABILITIES['heal']['cost']} {res}) - cheaper than resting.")
+    _study(g, add)
+    for it in p.inv:
+        use = it.facts.get("use") if it.kind in ("tool", "potion", "charm") else None
+        if use == "picks" and t.site and t.site["kind"] in ("ruin", "camp") and t.site.get("box") != "open" and not t.creatures:
+            add(57, f"use {it.name}", "Look for a strongbox to pick", "Ruins and abandoned camps sometimes hide a locked box.")
+        elif use == "arrows" and _can(g, "shoot") and not (getattr(p, "arrows", None) or {}).get("left"):
+            add(40, f"use {it.name}", f"Fill your quiver: {it.name}", "Your next three shots hit harder.")
+    for key in ("poultice", "rally", "purify"):
+        if _can(g, key) and hp < 0.6:
+            add(86, key, K.ABILITIES[key]["label"], f"{K.ABILITIES[key]['desc']} ({K.ABILITIES[key]['cost']} {res})")
+            break
     for c in t.creatures:
         noun = c.species["arch"]["noun"]
         risk = fight_risk(p, c)

@@ -335,7 +335,7 @@
       const c = cell(x, y); if (c.s) reserve(X0 + (x + 0.5) * T, Y0 + (y + 0.5) * T + 2, c.s === "village" ? 44 : 30, c.s === "village" ? 34 : 28);
     }
     if (A.relic && !A.relic_found) reserve(X0 + (A.relic[0] + 0.5) * T, Y0 + (A.relic[1] + 0.5) * T, 30, 30);
-    A.goals.forEach(([x, y]) => reserve(X0 + (x + 0.5) * T, Y0 + (y + 0.5) * T, 30, 30));
+    A.goals.forEach(({ x, y }) => reserve(X0 + (x + 0.5) * T, Y0 + (y + 0.5) * T, 30, 30));
     for (let y = 0; y < A.h; y++) for (let x = 0; x < N; x++) {
       const c = cell(x, y); if (!c.s) continue;
       const r = mulberry(seed + x * 31 + y * 1013), cx = X0 + (x + 0.5) * T, cy = Y0 + (y + 0.5) * T, a = c.k === 2 ? 1 : 0.6;
@@ -388,7 +388,7 @@
       ctx.restore();
       place(`the ${A.relic_name} lies hereabouts`, [[cx, cy + T * 0.55, 15], [cx, cy - T * 0.55, 15], [cx, cy + T * 0.55, 12]], { italic: true, color: "rgba(140,30,25,.95)" });
     }
-    A.goals.forEach(([x, y]) => {
+    A.goals.forEach(({ x, y }) => {
       const cx = X0 + (x + 0.5) * T, cy = Y0 + (y + 0.5) * T;
       ctx.beginPath(); ctx.arc(cx, cy, 13, 0, 7); ctx.strokeStyle = "rgba(150,30,25,.75)"; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
     });
@@ -477,4 +477,9 @@
   }
 
   window.drawAtlas = drawAtlas;
+  // which tile is under a point of the sheet (design units), for hover notes
+  window.atlasTileAt = (A, px, py) => {
+    const T = (W - 2 * X0) / A.w, x = Math.floor((px - X0) / T), y = Math.floor((py - Y0) / T);
+    return x >= 0 && y >= 0 && x < A.w && y < A.h ? [x, y] : null;
+  };
 })();

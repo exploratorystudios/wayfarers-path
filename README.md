@@ -194,6 +194,107 @@ menu in the action bar. Each class levels differently. In testing, the advisor
 bot wins 72-100% of worlds depending on class. Saves from before classes load
 as a classless Wanderer.
 
+## Stats, schools and books (`rpg/arts.py`)
+
+You have four stats, **might**, **grace**, **wits** and **spirit**. The game
+keeps them as small numbers but only ever shows them in words ("powerful",
+"light on your feet", "sensible, nearly quick-witted"). Every level brings a
+point to spend (`improve wits`, or the Improve menu), and every third level
+your calling raises its own stat. A stat above the ordinary starts to tell:
+harder blows, a better dodge, stronger spells and prayers, a deeper well of
+mana or faith.
+
+There are five schools of learning, each with a stat, a home class and a named
+trait that lets you read its books:
+
+| School  | Stat   | Home   | Trait            | Books |
+|---------|--------|--------|------------------|-------|
+| Arcane  | wits   | Wizard | Arcane Letters   | spellbooks, grimoires, codices; scrolls |
+| Divine  | spirit | Cleric | The Kindled Word | litanies, breviaries, psalters; prayer-rolls |
+| Martial | might  | Knight | Drill-Learned    | war-manuals, treatises of arms, drill-books |
+| Wild    | wits   | Ranger | Trailwise        | field almanacs, hunters' daybooks, herbals |
+| Cant    | grace  | Rogue  | Cant-Reader      | cant-books, cutpurses' primers |
+
+You start with your own school's trait. Raise another school's stat far enough
+and you earn its trait too, so you can dual-class if you like. Your own school
+goes to the fifth circle; anyone else's to the second. Each circle needs a
+little more of the school's stat. Two classes lean towards a second school: a
+Cleric can learn first-circle arcane spells from the start, and a Ranger needs
+one point less grace than anyone else to read thieves' cant (and can go a
+circle further in it).
+
+`read` a book to study it. It takes a few hours, and teaches one art, settled
+the first time someone who can read it looks inside. A book you can't read
+says nothing useful about itself. Scrolls hold one spell or prayer, spent when
+you read it aloud. Reading one beyond your circle may go wrong (frogs, blue
+hair, a personal snowstorm). Books and scrolls turn up in ruins, on stalls
+(often in a school you can read), and as rewards. `arts` lists everything you
+know and every trait you have.
+
+There are 35 arts, 7 per school, from first to fifth circle. The original class
+abilities are the first rungs; the rest, like Frost Dart, Thunderclap, Sanctuary,
+Miracle, Cleave, Bulwark, Snare, Beast-Speech, Envenom and Deathblow, are
+data: a list of effects (damage, stun, weaken, expose, burning, flee, heal,
+ward, guard, escape, buffs, cleansing, far sight, finishing blows) that one
+function runs.
+
+## Crafting your own arts (`rpg/crafts.py`)
+
+Each craft works only within its own school; nothing mixes across schools.
+
+- **Spellcraft** (`craft`, arcane): every spell you know teaches its parts.
+  Firebolt gives *fire* and *bolt*, Ward gives *ward*, Fear gives *shadow*,
+  Thunderclap *storm* and *burst*, Searing Lance *lance* and *lingering*, and so
+  on. You combine an element (fire, frost, storm, stone, shadow) with a shape
+  (bolt, burst, lance, ward, veil), and can add a twist (lingering, twin, quiet,
+  great). The result is a new named spell, like "Lingering Frost Burst". It
+  costs a pot of oak-gall ink and three hours. `craft` on its own lists
+  everything you could make.
+- **Prayer composing** (`compose`, divine): the same idea with a virtue (mercy,
+  wrath, vigil, light, peace) and a form (word, litany, blessing), and can add a
+  twist (lasting, humble, or twinned with a second virtue). It makes things like
+  "Litany of Twinned Wrath and Light" or "Blessing of Lasting Vigil", and costs
+  beeswax candles and two hours.
+- **Technique honing** (`hone`, martial, wild and cant): using a technique in
+  earnest counts as practice. After five uses you can hone it into one of two
+  refinements, for example Shield Bash into *Ringing Bash* or *Shield Rush*,
+  Backstab into *Assassin's Cut* or *Bleeding Cut*, or Shoot into *Long Shot*
+  or *Pinning Shot*. With the school's stat high enough you can join two of its
+  techniques into a combination (`combine feint deathblow`, giving "Feint into
+  Deathblow").
+
+Wizards start with a pot of ink and Clerics with candles. Chandlers, pedlars and
+hedge-witches sell more. Crafted arts get a one-word command, live in your save,
+and can be let go with `forget` (a honed technique goes back to plain).
+
+## Villages, traders and goods (`rpg/goods.py`)
+
+Each world has about six settlements: your home village, one **market town** a
+fair walk away (three traders and a few craftsfolk), and a mix of villages and
+**hamlets**. No two people in a settlement share a job.
+
+Traders sell what their trade suggests. A smith has blades, mail and whetstones;
+a fletcher fire and bodkin arrows; a hedge-witch or wise-woman herbs, draughts
+and charms; a chandler scrolls, books and holy water; a spice-trader draughts
+and antidotes; a tinker lockpicks and whetstones; a pedlar or packman a bit of
+everything. Craftsfolk keep a small stall once you've been introduced
+(`trade <name>`). With several sellers in one place, `trade` names them all, and
+`buy` finds the item on any stall you've already looked at. Stalls restock every
+few days, and the season shows: herbs in summer, padded coats and draughts in
+winter.
+
+Things you can use (`use <item>`):
+
+| Item | What it does |
+|------|--------------|
+| whetstone | a fresh edge: harder blows for half a day (three uses) |
+| set of lockpicks | open a strongbox in a ruin or abandoned camp; picks snap in clumsy hands |
+| quiver of fire / bodkin arrows | your next three shots burn, or go through armour |
+| flask of holy water | thrown in a fight; three times as harsh on the dead |
+| smoke pot | vanish from a fight |
+| draughts of strength, warding, fortune, clarity; antidote | half a day of harder blows or better guard, a day of luck, a full well of power, a cure |
+| rowan cross, hare's-foot charm, witch-stone | a couple of days of warding or luck, or a day of fae favour |
+
 ## Creatures have minds (`rpg/mind.py`)
 
 Each creature holds five intents (**wander**, **stalk**, **hunt**, **hold**,
@@ -247,6 +348,9 @@ load, so wording fixes reach old games too.
 | Menu actions (web)                 | `rpg/actions.py` → `catalog()`         |
 | Combat narration                   | `rpg/lex_entities.py` → `COMBAT_RULES` |
 | Classes, abilities, balance        | `rpg/classes.py`; narration in `rpg/lex_classes.py` |
+| Stats, schools, learnable arts, books and scrolls | `rpg/arts.py` (`SCHOOLS`, `ARTS`, `STAT_WORDS`) |
+| What traders sell, tools, draughts and charms | `rpg/goods.py` (`TRADES`, `GOODS`, `SEASON_WEIGHT`) |
+| Spellcraft parts, prayer parts, technique refinements | `rpg/crafts.py` (`WEAVES`, `HONES`) |
 | Landmark kinds, how they look in each season/weather/hour | `rpg/lex_landmarks.py` (`NEW_FEATURES`, `TAG`, `_TAGS`, `_KINDS`) |
 | Landmark secrets and what the verbs do | `rpg/secrets.py` (`DECK`, `HINTS`, one function per secret) |
 | Road encounters                    | `rpg/encounters.py` (`DECK`, a start function and outcomes) |

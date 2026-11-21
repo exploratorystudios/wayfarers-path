@@ -71,6 +71,8 @@ def new_day(g):
         if w.day >= cooldown and g.rng.random() < 0.22:
             start_trouble(g, v)
     respawn(g)
+    from . import goods as GOODS
+    GOODS.restock(g)
 
 
 # ------------------------------------------------------------------ festivals
@@ -234,7 +236,7 @@ def _trouble_yes(g, d):
     t["accepted"], t["giver"] = True, d["giver"]
     giver = S.find_npc(w, d["giver"])
     k, name = t["kind"], site["name"]
-    reward = dict(gold=g.rng.randint(15, 35), xp=25, like=4, village_like=2, chronicle=f"You ended the trouble at {name}: {short(t)}.",
+    reward = dict(gold=g.rng.randint(15, 35), xp=25, like=4, village_like=2, **({"item": "book", "danger": 3} if g.rng.random() < 0.35 else {}), chronicle=f"You ended the trouble at {name}: {short(t)}.",
                   story=f"you saved {name} when {short(t)}", story_like=3)
     common = dict(giver=giver, source="trouble", on_done="trouble", data=dict(village=v))
     if k in ("beast", "haunting"):

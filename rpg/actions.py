@@ -10,21 +10,37 @@ now. Each action carries:
 """
 from . import mind
 from . import classes as K
+from . import arts as ARTS
+from . import goods as GOODS_
 from .advisor import fight_risk
 from .world import DIRS
 
-GROUPS = ["Look", "Explore", "Items", "People", "Fight", "Rest & Time", "Info", "Game"]
+GROUPS = ["Look", "Explore", "Items", "People", "Fight", "Craft", "Rest & Time", "Info", "Game"]
 
 
 def groups(g):
     """Menu groups for this character: the class's own menu sits after Fight."""
-    s = K.spec(g.player)
     out = list(GROUPS)
-    if s:
-        out.insert(out.index("Fight") + 1, s["menu"])
+    from . import crafts as CR
+    p = g.player
+    if not (ARTS.literate(p, "arcane") or ARTS.literate(p, "divine") or any(k in CR.HONES or k in p.crafted for k in K.known(p))):
+        out.remove("Craft")
+    for i, menu in enumerate(art_menus(g.player)):
+        out.insert(out.index("Fight") + 1 + i, menu)
     if getattr(g, "pending", None):
         out.insert(0, "Respond")
     return out
+
+
+def art_menus(p):
+    """One menu per school you know something of, your class's first."""
+    s = K.spec(p)
+    menus = [s["menu"]] if s else []
+    for k in K.known(p):
+        sc = ARTS.SCHOOLS.get(ARTS.school_of(k)[0])
+        if sc and sc["menu"] not in menus:
+            menus.append(sc["menu"])
+    return menus
 
 
 def _opt(label, value, note=""):
@@ -115,8 +131,12 @@ def catalog(g):
     act("Items", "equip", "Equip…", "Wield a weapon or wear armour.", "equip {item}",
         [dict(name="item", prompt="Equip what?", options=gear)], enabled=gear, reason="Nothing new to wield or wear.")
     heals = [_opt(i.name, i.name, f"heals ~{i.heal}") for i in p.inv if i.heal]
-    act("Items", "use", "Use / eat / drink…", "Use a healing item.", "use {item}",
-        [dict(name="item", prompt="Use what?", options=heals)], enabled=heals, reason="You have nothing that heals.")
+    heals += [_opt(i.name, i.name, i.kind) for i in p.inv if GOODS_.usable(i)]
+    act("Items", "use", "Use / eat / drink…", "Eat, drink, or use a tool or charm.", "use {item}",
+        [dict(name="item", prompt="Use what?", options=heals)], enabled=heals, reason="You have nothing you can use.")
+    books = [_opt(i.name, i.name, i.kind) for i in p.inv if ARTS.readable(i)]
+    act("Items", "read", "Read / study…", "Study a book to learn from it, or read a scroll aloud (it is spent).", "read {item}",
+        [dict(name="item", prompt="Read what?", options=books)], enabled=books, reason="You have nothing to read.")
     act("Items", "inventory", "Inventory", "List what you carry.")
 
     # ------------------------------------------------------------ people
@@ -131,8 +151,13 @@ def catalog(g):
          dict(name="who", prompt="To whom?", options=people)],
         enabled=people and giftable, reason=no_one if not people else "You have nothing to give.")
     no_m = "There's no merchant here."
-    act("People", "trade", "See wares", f"Step over to {m.called()}'s stall and see what's for sale." if m else "List what the merchant sells.",
-        enabled=m, reason=no_m)
+    here = g.sellers()
+    if len(here) > 1:
+        act("People", "trade", "See wares…", "Step over to a stall and see what's for sale.", "trade {who}",
+            [dict(name="who", prompt="Whose wares?", options=[_opt(f"{n.called()}" + (" (dealing now)" if n is m else ""), n.ref(), GOODS_.WARES_WORDS.get(n.job, "general goods")) for n in here])])
+    else:
+        act("People", "trade", "See wares", f"Step over to {m.called()}'s stall and see what's for sale." if m else "List what the merchant sells.",
+            enabled=m, reason=no_m)
     first = f"See {m.called()}'s wares first." if m else no_m
     stock = [_opt(i.name, i.name, f"{g.buy_price(m, i)} coins" + ("" if g.buy_price(m, i) <= p.gold else " - can't afford"))
              for i in m.stock] if seen else []
@@ -161,14 +186,15 @@ def catalog(g):
 
     # ------------------------------------------------------------ class abilities
     s = K.spec(p)
-    if s:
-        for key in s["abilities"]:
+    if True:
+        for key in K.known(p):
             a = K.ABILITIES[key]
+            menu = ARTS.SCHOOLS[ARTS.school_of(key)[0]]["menu"]
             label = f"{a['label']}" + ("…" if a.get("target") and not fighting else "")
-            desc = f"{a['desc']} ({a['cost']} {s['res']})"
+            desc = f"{a['desc']} ({a['cost']} {K.res_name(p)})"
             ok, why = True, ""
             if p.res < a["cost"]:
-                ok, why = False, f"Needs {a['cost']} {s['res']}; you have {p.res}."
+                ok, why = False, f"Needs {a['cost']} {K.res_name(p)}; you have {p.res}."
             elif a.get("combat_only") and not fighting:
                 ok, why = False, "Only in a fight."
             elif a.get("peace_only") and fighting:
@@ -176,10 +202,37 @@ def catalog(g):
             elif a.get("target") and not fighting and not t.creatures:
                 ok, why = False, "There's nothing here to use it on."
             if a.get("target") and not fighting:
-                act(s["menu"], key, label, desc, f"{key} {{who}}",
+                act(menu, key, label, desc, f"{key} {{who}}",
                     [dict(name="who", prompt=f"{a['label']}: which?", options=foes)], enabled=ok, reason=why)
             else:
-                act(s["menu"], key, label, desc, key, enabled=ok, reason=why)
+                act(menu, key, label, desc, key, enabled=ok, reason=why)
+
+    # ------------------------------------------------------------ crafting (each craft in its own school)
+    from . import crafts as CR
+    for school in ("arcane", "divine"):
+        wv = CR.WEAVES[school]
+        if not ARTS.literate(p, school):
+            continue
+        rec = CR.recipes(p, school)
+        have = any(i.name == wv["material"] for i in p.inv)
+        made = {s["label"] for s in p.crafted.values()}
+        opts = [_opt(s["label"], " ".join(x for x in (pr, sh, tw, sec) if x), f"{s['cost']} {K.res_name(p)}: {s['desc']}")
+                for pr, sh, tw, sec, s in rec if s["label"] not in made]
+        why = ("Not mid-fight." if fighting else f"You need a {wv['material']}." if not have else
+               "You don't know enough yet to make anything new.")
+        act("Craft", wv["verb"], f"{wv['craft']}…", f"Make a new {ARTS.SCHOOLS[school]['art']} from the parts you know ({wv['material']}, {wv['hours']} hours).",
+            f"{wv['verb']} {{parts}}", [dict(name="parts", prompt="Make what?", options=opts)], enabled=opts and have and not fighting, reason=why)
+    hones = [_opt(f"{K.ABILITIES[k]['label']} → {o[1]}", f"{k} {o[1].split()[0].lower()}", o[2]) for k, os_ in CR.honeable(p) for o in os_]
+    joins = [_opt(f"{K.ABILITIES[a]['label']} into {K.ABILITIES[b]['label']}", f"{a} with {b}", "join two techniques") for a, b in CR.combos(p)
+             if f"{K.ABILITIES[a]['label']} into {K.ABILITIES[b]['label']}" not in {s["label"] for s in p.crafted.values()}]
+    if any(k in CR.HONES for k in p.known) or hones or joins:
+        act("Craft", "hone", "Hone a technique…", "Refine a technique you've practised (2 hours), or join two (3 hours).", "hone {which}",
+            [dict(name="which", prompt="Hone what?", options=hones + joins)], enabled=(hones or joins) and not fighting,
+            reason="Not mid-fight." if fighting else "Use your techniques in earnest; with practice they can be honed.")
+        act("Craft", "honelist", "Practice so far", "How close each technique is to being honed.", "hone")
+    if p.crafted:
+        act("Craft", "forget", "Forget a crafted art…", "Let go of something you made (a honed technique goes back to plain).", "forget {art}",
+            [dict(name="art", prompt="Forget what?", options=[_opt(s["label"], k) for k, s in p.crafted.items()])])
 
     # ------------------------------------------------------------ rest & time
     village = bool(t.site and t.site["kind"] == "village")
@@ -194,6 +247,13 @@ def catalog(g):
     act("Info", "journal", "Journal", "Your quests, and what you're under (luck, curses...).")
     act("Info", "chronicle", "Chronicle", "Everything notable that has happened.")
     act("Info", "status", "Status", "Your health, level and gear.")
+    act("Info", "arts", "Arts & traits", "Everything you can do, and what you can learn to read.")
+    ARTS.ensure(p)
+    growth = [_opt(ARTS.STAT_LABEL[k], k, f"you are {ARTS.standing(p, k)}" + (f"; {ARTS.near_hint(p, k)}" if ARTS.near_hint(p, k) else ""))
+              for k in ARTS.STATS if ARTS.stat(p, k) < ARTS.STAT_MAX]
+    act("Info", "improve", f"Improve… ({p.points})" if p.points else "Improve…",
+        "Spend a point on might, grace, wits or spirit. Each level brings one.", "improve {stat}",
+        [dict(name="stat", prompt="Grow in what?", options=growth)], enabled=p.points > 0, reason="Each new level brings a point to spend.")
     act("Info", "map", "Text map", "Print the map into the story log.")
     act("Info", "help", "All commands", "Every typed command, at a glance.")
 

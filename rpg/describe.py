@@ -335,6 +335,14 @@ class Narrator:
             out = [self.say("{village_line}", c)]
             if not brief:
                 out.append(self.say("{village_centre}", c))
+                scale = site.get("scale")
+                if scale == "town":
+                    out.append(self.pick(["Stalls and awnings crowd the main street, and there is more than one voice crying its wares.",
+                                          "It is a real market town: a paved square, traders' booths, and carts from farther off than you've been.",
+                                          "Several traders keep stalls here, and the street is loud with haggling."], f"town{site['name']}"))
+                elif scale == "hamlet":
+                    out.append(self.pick(["It is barely more than a few houses and a track.", "A handful of households, no more.",
+                                          "Small as it is, someone here keeps a trade."], f"hamlet{site['name']}"))
                 out.append(self.economy_line(site))
             trouble, fest = LV.trouble_lines(self, site), LV.festival_lines(self, site)
             if fest:

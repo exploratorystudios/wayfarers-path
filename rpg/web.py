@@ -104,7 +104,7 @@ class Session:
             quest = f"Recover the {w.relic.name} from {w.region_of(w.quest_pos)['name']}."
         inv = [dict(name=it.name, kind=it.kind,
                     equipped=(it is p.weapon or it is p.armour),
-                    usable=bool(it.heal), equippable=it.kind in ("weapon", "armour"))
+                    usable=bool(it.heal) or it.kind in ("book", "scroll") or bool(it.facts.get("use")), equippable=it.kind in ("weapon", "armour"))
                for it in p.inv]
         return dict(base, game=dict(
             player=dict(name=p.name, klass=p.class_name, res_name=(K.spec(p) or {}).get("res"), res=getattr(p, "res", 0),
@@ -128,7 +128,7 @@ class Session:
 
     def map_state(self, g, path):
         w = g.world
-        targets = {tuple(q["target"]) for q in S.active(g) if q.get("target")} if hasattr(g, "quests") else set()
+        targets = goal_titles(g)
         seen = lambda x, y: w.tiles[(x, y)].visited or getattr(w.tiles[(x, y)], "glimpsed", False) or any(
             (x + dx, y + dy) in w.tiles and w.tiles[(x + dx, y + dy)].visited for dx, dy in DIRS.values())
         rows = []
@@ -147,7 +147,7 @@ class Session:
                 if pos in path:
                     cell["p"] = 1
                 if pos in targets:
-                    cell["t"] = 1
+                    cell["t"] = targets[pos]
                 if g.has_quest and pos == w.quest_pos:
                     cell["q"] = 1
                 if pos == g.pos:
@@ -157,6 +157,15 @@ class Session:
                 row.append(cell)
             rows.append(row)
         return dict(w=w.W, h=w.H, cells=rows, pos=list(g.pos), seed=g.seed)
+
+
+def goal_titles(g):
+    """Journal errands with a place on the map: {(x, y): [titles]}."""
+    out = {}
+    for q in (S.active(g) if hasattr(g, "quests") else []):
+        if q.get("target"):
+            out.setdefault(tuple(q["target"]), []).append(q["title"])
+    return out
 
 
 def atlas(g):
@@ -183,7 +192,7 @@ def atlas(g):
         cells.append(row)
     known_regions = {w.tiles[p].region for p in visited}
     regions = [dict(id=i, name=r["name"], biome=r["biome"]) for i, r in enumerate(w.regions) if i in known_regions]
-    goals = [list(q["target"]) for q in S.active(g) if q.get("target")] if hasattr(g, "quests") else []
+    goals = [dict(x=p[0], y=p[1], titles=ts) for p, ts in goal_titles(g).items()]
     trail = [list(p) for p in getattr(g, "trail", [])] or [list(w.start), list(g.pos)]
     return dict(w=w.W, h=w.H, cells=cells, regions=regions, trail=trail, pos=list(g.pos), start=list(w.start),
                 home=w.tiles[w.start].site["name"], relic=list(w.quest_pos) if g.has_quest else None,

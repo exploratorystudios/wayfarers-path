@@ -10,6 +10,8 @@ from .textgen import Grammar
 from . import lex_variety as V
 from . import coherence as C
 from . import names as NAMES
+from . import arts as ARTS
+from . import goods as GOODS
 
 V.apply_fact_pools(L, E)
 
@@ -22,6 +24,7 @@ GENDERED_JOBS = {
     "chandler's boy": {"female": "chandler's girl"}, "chandler's girl": {"male": "chandler's boy"},
     "wise-woman": {"male": "wise-man"}, "wise-man": {"female": "wise-woman"},
 }
+GENDERED_BASE = {"goose-boy": "goose-girl", "chandler's girl": "chandler's boy", "wise-man": "wise-woman", "headwoman": "headman"}
 PRONOUNS = {"female": dict(he="she", him="her", his="her", hers="hers", himself="herself"),
             "male": dict(he="he", him="him", his="his", hers="his", himself="himself")}
 
@@ -448,9 +451,18 @@ class World:
         # quest site: a ruin far away
         far = sorted(dist, key=lambda p: -dist[p])
         self.quest_pos = far[r.randrange(min(4, len(far)))]
-        villages = [self.start] + self._pick_sites(2, ("plains", "forest", "hills", "marsh"), 5, [self.start, self.quest_pos])
+        others = self._pick_sites(5, ("plains", "forest", "hills", "marsh"), 4, [self.start, self.quest_pos])
+        if len(others) < 3:
+            others += self._pick_sites(3 - len(others), ("plains", "forest", "hills", "marsh", "peaks"), 3, [self.start, self.quest_pos] + others)
+        villages = [self.start] + others
+        # one market town, a fair walk from home; the rest villages and hamlets
+        town = min(others, key=lambda p: abs(dist.get(p, 99) - 7)) if others else None
+        small = [p for p in others if p != town]
+        scales = {self.start: "village", town: "town"}
+        for i, p in enumerate(small):
+            scales[p] = "hamlet" if i % 2 == 0 else "village"
         for p in villages:
-            self.tiles[p].site = self.make_village(self.tiles[p].biome)
+            self.tiles[p].site = self.make_village(self.tiles[p].biome, scales[p])
             self.tiles[p].danger = 0
         self.relic = Item("relic", f"{r.choice(E.RELIC_ADJ)} {r.choice(E.RELIC_NOUN)}", value=500,
                           facts=dict(material=r.choice(["gold", "silver", "black iron", "bone", "crystal", "bronze"]),
@@ -487,10 +499,19 @@ class World:
             return self.rng.choices(good, [weight.get(x, 1) for x in good])[0]
         return self.rng.choice(good)
 
-    def make_village(self, biome="plains"):
+    SIZE_WORDS = {"hamlet": ["hamlet", "huddle", "steading"], "village": ["village"], "town": ["market town", "town"]}
+
+    def make_village(self, biome="plains", scale="village"):
         r = self.rng
+        taken = {self.tiles[p].site["name"] for p in self.land if self.tiles[p].site and self.tiles[p].site.get("kind") == "village"}
         name = r.choice(L.NAME_PRE) + r.choice(L.NAME_SUF)
+        for _ in range(20):
+            if name not in taken:
+                break
+            name = r.choice(L.NAME_PRE) + r.choice(L.NAME_SUF)
         facts = {k: r.choice(v) for k, v in E.VILLAGE.items()}
+        facts["scale"] = scale
+        facts["size"] = r.choice(self.SIZE_WORDS[scale])
         facts["roof"] = self.pick(E.VILLAGE["roof"], lambda x: C.walls_roof_ok(facts["material"], x))
         trades = r.sample(V.ECONOMY.get(biome, V.ECONOMY["plains"]), 2)     # a main trade and a side trade
         facts["economy"], facts["economy2"] = trades
@@ -514,7 +535,7 @@ class World:
         return dict(kind="shrine", form=form, spirit=f"{pre} {name}",
                     domain=domain, offerings=r.choice(E.SHRINE["offerings"]), used=False)
 
-    def make_npc(self, role, home=(0, 0)):
+    def make_npc(self, role, home=(0, 0), stall=False):
         r = self.rng
         taken = {n.name for t in self.tiles.values() for n in t.npcs} | {getattr(self, "player_name", "")}
         gender = r.choice(["female", "male"])
@@ -523,7 +544,9 @@ class World:
         # the land around their home decides which trades make sense
         lands = {self.tiles[home].biome} if home in self.tiles else {"plains"}
         lands |= {"water" if self.tiles[q].biome == "lake" else self.tiles[q].biome for _, q in self.neighbours(home)} if home in self.tiles else set()
-        job = self.pick(E.OCCUPATIONS[role], lambda j: C.job_ok(j, lands))
+        here = {GENDERED_BASE.get(n.job, n.job) for n in self.tiles[home].npcs} if home in self.tiles else set()
+        job = self.pick(E.OCCUPATIONS[role], lambda j: C.job_ok(j, lands) and j not in here and (not stall or j in GOODS.STALL_FOLK
+                                                                                                 or GENDERED_JOBS.get(j, {}).get("female") in GOODS.STALL_FOLK))
         # age is a fact about the person (young / mid / old); the word is just how it's put
         band = self.pick(C.AGE_BANDS, lambda b: C.band_ok(b, role, job), C.BAND_WEIGHT)
         age = self.pick(C.age_words(band, E.AGE), lambda a: C.age_ok(a, role, job))
@@ -542,14 +565,18 @@ class World:
                   home=home)
         if npc.demeanour in ("suspicious", "gruff"):
             npc.mem["disp"] = -1
-        if role == "merchant":
-            npc.stock = [self.make_item(danger=2) for _ in range(r.randint(4, 6))]
+        if GOODS.sells(npc):
+            lo, hi = GOODS.stall_size(npc)
+            npc.stock = GOODS.stock(self, npc.job, r.randint(lo, hi), 2 if home == getattr(self, "start", None) else 3, getattr(self, "season", None))
         return npc
 
     # ------------------------------------------------------------- items
-    def make_item(self, danger=1, kind=None, wtype=None, akind=None):
+    def make_item(self, danger=1, kind=None, wtype=None, akind=None, school=None):
         r = self.rng
-        kind = kind or r.choices(["weapon", "armour", "herb", "potion", "food", "trinket"], [3, 2, 3, 2, 3, 3])[0]
+        kind = kind or r.choices(["weapon", "armour", "herb", "potion", "food", "trinket", "book", "scroll"], [3, 2, 3, 2, 3, 3, 1.2, 1.5])[0]
+        if kind in ("book", "scroll"):
+            d = ARTS.make_book(r, danger, school, self.name_pool) if kind == "book" else ARTS.make_scroll(r, danger, school)
+            return Item(d["kind"], d["name"], value=d["value"], facts=d["facts"])
         if kind == "weapon":
             wk = wtype or r.choice(list(E.WEAPONS))
             w = E.WEAPONS[wk]
@@ -617,11 +644,15 @@ class World:
         r = self.rng
         for i, p in enumerate(self.villages):
             t = self.tiles[p]
+            scale = t.site.get("scale", "village")
             if i == 0:
                 t.npcs.append(self.make_npc("elder", p))
-            t.npcs.append(self.make_npc("merchant", p))
-            for _ in range(r.randint(1, 2)):
-                t.npcs.append(self.make_npc("folk", p))
+            merchants = {"town": 3, "village": 1, "hamlet": 0}[scale]
+            folk = {"town": r.randint(2, 3), "village": r.randint(1, 2), "hamlet": r.randint(1, 2)}[scale]
+            for _ in range(merchants):
+                t.npcs.append(self.make_npc("merchant", p))
+            for j in range(folk):      # towns and hamlets always have at least one craftsperson with a stall
+                t.npcs.append(self.make_npc("folk", p, stall=(j == 0 and scale in ("town", "hamlet"))))
         for p in self.land:
             t = self.tiles[p]
             if t.site and t.site["kind"] == "village":

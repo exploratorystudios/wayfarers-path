@@ -17,6 +17,9 @@ from . import story as S
 from . import secrets as SEC
 from . import living as LV
 from . import encounters as ENC
+from . import arts as ARTS
+from . import goods as GOODS
+from . import crafts as CR
 
 ALIASES = {"n": "north", "s": "south", "e": "east", "w": "west", "l": "look", "x": "examine",
            "i": "inventory", "inv": "inventory", "get": "take", "grab": "take",
@@ -28,7 +31,11 @@ ALIASES = {"n": "north", "s": "south", "e": "east", "w": "west", "l": "look", "x
            "restore": "load", "erase": "delete", "offer": "give", "hand": "give",
            "dig": "search", "rummage": "search", "explore": "search", "scale": "climb", "gather": "forage", "pick": "forage",
            "ring": "touch", "feel": "touch", "hear": "listen", "j": "journal", "quests": "journal", "log": "journal", "history": "chronicle",
-           "bathe": "drink", "swim": "drink", "decipher": "read"}
+           "bathe": "drink", "swim": "drink", "decipher": "read", "study": "read", "learn": "read",
+           "train": "improve", "grow": "improve", "spend": "improve", "skills": "arts", "spells": "arts", "prayers": "arts",
+           "feats": "arts", "tricks": "arts", "abilities": "arts", "traits": "arts",
+           "spellcraft": "craft", "weave": "craft", "pray-write": "compose", "drill": "hone", "practise": "hone", "practice": "hone",
+           "unlearn": "forget"}
 LINGER = {"wait", "take", "drop", "use", "equip", "pray", "search", "climb", "drink", "touch", "forage", "read", "listen"}   # commands that give nearby creatures time to act
 STOP = {"the", "a", "an", "at", "to", "with", "on", "up", "my", "some", "of"}
 
@@ -46,6 +53,7 @@ HELP = """Commands:
   pray (at a shrine) / rest / wait / map / status
   search / climb / drink / touch / read / listen / forage <landmark>   (landmarks keep secrets)
   give <item> to <landmark>  (an offering) / journal (j) / chronicle / 1, 2, 3... to answer a choice
+  arts / improve <stat> / read <book or scroll> / craft / compose / hone / forget
   save [slot] / load [slot] / saves / rename [a] [b] / delete [slot] / hints [on|off] / help / quit (autosaves)"""
 
 
@@ -60,6 +68,9 @@ class Player:
         self.guard = self.ward = self.hidden = 0      # Knight's guard, Wizard's ward, Rogue's hiding
         self.level, self.xp, self.gold = 1, 0, 15
         self.inv, self.weapon, self.armour = [], None, None
+        ARTS.ensure(self)
+        if self.res_max:
+            self.res = self.res_max = self.res_max + ARTS.bonus(self, "spirit")
 
     @property
     def class_name(self):
@@ -68,12 +79,12 @@ class Player:
 
     @property
     def atk(self):
-        return self.base_atk + (self.weapon.dmg if self.weapon else 1) + getattr(self, "bonus_atk", 0)
+        return self.base_atk + (self.weapon.dmg if self.weapon else 1) + getattr(self, "bonus_atk", 0) + ARTS.bonus(self, "might") // 2
 
     @property
     def df(self):
         armoured = 1 if getattr(self, "klass", None) == "knight" else 0
-        return max(0, self.base_df + armoured + (self.armour.df if self.armour else 0) + getattr(self, "bonus_df", 0))
+        return max(0, self.base_df + armoured + (self.armour.df if self.armour else 0) + getattr(self, "bonus_df", 0) + ARTS.bonus(self, "grace") // 2)
 
     def gain_xp(self, n):
         self.xp += n
@@ -91,6 +102,7 @@ class Player:
             self.res_max = getattr(self, "res_max", 0) + s["res_gain"]
             self.res = self.res_max
             msgs.append(f"** You feel yourself grow harder and surer. You are now a level {self.level} {self.class_name.lower()}. **")
+            msgs += ARTS.on_level(self, self.level)
         return msgs
 
 
@@ -126,6 +138,9 @@ class Game:
         if s and s["armour"]:
             p.armour = self.world.make_item(1, "armour", akind=s["armour"])
             p.inv.insert(1, p.armour)
+        kit = {"wizard": "pot of oak-gall ink", "cleric": "bundle of beeswax candles"}.get(p.klass)
+        if kit:              # enough for a first try at your own craft
+            p.inv.append(GOODS.make(self.world, kit, 1))
         S.ensure(self)
 
     # ------------------------------------------------------------ output
@@ -236,7 +251,7 @@ class Game:
     def apply_buffs(self):
         """Blessings, curses and luck show up in attack and defence."""
         p, b = self.player, lambda k: S.buff(self, k)
-        p.bonus_atk = b("blessed") + b("strong") + b("fae") - b("cursed")
+        p.bonus_atk = b("blessed") + b("strong") + b("fae") + b("honed") - b("cursed")
         p.bonus_df = b("warded") + b("fae") - b("soaked")
 
     def hush(self):
@@ -442,7 +457,7 @@ class Game:
         elif kind == "NPC":
             self.emit(n.npc_full(obj))
         elif kind == "Item":
-            self.emit(n.item_full(obj))
+            self.emit(ARTS.describe(self, obj) if ARTS.readable(obj) else GOODS.describe(obj) if GOODS.describable(obj) else n.item_full(obj))
         else:
             self.emit(n.feature_full(obj, t.biome))
 
@@ -474,10 +489,14 @@ class Game:
         self.emit(f"{p.name}, level {p.level} ({p.xp}/{p.level * 30} xp). Health {p.hp}/{p.maxhp}. "
                   f"Attack {p.atk}, defence {p.df}. {p.gold} coins.")
         self.emit(f"Wielding: {p.weapon.name if p.weapon else 'nothing'}. Wearing: {p.armour.name if p.armour else 'ordinary clothes'}.")
+        self.emit(ARTS.describe_stats(self))
         s = K.spec(p)
         if s:
-            abil = " ".join(f"{K.ABILITIES[a]['label']} ({a}, {K.ABILITIES[a]['cost']} {s['res']}): {K.ABILITIES[a]['desc']}" for a in s["abilities"])
-            self.emit(f"{s['name']} - {s['res']} {p.res}/{p.res_max}. {abil} {s['passive'][0]}: {s['passive'][1]}")
+            abil = ", ".join(f"{K.ABILITIES[a]['label']} ({a}, {K.ABILITIES[a]['cost']})" for a in K.known(p))
+            self.emit(f"{s['name']} - {s['res']} {p.res}/{p.res_max}. Arts: {abil}.")
+            self.emit("Traits: " + "; ".join(f"{a} ({b})" for a, b in ARTS.traits(p)))
+            if p.points:
+                self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: 'improve' might, grace, wits or spirit.)")
             extra = [f"guarding ({p.guard} blows)" if getattr(p, "guard", 0) else "", f"warded ({p.ward})" if getattr(p, "ward", 0) else "",
                      "hidden" if getattr(p, "hidden", 0) else ""]
             if any(extra):
@@ -552,6 +571,10 @@ class Game:
         it = self.find(rest, [p.inv])
         if not it:
             return self.emit("You don't have that.")
+        if ARTS.readable(it):
+            return ARTS.read(self, it, [])
+        if GOODS.usable(it):
+            return GOODS.use(self, it, [x for x in rest if x not in it.keywords and x not in ("at", "on")])
         if not it.heal:
             return self.emit(f"You can't think how to use the {it.name}.")
         p.inv.remove(it)
@@ -613,6 +636,12 @@ class Game:
             self.emit("(Quest: recover the relic and return here.)")
         elif npc.role == "merchant" and first:
             self.emit(f"{npc.name} gestures at {npc.pronouns()['his']} wares. (Type 'trade' to see what's for sale.)")
+            m["wares_pointed"] = True
+        elif first and GOODS.sells(npc):
+            what = GOODS.WARES_WORDS.get(npc.job, "a few things")
+            self.emit(f"{npc.name}: " + n.pick([f"\"If you need {what}, I've some to spare. For coin, mind.\"",
+                                                 f"\"I sell {what}, if you've the coin.\"",
+                                                 f"\"You'll want {what} on the road. I can help with that.\""]) + f" (Type 'trade {npc.name}' to see.)")
             m["wares_pointed"] = True
         elif not handed:
             rum = n.rumour(npc, self.pos)
@@ -690,16 +719,34 @@ class Game:
         rogue = 1.25 if self.klass() == "rogue" else 1.0
         return max(1, round(it.value / 2 / self.price_mult(m) * rogue))
 
+    def sellers(self):
+        """Everyone here you can buy from: merchants, and craftsfolk you've been introduced to."""
+        return [n for n in self.world.tiles[self.pos].npcs if n.role == "merchant" or (GOODS.sells(n) and n.mem.get("introduced"))]
+
     def merchant(self):
-        return next((n for n in self.world.tiles[self.pos].npcs if n.role == "merchant"), None)
+        """Whoever you're dealing with: the last seller you traded with here, else the first."""
+        here = self.sellers()
+        cur = next((n for n in here if n.name == getattr(self, "trading_with", None)), None)
+        return cur or next((n for n in here if n.role == "merchant"), None) or (here[0] if here else None)
 
     def cmd_trade(self, rest):
-        m = self.merchant()
+        here = self.sellers()
+        m = (self.find(rest, [here]) if rest else None) or (None if rest else self.merchant())
+        if rest and not m:
+            stranger = self.find(rest, [self.world.tiles[self.pos].npcs])
+            if stranger and GOODS.sells(stranger):
+                return self.emit(f"You don't know {cap(stranger.called())} well enough to ask about wares. Talk first.")
+            return self.emit(f"No one here by that description has anything to sell." + (f" (Sellers: {self.who_list(here)}.)" if here else ""))
         if not m:
             return self.emit(self.narr.say("{sys_no_trader}"))
+        self.trading_with = m.name
+        if len(here) > 1 and not rest:
+            self.emit(f"(Others here sell too: {self.who_list([n for n in here if n is not m])}. 'trade <name>' to see their wares.)")
         if not m.known:      # walking up to the stall means meeting whoever keeps it
             self.emit(f"You step over to {m.called()}'s wares.")
             self.cmd_talk([], npc=m, for_trade=True)
+        if not m.mem.get("wares_seen"):
+            ARTS.stock_for(self, m)          # something on the stall for the way you think
         m.mem["wares_seen"] = True
         if not m.stock:
             return self.emit(f"{m.name} spreads empty hands. \"Sold out, friend.\"")
@@ -720,7 +767,11 @@ class Game:
             return self.emit(f"You haven't looked over {m.called()}'s wares yet. (Type 'trade' to see what's for sale.)")
         it = self.find(rest, [m.stock])
         if not it:
-            return self.emit(f"{m.name} doesn't have that.")
+            other = next((s for s in self.sellers() if s is not m and s.mem.get("wares_seen") and self.find(rest, [s.stock])), None)
+            if not other:
+                return self.emit(f"{m.name} doesn't have that.")
+            m, it = other, self.find(rest, [other.stock])
+            self.trading_with = m.name
         price = self.buy_price(m, it)
         if self.player.gold < price:
             return self.emit(f"{m.name} shakes {m.pronouns()['his']} head. \"That's {price} coins. You've not got it.\"")
@@ -894,6 +945,8 @@ class Game:
     def enemy_turn(self, bonus=0, committed=False):
         c, p, n, w = self.combat, self.player, self.narr, self.world
         self._enemy_dmg = 0
+        if ARTS.tick(self, c):           # burning or poisoned to death
+            return
         if mind.ensure(c).get("stunned"):
             c.mind["stunned"] = False
             self.emit(n.mind_line("ab_stunned", c))
@@ -945,7 +998,7 @@ class Game:
 
     def try_flee(self):
         c = self.combat
-        ok = self.rng.random() < (0.35 if c.boss else 0.65)
+        ok = self.rng.random() < (0.35 if c.boss else 0.65) + 0.03 * ARTS.bonus(self.player, "grace")
         self.emit(self.narr.flee(ok, c))
         if ok:
             self.combat = None
@@ -1216,7 +1269,65 @@ class Game:
         self.landmark("touch", rest)
 
     def cmd_read(self, rest):
+        p = self.player
+        books = [i for i in p.inv if ARTS.readable(i)]
+        it = self.find(rest, [books]) if rest else (books[0] if len(books) == 1 and not self.world.tiles[self.pos].features else None)
+        if it is None and rest and books:       # "read scroll at wolf"
+            for cut in range(len(rest) - 1, 0, -1):
+                it = self.find(rest[:cut], [books])
+                if it:
+                    return ARTS.read(self, it, [x for x in rest[cut:] if x not in ("at", "on")])
+        if it is not None:
+            return ARTS.read(self, it, [])
+        if not rest and books and not any(SEC.can("read", f) for f in self.world.tiles[self.pos].features):
+            return self.emit(f"Read what? ({', '.join('the ' + b.name for b in books)})")
         self.landmark("read", rest)
+
+    def cmd_improve(self, rest):
+        ARTS.improve(self, rest)
+
+    def cmd_craft(self, rest):
+        p = self.player
+        if not ARTS.literate(p, "arcane") and ARTS.literate(p, "divine"):
+            return CR.weave(self, "divine", rest)
+        if not ARTS.literate(p, "arcane"):
+            return self.emit("Spellcraft needs Arcane Letters." + (" You could 'hone' your techniques instead." if any(k in CR.HONES for k in p.known) else ""))
+        CR.weave(self, "arcane", rest)
+
+    def cmd_compose(self, rest):
+        CR.weave(self, "divine", rest)
+
+    def cmd_hone(self, rest):
+        if rest and rest[0] == "combine":           # "hone combine a b"
+            rest = rest[1:]
+            if len(rest) == 2:
+                rest = [rest[0], "with", rest[1]]
+        CR.hone(self, rest)
+
+    def cmd_combine(self, rest):
+        """'combine a b' or 'combine a with b': join two techniques."""
+        words = [x for x in rest if x not in ("and",)]
+        if "with" not in words and len(words) == 2:
+            words = [words[0], "with", words[1]]
+        CR.hone(self, words)
+
+    def cmd_forget(self, rest):
+        CR.forget(self, rest)
+
+    def cmd_arts(self, rest):
+        """Everything you can do, by school, and the traits that let you learn more."""
+        p = self.player
+        res = K.res_name(p)
+        by = {}
+        for k in K.known(p):
+            by.setdefault(ARTS.school_of(k)[0], []).append(k)
+        for school, keys in by.items():
+            sc = ARTS.SCHOOLS.get(school, {})
+            self.emit(f"{sc.get('menu', 'Arts')}: " + "; ".join(
+                f"{K.ABILITIES[k]['label']} ('{k}', {K.ABILITIES[k]['cost']} {res}) - {K.ABILITIES[k]['desc']}" for k in keys))
+        self.emit("Traits: " + "; ".join(f"{a} - {b}" for a, b in ARTS.traits(p)))
+        if p.points:
+            self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: 'improve' might, grace, wits or spirit.)")
 
     def cmd_forage(self, rest):
         self.landmark("forage", rest)
@@ -1265,8 +1376,10 @@ class Game:
         self.out(HELP)
         s = K.spec(self.player)
         if s:
-            self.out(f"  {s['name']} abilities: " + ", ".join(f"{a} ({K.ABILITIES[a]['cost']} {s['res']})" for a in s["abilities"])
+            self.out(f"  {s['name']} arts: " + ", ".join(f"{a} ({K.ABILITIES[a]['cost']} {s['res']})" for a in K.known(self.player))
                      + "  - e.g. 'firebolt wolf', or 'cast firebolt'")
+        self.out("  arts (your skills and traits) / improve <might|grace|wits|spirit> / read <book or scroll> (study it; scrolls are spent)")
+        self.out("  craft <parts> (spellcraft) / compose <parts> (prayers) / hone [technique] [refinement] / hone <a> with <b> / forget <crafted art>")
 
     # ------------------------------------------------------------ run
     def run(self, resumed=False):

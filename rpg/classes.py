@@ -72,6 +72,24 @@ ABILITIES = {
 }
 
 
+from . import arts as ARTS_      # noqa: E402  (the schools; new arts join ABILITIES below)
+for _k, _a in ARTS_.ARTS.items():
+    ABILITIES[_k] = _a
+for _k, (_s, _c) in ARTS_.ORIGINAL.items():
+    ABILITIES[_k].update(school=_s, circle=_c)
+
+
+def known(player):
+    """The arts this player has: their class's to begin with, then whatever they learn."""
+    ARTS_.ensure(player)
+    return player.known
+
+
+def res_name(player):
+    s = spec(player)
+    return s["res"] if s else "stamina"
+
+
 def spec(player):
     return CLASSES.get(getattr(player, "klass", ""), None)
 
@@ -86,7 +104,7 @@ def use(g, key, rest):
     p, n = g.player, g.narr
     s = spec(p)
     a = ABILITIES[key]
-    if not s or key not in s["abilities"]:
+    if key not in known(p):
         who = s["name"].lower() if s else "traveller"
         return g.emit(n.say("{ab_unknown}", dict(klass=who, ability=a["label"].lower())))
     if a.get("combat_only") and not g.combat:
@@ -94,7 +112,7 @@ def use(g, key, rest):
     if a.get("peace_only") and g.combat:
         return g.emit(n.say("{ab_need_peace}", dict(ability=a["label"])))
     if p.res < a["cost"]:
-        return g.emit(n.say("{ab_spent}", dict(res=s["res"], ability=a["label"])))
+        return g.emit(n.say("{ab_spent}", dict(res=res_name(p), ability=a["label"])))
     target = None
     if a.get("target"):
         t = g.world.tiles[g.pos]
@@ -107,6 +125,10 @@ def use(g, key, rest):
         if target is None:
             return g.emit(n.say("{ab_no_target}" if not t.creatures else "{ab_which}", dict(ability=a["label"])))
     p.res -= a["cost"]
+    from . import crafts as CR
+    CR.practise(p, key)
+    if key in ARTS_.ARTS:
+        return ARTS_.run(g, key, target)
     globals()["_" + key](g, target)
 
 
@@ -160,11 +182,21 @@ def _shoot(g, c):
     if not hit:
         g.emit(n.say("{ab_shoot_miss}", _ctx(g, c)))
         return finish_exchange(g, c, 0, opener)
-    dmg = max(1, p.atk + 2 + g.rng.randint(0, 3) - c.df)
+    arrows = getattr(p, "arrows", None)
+    special = arrows["kind"] if arrows and arrows.get("left", 0) > 0 else None
+    if special:
+        arrows["left"] -= 1
+    dmg = max(1, p.atk + 2 + g.rng.randint(0, 3) - (0 if special == "bodkin" else c.df))
     if opener:
         dmg = int(dmg * 1.5)
     c.hp -= dmg
-    g.emit(n.say("{ab_shoot_open}" if opener else "{ab_shoot_hit}", _ctx(g, c)) + f" ({dmg} damage)")
+    extra = ""
+    if special == "fire" and c.hp > 0:
+        mind.ensure(c)["dot"] = dict(dmg=2, turns=3, verb="burns")
+        extra = " The pitch catches, and it burns."
+    elif special == "bodkin":
+        extra = " The bodkin point goes straight through."
+    g.emit(n.say("{ab_shoot_open}" if opener else "{ab_shoot_hit}", _ctx(g, c)) + extra + f" ({dmg} damage)")
     finish_exchange(g, c, dmg, opener)
 
 
@@ -184,7 +216,7 @@ def _track(g, c):
 # ------------------------------------------------------------------ wizard
 def _firebolt(g, c):
     p, n = g.player, g.narr
-    dmg = scale(p, 6, 2) + g.rng.randint(0, 4)          # ignores armour
+    dmg = scale(p, 6, 2) + g.rng.randint(0, 4) + ARTS_.power(p, "arcane")          # ignores armour
     crit = g.rng.random() < 0.12
     if crit:
         dmg = int(dmg * 1.5)
@@ -195,7 +227,7 @@ def _firebolt(g, c):
 
 def _ward(g, c):
     p = g.player
-    p.ward = scale(p, 9, 3)
+    p.ward = scale(p, 9, 3) + ARTS_.power(p, "arcane")
     g.emit(g.narr.say("{ab_ward}", {}) + f" (absorbs {p.ward})")
     if g.combat:
         g.enemy_turn()
@@ -248,7 +280,7 @@ def _vanish(g, c):
 def _heal(g, c):
     p = g.player
     before = p.hp
-    p.hp = min(p.maxhp, p.hp + scale(p, 9, 2) + g.rng.randint(0, 3))
+    p.hp = min(p.maxhp, p.hp + scale(p, 9, 2) + g.rng.randint(0, 3) + ARTS_.power(p, "divine"))
     g.emit(g.narr.say("{ab_heal}", {}) + f" (+{p.hp - before} HP)")
     if g.combat:
         g.enemy_turn()
@@ -257,7 +289,7 @@ def _heal(g, c):
 def _smite(g, c):
     p, n = g.player, g.narr
     undead = c.species["arch"].get("undead", False)
-    dmg = scale(p, 4, 1) + g.rng.randint(0, 3)
+    dmg = scale(p, 4, 1) + g.rng.randint(0, 3) + ARTS_.power(p, "divine")
     if undead:
         dmg *= 2
     c.hp -= dmg

@@ -66,6 +66,10 @@ def ensure(g):
                         sec["verbs"] = sorted(v for v in sec["verbs"] if SEC.can(v, f)) or ["search"]
                     else:
                         f.state["secret"] = None      # a nest high in its branches can't be there any more
+    from . import arts as ARTS
+    from . import crafts as CR
+    ARTS.ensure(g.player)
+    CR.register(g.player)
     if not hasattr(w, "secrets_placed"):
         from . import secrets
         secrets.place_all(w)
@@ -184,7 +188,9 @@ def finish(g, q, text=None, success=True):
         p.gold += r["gold"]
         bits.append(f"{r['gold']} coins")
     if r.get("item"):
-        it = w.make_item(r.get("danger", 2), r["item"])
+        from . import arts as ARTS
+        school = r.get("school") or (ARTS.favoured_school(g) if r["item"] in ("book", "scroll") else None)
+        it = w.make_item(r.get("danger", 2), r["item"], school=school)
         p.inv.append(it)
         bits.append(article(it.name))
     if r.get("xp"):
@@ -313,7 +319,7 @@ def journal_lines(g):
 
 # ------------------------------------------------------------------ buffs (blessings, curses, luck)
 BUFF_NAMES = {"lucky": "luck", "blessed": "a blessing", "cursed": "a curse", "fae": "fae favour", "soaked": "a soaking",
-              "strong": "strength", "warded": "a ward", "queasy": "a bad stomach"}
+              "strong": "strength", "warded": "a ward", "queasy": "a bad stomach", "honed": "a fresh edge"}
 
 
 def add_buff(g, name, hours, power=1):
