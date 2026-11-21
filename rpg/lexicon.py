@@ -115,7 +115,7 @@ RULES = {
     "plains:ground": ["springy turf", "tussocky grass", "thin soil over chalk", "close-cropped grass dotted with rabbit droppings", "heather and wiry bilberry", "a sheep-track worn bare and hard"],
     "plains:winter:ground": ["frozen turf, white with frost", "brittle, frost-silvered grass", "a skim of snow over tussocks"],
     "plains:grass": ["long grass", "heather", "gorse", "bracken", "ox-eye daisies", "harebells", "rough pasture"],
-    "plains:flora_line": ["{grass.cap} rolls away in long waves under the wind.", "Clumps of gorse, {gorse_state}, break up the {grass}.", "A lone {lone_tree} stands in the open, {lone_desc}.", "The open land is spotted with {bloom}.", "{grass.cap} and {grass} cover the gentle swells of the land."],
+    "plains:flora_line": ["The wind sends long waves rolling through the {grass}.", "Clumps of gorse, {gorse_state}, break up the {grass}.", "A lone {lone_tree} stands in the open, {lone_desc}.", "The open land is spotted with {bloom}.", "{grass.cap} and {grass} cover the gentle swells of the land."],
     "gorse_state": ["yellow with coconut-scented flowers", "black and spiky", "humming with bees", "burnt to stumps by some old fire"],
     "lone_tree": ["hawthorn", "oak", "ash", "crab apple", "pine"],
     "lone_desc": ["bent permanently away from the wind", "its branches hung with sheep's wool", "dead on one side and green on the other", "a crow perched in its crown", "older than any village you know"],

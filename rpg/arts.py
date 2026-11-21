@@ -453,9 +453,8 @@ def improve(g, rest):
     was = band(p.stats[k])
     msgs = grow(g, k)
     if band(p.stats[k]) > was:
-        g.emit(g.narr.pick([f"You work at it, and it shows: you are {word(p, k, g.narr.rng)} now.",
-                            f"Days on the road have changed you. You are {word(p, k, g.narr.rng)}.",
-                            f"You feel the difference. You are {word(p, k, g.narr.rng)}."]))
+        from . import lex_talk_more as TALK2
+        g.emit(g.narr.pick(TALK2.GROWN, "grown").format(word=word(p, k, g.narr.rng)))
     else:
         nxt = STAT_WORDS[k][band(p.stats[k] + 1)][0] if p.stats[k] < STAT_MAX else None
         g.emit(g.narr.pick([f"You work at it. You are still {word(p, k)}, but you can feel yourself growing {nxt}." if nxt else

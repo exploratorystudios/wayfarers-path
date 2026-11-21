@@ -16,6 +16,8 @@ import random
 
 from . import story as S
 from .lex_landmarks import TAG
+from . import lex_looks as LK
+from . import lex_talk_more as LK_TALK2
 from .textgen import article, cap
 
 VERBS = ["search", "climb", "drink", "touch", "read", "listen", "forage"]
@@ -251,8 +253,7 @@ def act(g, verb, f):
             g.pass_time(took)
         return g.emit(asleep(g, verb, f, sec))
     if verb in done and verb in ("search", "forage") and not (verb == "forage" and f.state.get("forage_day") != g.world.day):
-        return g.emit(g.narr.pick([f"You have already been over the {f.noun} thoroughly.", f"There's nothing more to find at the {f.noun}.",
-                                   f"You search the {f.noun} again, but you were thorough the first time."]))
+        return g.emit(g.narr.pick([x.format(noun=f.noun) for x in LK.SEARCHED], "searched"))
     if verb not in done:
         done.append(verb)
     with g.hush():
@@ -266,7 +267,7 @@ def cant(g, verb, f):
                             f"There's no climbing a tree that's already down. From the {f.noun}'s trunk you'd see no further than the bracken.",
                             f"The {f.noun} lies full length on the ground. You'd need a standing tree to see anything from."])
     return {
-        "climb": f"There's no climbing the {f.noun}.",
+        "climb": g.narr.pick(LK.NO_CLIMB, "noclimb").format(noun=f.noun),
         "drink": f"There's nothing to drink at the {f.noun}.",
         "read": f"There's nothing written on the {f.noun}.",
         "forage": f"Nothing worth gathering grows on the {f.noun}.",
@@ -294,29 +295,86 @@ def small_find(g, chance=0.12):
     return f" Tucked away, you find {article(it.name)}."
 
 
+def _list(items):
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
 def plain_search(g, f):
-    t = tag_of(f)
-    finds = {"tree": ["beetles, a snail shell, a scatter of owl pellets", "dry leaves, a jay's feather, the husk of a nut", "spiders, a rusty nail, nothing more"],
-             "water": ["cold fingers, smooth stones, a flash of a startled fish", "weed, silt and a broken clay pipe"],
-             "stone": ["lichen, a spider's egg-sac, damp", "chips of stone and a lost button", "an old fire-blackened stone and some sheep droppings"],
-             "log": ["woodlice, a toad under the trunk, a scatter of owl pellets", "beetle galleries under loose bark, and a dormouse's empty nest", "rotten wood, fungus, a fox's droppings"],
-             "earth": ["roots, flints and a worm or two", "rabbit droppings and a cracked bead", "nothing but soil and stones"],
-             "built": ["rot, nettles and a mouse's nest", "a broken buckle and some rotten rope", "old straw and the smell of damp"],
-             "ice": ["only cold, and blue depths you'd rather not lean over"], "fungus": ["only the soft give of the caps, and a sweet smell"],
-             "plant": ["grass, a lark's empty nest, a curl of snakeskin", "only grass and the flattened place where a deer lay"]}
-    g.emit(g.narr.pick([f"You search the {f.noun} carefully. You find {g.narr.pick(finds.get(t, finds['stone']))}.",
-                        f"You go over the {f.noun} inch by inch: {g.narr.pick(finds.get(t, finds['stone']))}.",
-                        f"A good search of the {f.noun} turns up {g.narr.pick(finds.get(t, finds['stone']))}."]) + small_find(g))
+    """Searching with nothing hidden: what turns up, told in frames of different shapes."""
+    pool = LK.FINDS.get(tag_of(f), LK.FINDS["stone"])
+    def make():
+        items = g.rng.sample(pool, min(len(pool), g.rng.choice([1, 2, 2, 3])))
+        fr = g.narr.pick(LK.SEARCH, "search")
+        return fr.format(noun=f.noun, finds=_list(items), Finds=cap(_list(items)), one=items[0])
+    g.emit(g.narr.best_of(make) + small_find(g))
 
 
 def plain_climb(g, f):
+    """Climbing for a view: how you get up depends on what it is; what you see depends on the
+    weather, the hour, how high it is, and what is really out there on the map."""
+    w, narr = g.world, g.narr
+    kind, tag = kind_of(f), tag_of(f)
+    how = narr.pick([x.format(noun=f.noun) for x in LK.CLIMB_KIND.get(kind) or LK.CLIMB_HOW.get(tag, LK.CLIMB_HOW["stone"])], f"climb:{kind}")
+    fog, dark = w.weather == "fog", w.is_dark
+    found = reveal_places(g, 1 if fog else (3 if kind in LK.CLIMB_HIGH else 2))
+    def where(pos):
+        dist = abs(pos[0] - g.pos[0]) + abs(pos[1] - g.pos[1])
+        far = "a short walk" if dist <= 3 else "a few hours" if dist <= 7 else "a long way"
+        return narr.dir_phrase(g.pos, pos).split(" to the ")[-1], far
+    parts = [how]
+    villages = [p for k, p in found if k == "village"]
+    if fog:
+        parts.append(narr.pick(LK.VISTA_FOG, "vista:fog"))
+        if villages:
+            d, far = where(villages[0])
+            parts.append(narr.pick(LK.HEARD, "heard").format(dir=d, far=far))
+    elif dark:
+        parts.append(narr.pick(LK.VISTA_DARK, "vista:dark"))
+        if villages:
+            d, far = where(villages[0])
+            parts.append("You make out " + narr.pick(LK.SEEN_LIGHT, "seenlight").format(dir=d, far=far) + ".")
+    elif found:
+        bits = []
+        for k, pos in found[:3]:
+            d, far = where(pos)
+            what = {"village": "a village", "ruin": "a ruin", "shrine": "a shrine"}[k]
+            bits.append(narr.pick(LK.SEEN_FRAMES, "seenframe").format(what=what, dir=d, far=far))
+        intro = narr.pick(LK.VISTA_CLEAR if w.weather_class == "bright" else LK.VISTA_DULL, "vista")
+        parts.append(f"{intro} You make out {_list(bits)}.")
+    else:
+        regions = sorted({w.region_of(p)["name"] for p, t in w.tiles.items()
+                          if getattr(t, "glimpsed", False) and abs(p[0] - g.pos[0]) + abs(p[1] - g.pos[1]) <= 2} - {w.region_of(g.pos)["name"]})
+        if regions and g.rng.random() < 0.6:
+            parts.append(narr.pick(LK.VISTA_CLEAR if w.weather_class == "bright" else LK.VISTA_DULL, "vista") +
+                         f" You can see as far as {_list(regions[:2])}.")
+        else:
+            parts.append(narr.pick(LK.VISTA_NONE, "vista:none"))
+    if not fog and not dark:                      # an errand's destination, if it's in sight
+        for q in S.active(g):
+            tq = q.get("target")
+            if tq and tuple(tq) != tuple(g.pos) and abs(tq[0] - g.pos[0]) + abs(tq[1] - g.pos[1]) <= 3:
+                t = w.tiles[tuple(tq)]
+                place = t.site["name"] if t.site and t.site.get("name") else w.region_of(tuple(tq))["name"]
+                d, far = where(tuple(tq))
+                parts.append(narr.pick(LK.GOAL_SEEN, "goalseen").format(place=place, dir=d, far=far, title=q["title"]))
+                break
+    if g.rng.random() < 0.35:
+        parts.append(narr.pick(LK.CLIMB_DOWN, "climbdown"))
+    g.emit(" ".join(parts))
+
+
+def reveal_places(g, radius):
+    """Mark the land within reach as glimpsed; return the sites newly seen, nearest first, as (kind, pos)."""
     w = g.world
-    seen = reveal(g, 2)
-    view = f" From up here you can see the lie of the land for miles: {seen}." if seen else " You can see a long way, but it is country you know."
-    if w.is_dark or w.weather == "fog":
-        view = " But in the " + ("dark" if w.is_dark else "fog") + " there is little to see." if not seen else f" Even so, you make out the shapes of {seen}."
-    g.emit(g.narr.pick([f"You climb the {f.noun}, scraping a knee on the way.", f"You haul yourself up onto the {f.noun}.",
-                        f"With some effort you get to the top of the {f.noun}."]) + view)
+    out = []
+    for (x, y), t in w.tiles.items():
+        if abs(x - g.pos[0]) + abs(y - g.pos[1]) <= radius and not t.visited and not getattr(t, "glimpsed", False):
+            t.glimpsed = True
+            if t.site and t.site["kind"] in ("village", "ruin", "shrine"):
+                t.site_seen = True
+                out.append((t.site["kind"], (x, y)))
+    out.sort(key=lambda kp: abs(kp[1][0] - g.pos[0]) + abs(kp[1][1] - g.pos[1]))
+    return out
 
 
 def reveal(g, radius):
@@ -430,14 +488,14 @@ def s_cache(g, f, sec):
     w, p = g.world, g.player
     gold = g.rng.randint(8, 25)
     p.gold += gold
-    where = {"tree": "in a hollow among the roots", "stone": "behind a loose stone", "built": "under a rotten board",
-             "earth": "a hand's depth down in the soft ground", "log": "in the dry hollow under the trunk"}.get(tag_of(f), "tucked out of sight")
+    where = LK.CACHE_WHERE.get(tag_of(f), "tucked out of sight")
     extra = ""
     if g.rng.random() < 0.5:
         it = w.make_item(2, g.rng.choice(["potion", "weapon", "armour", "trinket"]))
         p.inv.append(it)
         extra = f", and {article(it.name)} wrapped in oiled cloth"
-    g.emit(f"{cap(where)} at the {f.noun} you find a bundle someone hid and never came back for: {gold} coins{extra}.")
+    loot = f"{gold} coins{extra}"
+    g.emit(g.narr.pick(LK.CACHE, "cache").format(where=where, Where=cap(where), noun=f.noun, loot=loot, Loot=cap(loot)))
     S.record(g, f"You found a hidden cache at the {f.noun}.", "find", mark=f"The ground by the {f.noun} has been dug, where you found the cache.", mark_days=6)
 
 
@@ -920,7 +978,7 @@ def s_snared(g, f, sec):
 @S.choice_handler("snare_free")
 def _snare_free(g, d):
     S.add_buff(g, "lucky", 24)
-    g.emit(f"You work the wire loose. The {d['beast']} stares at you for one long second, then is gone. You feel, absurdly, that you've been thanked. (Luck for a day.)")
+    g.emit(g.narr.pick(LK_TALK2.SNARE_FREE, "snarefree").format(beast=d["beast"]) + " (Luck for a day.)")
     S.record(g, f"You freed a {d['beast']} from a snare.", "deed", story=f"you freed a {d['beast']} from a poacher's snare", like=1)
 
 
@@ -971,7 +1029,7 @@ def _echo_leave(g, d):
 def s_chalk_walk(g, f, sec):
     g.pass_time(90)
     S.add_buff(g, "strong", 24)
-    g.emit(f"You walk the whole outline of the {f.noun}, as the worn path tells you people have for a thousand years. By the end your legs ache, and your arms feel like iron. (Strength for a day.)")
+    g.emit(g.narr.pick(LK_TALK2.CHALK_WALK, "chalkwalk").format(noun=f.noun) + " (Strength for a day.)")
     rested(g, sec)
 
 
@@ -988,7 +1046,8 @@ def s_hot_bath(g, f, sec):
 def s_ringing(g, f, sec):
     t = g.world.tiles[g.pos]
     S.add_buff(g, "lucky", 12)
-    g.emit(f"You strike the stone with your knuckles and it rings, a long pure note that goes out over the land and doesn't seem to stop. (Luck for half a day.)")
+    from . import lex_compose as COMPOSE
+    g.emit(g.narr.pick(COMPOSE.RING, "ring") + " (Luck for half a day.)")
     for c in list(t.creatures):
         if not c.boss and c is not g.combat:
             t.creatures.remove(c)

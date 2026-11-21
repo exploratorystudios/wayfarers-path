@@ -139,7 +139,7 @@ EXTEND = {
              "A clean, deadly strike to {target}'s {part}. It {react_big}."],
     "graze": ["You barely touch {target}'s {part}.", "{weapon.cap} skims {target}'s {part}, drawing a little blood."],
     "miss": ["{target.cap} is too quick; your {attack_noun} finds nothing.", "You overreach, and {target} slips past your {attack_noun}.", "Your {attack_noun} hits only the ground."],
-    "warn": ["{the_c.cap} rears up, making itself huge. Its meaning is plain: go.", "{the_c.cap} stands its ground and stares you down.",
+    "warn": ["{the_c.cap} rears up, making itself huge. [Its meaning is plain: go.|There is no mistaking it: leave.|It is telling you to go.]", "{the_c.cap} stands its ground and stares you down.",
              "{the_c.cap} gives a warning you'd be foolish to ignore."],
 }
 
@@ -158,7 +158,7 @@ ECONOMY_SIGNS = {
     "bodging": ["Chair-legs, turned on pole-lathes, dry in neat rows under an awning.", "Green wood shavings curl in drifts outside a workshop."],
     "eel-fishing": ["Wicker eel traps are stacked by the doors, and the smell of smoked eel hangs over everything.", "Eels hang in long rows over a smoking fire."],
     "peat-cutting": ["Stacks of cut turf dry against every wall.", "Blocks of drying peat are piled in neat walls between the houses.", "The smoke here is thick and sweet with burning peat."],
-    "reed-cutting": ["Bundles of cut reed are stacked like sheaves beside the lanes.", "Someone is re-thatching a roof with fresh-cut reed."],
+    "reed-cutting": ["Bundles of cut reed are stacked in tall ranks beside the lanes.", "Someone is re-thatching a roof with fresh-cut reed."],
     "wildfowling": ["Strings of ducks and geese hang from the eaves.", "Nets and decoy birds are piled outside a hut."],
     "basket-making": ["Half-finished baskets sit on every doorstep.", "Willow withies soak in a trough by the well."],
     "sheep-farming": ["Sheep crowd a fold at the edge of the houses, and tufts of wool snag on every hedge.", "A shearing-board stands outside a barn, strewn with wool."],

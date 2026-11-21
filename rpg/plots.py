@@ -590,8 +590,8 @@ def _plot_yes(g, d):
     if c is not None:
         g.world.tiles[plot["target"]].creatures.append(c)
         plot["creature"] = c
-    g.emit(g.narr.pick([f"{plot['giver']} grips your hand. \"Thank you.\"", f"{plot['giver']} lets out a breath. \"I'll not forget this.\"",
-                        f"\"Bless you,\" says {plot['giver']}."]) + f" (Journal: {plot['title']}.)")
+    from . import lex_talk_more as TALK2
+    g.emit(g.narr.pick(TALK2.PLOT_THANKS, "plotthanks").format(giver=plot["giver"], giver_eyes="their eyes") + f" (Journal: {plot['title']}.)")
     S.record(g, f"{plot['giver']} of {plot['village']} asked for your help: {plot['title'].lower()}.", "quest", pos=plot["home"])
     _start_step(g, plot, 0)
 

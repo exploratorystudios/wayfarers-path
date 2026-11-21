@@ -14,6 +14,11 @@ from . import secrets as SEC
 from . import living as LV
 from . import story as ST
 from . import lex_talk as TALK
+from . import phrasebook as PB
+from . import lex_wide as WIDE
+from . import lex_temper as TEMPER
+from . import lex_talk_more as TALK2
+from . import lex_compose as COMPOSE
 from .textgen import Grammar, tidy, article, cap, title
 
 PREP_WORDS = ("the ",)
@@ -63,10 +68,16 @@ class Narrator:
         self.g.add(LM.rules())
         self.g.extend(M.EXTEND)
         self.g.add(TALK.RULES)           # conversation: replaces the older, thinner greeting and introduction lines
+        WIDE.install(self.g)             # wider terrain changes, surroundings and travel lines
+        TEMPER.install(self.g)           # creature temperaments, per species per world
+        self.g.extend(TALK2.EXTEND)       # more conversation and village lines
+        self.g.extend(COMPOSE.EXTEND)     # openings from parts; weather, mood and talk lines
 
     def __getstate__(self):
         state = dict(self.__dict__)
         state.pop("g", None)        # rebuilt from the lexicon on load
+        state.pop("_past", None)    # earlier runs' phrases: reloaded from disk when needed
+        state.pop("_run_new", None)
         return state
 
     def __setstate__(self, state):
@@ -116,18 +127,39 @@ class Narrator:
         return {" ".join(words[i:i + 4]) for i in range(len(words) - 3)}
 
     def echo(self, s):
-        """How much of this sentence repeats phrasing used recently (runs of four words)."""
-        seen = getattr(self, "_phrases", None)
-        if not seen:
-            return 0
-        return min(4, sum(1 for sh in self._shingles(s) if sh in seen))
+        """How much of this sentence repeats phrasing used recently (runs of four words), plus a lighter
+        penalty for phrasing you read in an earlier run (see phrasebook)."""
+        seen = getattr(self, "_phrases", None) or {}
+        shs = self._shingles(s)
+        score = min(4, sum(1 for sh in shs if sh in seen))
+        past = self.past_phrases()
+        if past:
+            telling = [sh for sh in shs if PB.telling(sh)]
+            if telling:      # the share of this sentence's distinctive phrasing you've read before: 0 (all new) to 3 (all old)
+                score += 3 * sum(1 for sh in telling if PB.key(sh) in past) / len(telling)
+        return score
+
+    def past_phrases(self):
+        if "_past" not in self.__dict__:
+            self._past = PB.load()
+        return self._past
+
+    def flush_phrases(self, force=False):
+        """Hand this run's new phrases to the phrasebook (now and then, or when asked)."""
+        new = self.__dict__.get("_run_new")
+        if new and (force or len(new) >= 1500):
+            PB.add(new)
+            self._run_new = set()
 
     def remember_phrases(self, s):
         if not hasattr(self, "_phrases") or not hasattr(self, "_phrase_q"):
             self._phrases, self._phrase_q = {}, deque()
+        new = self.__dict__.setdefault("_run_new", set())
         for sh in self._shingles(s):
             self._phrases[sh] = self._phrases.get(sh, 0) + 1
             self._phrase_q.append(sh)
+            if len(new) < 20000:
+                new.add(sh)
         while len(self._phrase_q) > 1500:          # about the last fifty or so passages
             old = self._phrase_q.popleft()
             self._phrases[old] -= 1
@@ -322,30 +354,63 @@ class Narrator:
                 line += " " + extra
         return line
 
+    def best_of(self, make, tries=6, biome=None):
+        """Draw a few candidate passages and keep the one that clashes and repeats least (like say)."""
+        w = self.w
+        best, best_score = "", None
+        for _ in range(tries):
+            s = tidy(make())
+            score = (10 * len(C.context_clashes(s, w.season, w.weather, w.time_of_day, biome))
+                     + (3 if s in self.recent else 0) + len(C.repeated_words(s)) + self.echo(s))
+            if best_score is None or score < best_score:
+                best, best_score = s, score
+            if score == 0:
+                break
+        self.recent.append(best)
+        self.remember_phrases(best)
+        return best
+
     def feature_full(self, f, biome):
-        c = self.feature_ctx(f, biome)
+        """Examining a landmark: its own details and textures, in frames that vary in length, order and lead.
+        A second look moves on to something not yet said (see lex_looks)."""
+        from . import lex_looks as LK
+        w = self.w
+        if f.state is None:
+            f.state = {}
+        st = f.state
+        looks, used = st.get("looks", 0), set(st.get("said", []))
+        kind = f.archetype
+        tag = LM.TAG.get(kind, "stone")
         fit = self.fitting(f.details, biome)
+        clean = [d for d in fit if not C.context_clashes(d, w.season, w.weather, w.time_of_day, biome)]
+        if looks and len(clean) > 1:                       # look again: lead with the details not led with before
+            k = looks % len(clean)
+            clean = clean[k:] + clean[:k]
         now = self.moment(f, biome)
-        if len(fit) >= 2:
-            d1, d2 = fit[:2]
-        else:       # a detail is false right now: let the moment take its place
-            w = self.w
-            clean = not C.context_clashes(fit[0], w.season, w.weather, w.time_of_day, biome)
-            filler = self.pick(["little else of note", "nothing more to it than that"])
-            line = (now[0].lower() + now[1:].rstrip(".")) if now else None
-            if clean:
-                d1, d2 = fit[0], line or filler
-            else:   # every fixed detail is false right now (no "unbroken by any ripple" in the rain)
-                d1, d2 = line or "nothing about it that stands out just now", filler
-                now = ""
-        c.update(a1=f.adjs[0], a2=f.adjs[1], d1=d1, d2=d2)
-        frames = ["The {noun} {verb} {where}. It is {a1} and {a2}. {d1.cap}; {d2}.",
-                  "You take a closer look at the {noun}: {a2}, {a1}, {d1}. Looking longer, you notice {d2}.",
-                  "Up close, the {a1} {noun} is {a2}. You see {d2}, and {d1}.",
-                  "The {noun} rewards attention: {d1}, and {d2}. It is unmistakably {a1}."]
-        s = self.say(self.pick(frames, "featfull"), c, self.scopes(biome))
-        s = s.replace("You see its", "Its").replace("you notice its", "you notice that its")
-        return s + (" " + now if now and len(fit) >= 2 else "")
+        focus_pool = [x.replace("{noun}", f.noun) for x in LK.FOCUS.get(tag, LK.FOCUS["stone"])]
+        import re as _re
+        sig_pool = [_re.sub(rf"\b([Tt])he {_re.escape(kind)}", lambda m: m.group(1) + "he " + f.noun, x) for x in LK.SIG.get(kind, [])]   # "the track" -> "the drove road"
+        fresh = lambda pool: [x for x in pool if x not in used] or pool
+        frames = LK.AGAIN if looks else LK.EXAMINE
+        def ok(fr):
+            if ("{d2}" in fr or "{D2}" in fr) and len(clean) < 2:
+                return False
+            if ("{d1}" in fr or "{D1}" in fr) and not clean:
+                return False
+            return "{now}" not in fr or bool(now)
+        frames = [x for x in frames if ok(x[0])] or [("{focus}", 1.0)]
+        def make():
+            focus = self.pick(fresh(focus_pool), f"focus:{tag}")
+            sig = self.pick(fresh(sig_pool), f"sig:{kind}") if sig_pool else self.pick([x for x in fresh(focus_pool) if x != focus] or focus_pool, f"focus:{tag}")
+            d1 = clean[0] if clean else ""
+            d2 = clean[1] if len(clean) > 1 else d1
+            c = dict(noun=f.noun, a1=f.adjs[0], a2=f.adjs[1], A1=cap(f.adjs[0]), verb=f.verb, where=f.where,
+                     d1=d1, D1=cap(d1), d2=d2, D2=cap(d2), focus=focus, sig=sig, now=now, focus_l=focus[0].lower() + focus[1:])
+            return self.g.choose("examine-again" if looks else "examine", frames).format(**c)
+        line = self.best_of(make, biome=biome)
+        st["looks"] = looks + 1
+        st["said"] = (st.get("said", []) + [x for x in focus_pool + sig_pool if x in line])[-12:]   # not to be repeated on a later look
+        return line
 
     # ------------------------------------------------------------ sites
     def economy_line(self, site):
@@ -469,13 +534,14 @@ class Narrator:
                                  mark=c.species["mark"], idle=c.species["habits"]))
         it = mind.intent(c)
         if it != "wander":
-            return self.say("{intent_presence}", dict(a_c=self.creature_np(c)), [it])
+            return self.say("{intent_presence}", dict(a_c=self.creature_np(c)), [f"{it}_{TEMPER.temper(self.w, c)}", it])
         idle = list(c.species["habits"]) + list(c.species["arch"]["idle"])[:2]
         return self.say("{presence}", dict(a_creature=self.creature_np(c), idle=idle))
 
     def mind_line(self, key, c, **extra):
         """Narration for a creature's change of mind or intent-driven action."""
-        return self.say("{%s}" % key, dict(the_c=self.creature_np(c, True), a_c=self.creature_np(c), **extra))
+        return self.say("{%s}" % key, dict(the_c=self.creature_np(c, True), a_c=self.creature_np(c), **extra),
+                        [f"tm_{TEMPER.temper(self.w, c)}"] + self.scopes())
 
     def creature_full(self, c):
         sp, a = c.species, c.species["arch"]

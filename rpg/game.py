@@ -20,6 +20,7 @@ from . import encounters as ENC
 from . import arts as ARTS
 from . import goods as GOODS
 from . import crafts as CR
+from . import lex_compose as COMPOSE
 
 ALIASES = {"n": "north", "s": "south", "e": "east", "w": "west", "l": "look", "x": "examine",
            "i": "inventory", "inv": "inventory", "get": "take", "grab": "take",
@@ -190,7 +191,8 @@ class Game:
         self.emit(f"(This world is {realm}. Its seed is {self.seed}: the same seed gives the same world, but never the same words.)")
         self.show_location()
         self.emit("")
-        self.emit(f"{cap(elder.called())} seems to be waiting for someone. Perhaps you should talk to {elder.pronouns()['him']}.")
+        pr = elder.pronouns()
+        self.emit(self.narr.pick(COMPOSE.ELDER_HINT, "elderhint").format(who=cap(elder.called()), him=pr["him"], he=pr["he"], he_cap=cap(pr["he"])))
 
     # ------------------------------------------------------------ parsing
     def find(self, words, pools):
@@ -634,14 +636,14 @@ class Game:
             self.check_win()
         elif npc.role == "elder" and not self.has_quest:
             self.has_quest = True
-            q = w.tiles[w.quest_pos]
-            self.emit(f"{npc.name} studies you a long moment, then speaks. \"There was a thing kept here once - the {w.relic.name}. "
-                      f"It was taken, generations back, to a {q.site['purpose']} {n.dir_phrase(self.pos, w.quest_pos)}, "
-                      f"in {w.region_of(w.quest_pos)['name']}. Since it left, the seasons have soured. "
-                      f"Bring it home and {w.tiles[w.start].site['name']} will not forget you.\"")
+            from . import relic_tale
+            self.emit(relic_tale.speech(self, npc))
             self.emit("(Quest: recover the relic and return here.)")
         elif npc.role == "merchant" and first:
-            self.emit(f"{npc.name} gestures at {npc.pronouns()['his']} wares. (Type 'trade' to see what's for sale.)")
+            from . import lex_talk_more as TALK2
+            pr = npc.pronouns()
+            self.emit(n.pick(TALK2.WARES, "wares").format(name=npc.name, he=pr["he"], his=pr["his"], him=pr.get("him", "them")) +
+                      " (Type 'trade' to see what's for sale.)")
             m["wares_pointed"] = True
         elif first and GOODS.sells(npc):
             what = GOODS.WARES_WORDS.get(npc.job, "a few things")
@@ -836,7 +838,7 @@ class Game:
             return self.enemy_turn(bonus=4, committed=True)
         self.emit(self.narr.pick(["You find a sheltered spot and close your eyes.", "You settle down and let sleep take you.",
                                   "You rest a while, listening to the world."]) if not safe else
-                  self.narr.pick(["You find a bed for the night under a friendly roof.", "Someone lets you sleep by their hearth."]))
+                  self.narr.pick(COMPOSE.REST_SAFE, "restsafe"))
         self.pass_time(hours * 60)
         p.hp = min(p.maxhp, p.hp + (p.maxhp if safe else p.maxhp // 3))
         if K.spec(p):
@@ -852,7 +854,8 @@ class Game:
                 self.combat = c
                 return self.enemy_turn()
         res = f", {K.spec(p)['res']} {p.res}/{p.res_max}" if K.spec(p) else ""
-        self.emit(f"You wake feeling better. (HP {p.hp}/{p.maxhp}{res})")
+        from . import lex_talk_more as TALK2
+        self.emit(self.narr.pick(TALK2.WAKE, "wake") + f" (HP {p.hp}/{p.maxhp}{res})")
         self.emit(self.narr.sky(self.pos))
 
     def cmd_wait(self, rest):
@@ -1269,6 +1272,7 @@ class Game:
         folder = SAVE_DIR / self.run_id
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / f"{self.safe_slot(slot) or 'save'}.sav"
+        self.narr.flush_phrases(force=not quiet)      # what you've read, for the next run to avoid
         tmp = path.with_suffix(".tmp")
         with open(tmp, "wb") as f:
             pickle.dump(dict(version=SAVE_VERSION, game=self), f)

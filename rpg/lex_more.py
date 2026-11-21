@@ -31,8 +31,8 @@ EXTEND = {
     "marsh:glimpse": ["sodden ground and a glitter of pools", "a fen where the reeds stand thick"],
     # ---------------------------------------------------------------- plains
     "plains:opening": ["The sky is enormous out here.", "Nothing stands between you and the horizon.",
-                       "The land rolls under you like a slow sea.", "You walk through {grass} that hisses against your legs."],
-    "plains:flora_line": ["The {grass} is threaded with {bloom}.", "A line of wind-bent thorn marks an old hedge-bank.",
+                       "The land rolls under you like a slow sea.", "You wade through {grass}, and the stems hiss against your legs."],
+    "plains:flora_line": ["You see {bloom} threaded through the {grass}.", "A line of wind-bent thorn marks an old hedge-bank.",
                           "Patches of bare chalk show through the turf like old bone.", "Molehills pock the ground in long, wandering lines."],
     "plains:sound": ["a lapwing's thin, wheezing call", "grass seeds ticking against your boots", "a far-off cowbell", "a cart creaking somewhere out of sight"],
     "plains:smell": ["sun-warmed earth", "clover and dung", "the dry, dusty breath of the grass"],
@@ -217,7 +217,7 @@ FEATURES_MORE = {
 # ---------------------------------------------------------------- creature intents (mind.py)
 MIND = {
     # how a creature on your tile is described, by what it intends
-    "stalk:intent_presence": ["{a_c.cap} keeps pace just beyond easy reach, watching you.", "You catch {a_c} watching you. It does not look away.",
+    "stalk:intent_presence": ["{a_c.cap} keeps pace just beyond easy reach, watching you.", "You catch {a_c} watching you. [It does not look away.|It doesn't blink.|It holds your gaze.|It makes no move to hide.]",
                               "{a_c.cap} drifts at the edge of sight, matching your movements.", "{a_c.cap} watches you with patient, unblinking attention."],
     "hunt:intent_presence": ["{a_c.cap} fixes its eyes on you, muscles bunching.", "{a_c.cap} is coming for you, low and purposeful.",
                              "{a_c.cap} has seen you, and it is not afraid."],
@@ -231,7 +231,7 @@ MIND = {
     "shift_hunt": ["{the_c.cap} stops circling and commits.", "{the_c.cap} makes up its mind and comes on.", "All hesitation leaves {the_c}."],
     "shift_hold": ["{the_c.cap} plants itself and will not give ground.", "{the_c.cap} settles into a guarding crouch."],
     "shift_wander": ["{the_c.cap} loses interest in you.", "{the_c.cap} turns away, its attention elsewhere."],
-    "warn": ["{the_c.cap} bristles and gives a low warning. It wants you gone.", "{the_c.cap} makes a show of itself - a clear warning to leave.",
+    "warn": ["{the_c.cap} bristles and gives a low warning. [It wants you gone.|You are not welcome.|The message is clear enough.|Leave, it says.]", "{the_c.cap} makes a show of itself - a clear warning to leave.",
              "{the_c.cap} lowers its head and stands its ground. This is its place."],
     "warn_ignored": ["You've ignored its warning. {the_c.cap} attacks!", "{the_c.cap} has warned you once. It does not warn twice."],
     "follow": ["Behind you, {the_c} follows, keeping its distance.", "You glance back: {the_c} is still with you.",

@@ -421,6 +421,55 @@ and how often each kind of world fact (trades, village centres, ruins, relics,
 people's looks...) recurs across fresh worlds. Use it to decide where new
 wording will do the most good.
 
+`python3 tools/repeats.py [worlds] [turns] [memory]` measures repetition *across* worlds, which is what a
+player starting a second run notices. It plays each world with the advisor and reports:
+- **Overlap between runs:** the share of one run's sentences that also appear in another, with names masked so
+  templates line up.
+- **Widespread lines:** sentences and 5-word phrases found in many worlds.
+- **Frames:** how much of a run opens the same few ways, and the most common opening when examining, climbing
+  and searching landmarks.
+- **Returning player** (with `memory`): how much of each later run had already appeared in earlier runs.
+
+The first measurement found 76 sentences in half or more of all worlds, and the elder's relic speech in 27 of
+30. After the work described below, 6 sentences reach half the worlds, and runs share 5% of their sentences
+instead of 8%.
+
+### Looking at landmarks (`rpg/lex_looks.py`)
+
+Examining, climbing and searching used to give every landmark the same few frames: four for examining, all with
+the same three beats; one view from the top; a few ways to search. Now:
+- **Examining:** each family of landmark (stone, tree, water, earthwork, building...) has its own textures, and
+  each kind (a menhir, a gibbet, a barrow, a chalk figure...) its own things to notice. Twenty frames vary in
+  length, order and what leads: a detail, a texture, the weather, or your own movement. A second look moves on
+  to something not yet said.
+- **Climbing:** how you get up depends on what it is. What you see depends on the weather, the hour, the
+  height, and what is really on the map:
+  - fog hides the view, but you might hear a village;
+  - at night a village shows as lamplit windows;
+  - tall landmarks show further;
+  - an errand's destination, if in sight, is pointed out.
+- **Searching:** finds are put together from small lists and told in ten shapes. Hidden caches have their own.
+
+### The elder's tale (`rpg/relic_tale.py`)
+
+The relic quest is a story built per world, not one speech with the names swapped. It is assembled from what
+the relic meant, how it was lost (stolen, pawned for a debt, carried off by a keeper who vanished, given as a
+pledge, buried with the dead, sent away as cursed, lost in a burning, sold), when, what has gone wrong since,
+and what the village offers. The elder tells it in one of five shapes. 300 worlds give 300 different speeches.
+
+### Wider lines, temperaments and phrase memory
+
+- **Terrain changes** (`rpg/lex_wide.py`) join a way of leaving one land type to a way of entering the next,
+  about fifty combinations per pair.
+- **Location lines:** surroundings, onward travel and openings have lines for each land type. Openings are also
+  assembled from parts (`rpg/lex_compose.py`).
+- **Weather, mood, conversation and village lines** are wider too (`rpg/lex_talk_more.py`).
+- **Creature temperaments** (`rpg/lex_temper.py`): every species in every world is brazen, furtive, eerie,
+  sullen, skittish or cunning. A wraith that drifts eerily in one world may swagger in the next.
+- **Phrase memory** (`rpg/phrasebook.py`): the narrator also remembers, across all your runs, the phrases you've
+  read, stored as about 400 KB of hashes beside your saves. Candidate sentences that echo an earlier run score
+  slightly worse. It changes only how things are told. Set `RPG_PHRASEBOOK=0` to turn it off.
+
 ## Keeping it consistent (`rpg/coherence.py`)
 
 Facts are chosen to agree with each other: elders are old, white hair goes with

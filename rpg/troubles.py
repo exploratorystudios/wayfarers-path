@@ -357,7 +357,8 @@ def offer_trouble(g, npc):
               [("Lend a hand (about four hours)", "trouble_labour", dict(village=g.pos, giver=npc.name)), ("Not now", "trouble_no", dict(giver=npc.name))], leave=1)
         return True
     ask = _fill(t, g.rng.choice(ASKS[k]), g, g.pos)
-    S.ask(g, f"{npc.name} catches your sleeve. {ask}",
+    from . import lex_talk_more as TALK2
+    S.ask(g, g.narr.pick(TALK2.TROUBLE_LEAD, "troublelead").format(name=npc.name) + f" {ask}",
           [("Agree to help", "trouble_yes", dict(village=g.pos, giver=npc.name)), ("Not now", "trouble_no", dict(giver=npc.name))], leave=1)
     return True
 
