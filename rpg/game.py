@@ -442,6 +442,9 @@ class Game:
             return self.cmd_status([])
         m = self.merchant()
         stock = m.stock if m and m.mem.get("wares_seen") else []
+        place_words = {"village", "town", "hamlet", "ruin", "ruins", "shrine", "camp", "here", "place"}
+        if t.site and len(rest) == 1 and rest[0] in place_words | {t.site.get("name", "").lower()}:
+            return self.emit(" ".join(n.site_lines(t.site)))       # "examine village" means the place, not the village elder
         obj = self.find(rest, [t.creatures, t.npcs, t.items, self.player.inv, t.features, stock])
         if obj is None:
             if t.site and any(w in (t.site.get("kind"), t.site.get("purpose"), t.site.get("form"), "village", "ruin", "shrine", "camp") for w in rest):
@@ -605,10 +608,10 @@ class Game:
             m["knows_name"] = True
         elif w.day > m["last_day"]:
             npc.like(1)
-        speak = lambda line: self.emit((f"{cap(npc.called())}: " if line.startswith('"') else "") + line)
+        speak = lambda line: self.emit(n.attrib(npc, line))
         greeting = n.greet(npc, p.name)
         if first:   # introductions go both ways
-            greeting += " " + n.say("{npc_intro}", dict(name=npc.name, job=npc.job, **npc.pronouns()))
+            greeting += " " + n.introduce(npc)
         speak(greeting)
         m["introduced"] = True
         if for_trade:
@@ -639,16 +642,16 @@ class Game:
             m["wares_pointed"] = True
         elif first and GOODS.sells(npc):
             what = GOODS.WARES_WORDS.get(npc.job, "a few things")
-            self.emit(f"{npc.name}: " + n.pick([f"\"If you need {what}, I've some to spare. For coin, mind.\"",
+            self.emit(n.attrib(npc, n.pick([f"\"If you need {what}, I've some to spare. For coin, mind.\"",
                                                  f"\"I sell {what}, if you've the coin.\"",
-                                                 f"\"You'll want {what} on the road. I can help with that.\""]) + f" (Type 'trade {npc.name}' to see.)")
+                                                 f"\"You'll want {what} on the road. I can help with that.\""]), "trade_beat") + f" (Type 'trade {npc.name}' to see.)")
             m["wares_pointed"] = True
         elif not handed:
             rum = n.rumour(npc, self.pos)
             if rum:
-                self.emit(f"{npc.name}: " + rum)
+                self.emit(n.attrib(npc, rum, "rumour_beat"))
             elif not remark:
-                self.emit(f"{npc.name}: " + n.out_of_news(npc, p.name))
+                self.emit(n.attrib(npc, n.out_of_news(npc, p.name)))
         m["met"] += 1
         m["last_day"] = w.day
         npc.talked += 1
@@ -751,9 +754,9 @@ class Game:
         if not m.stock:
             return self.emit(f"{m.name} spreads empty hands. \"Sold out, friend.\"")
         if m.tier in ("friendly", "devoted"):
-            self.emit(f"{m.name}: " + self.narr.say("{discount_line}"))
+            self.emit(self.narr.attrib(m, self.narr.say("{discount_line}"), "trade_beat"))
         elif m.tier == "cold":
-            self.emit(f"{m.name}: " + self.narr.say("{markup_line}"))
+            self.emit(self.narr.attrib(m, self.narr.say("{markup_line}"), "trade_beat"))
         self.out(f"{m.name} has for sale:")
         for it in m.stock:
             self.out(f"  {article(it.name):45s} {self.buy_price(m, it):4d} coins")

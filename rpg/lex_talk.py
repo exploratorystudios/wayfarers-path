@@ -1,0 +1,137 @@
+"""Conversation: first meetings, introductions and speech beats.
+
+A first meeting is told as a small scene: what the person is doing as you come
+up (their temperament shows), what they say, the exchange of names, and how they
+introduce themselves (their trade shows). Later lines carry a beat - a gesture
+or a glance - so it's always clear who is speaking.
+
+ctx: the_npc ("the smith" / a name), name, job, he/him/his/himself, player,
+tool (what their hands are busy with), job_self (how they describe their work).
+"""
+
+# what someone's hands are busy with, by trade (falls back to their role)
+TOOL = {
+    "smith": "hammer", "trader": "coins", "pedlar": "pack-straps", "packman": "pack-straps", "huckster": "trinkets", "tinker": "a half-mended pot",
+    "chandler": "a bundle of tapers", "cloth-seller": "a bolt of cloth", "spice-trader": "a twist of paper", "horse-coper": "a bridle",
+    "fletcher": "an arrow shaft", "weaver": "a shuttle", "tanner": "a scraping knife", "miller": "a sack", "brewer": "a ladle",
+    "beekeeper": "a smoking pot", "eel-catcher": "a wicker trap", "shepherd": "a crook", "swineherd": "a switch", "thatcher": "a bundle of reed",
+    "midwife": "a basket of linen", "hedge-witch": "a bunch of drying herbs", "wise-woman": "a bunch of drying herbs", "wise-man": "a bunch of drying herbs",
+    "potter": "a lump of clay", "cooper": "a stave", "tinsmith": "a pair of snips", "wheelwright": "a spoke", "carter": "the reins",
+    "woodcutter": "an axe", "charcoal-burner": "a rake", "ferryman": "a pole", "net-mender": "a net", "drover": "a stick", "ploughman": "a harness strap",
+    "gravedigger": "a spade", "rat-catcher": "a sack that moves", "hurdle-maker": "a hazel rod", "goose-girl": "a long switch", "goose-boy": "a long switch",
+    "chandler's boy": "a tray of candles", "chandler's girl": "a tray of candles",
+}
+ROLE_TOOL = {"elder": "staff", "merchant": "wares", "folk": "a basket"}
+
+# how people describe their work (the trade shows in how they introduce themselves)
+JOB_SELF = {
+    "smith": ["I keep the forge", "I'm the smith - you'll have heard the hammer", "I make the nails, the hinges and the blades round here"],
+    "fletcher": ["I make arrows, and the odd bow", "I fletch - arrows, mostly"],
+    "trader": ["I buy and sell, mostly sell", "I trade - a bit of this, a bit of that"],
+    "pedlar": ["I carry what folk need from one village to the next", "I walk the roads with a pack"],
+    "packman": ["I carry a pack between the villages", "I walk the roads with goods"],
+    "huckster": ["I sell what I can, to whoever'll buy", "I've a stall, and a quick tongue"],
+    "tinker": ["I mend pots and sell odds and ends", "I fix what's broken, mostly"],
+    "chandler": ["I make the candles, and sell a few other things", "candles, wax, ink - that's me"],
+    "spice-trader": ["I bring spices up from the south", "I sell things that smell better than this village"],
+    "horse-coper": ["I deal in horses, when there are horses", "horses, harness, whatever moves"],
+    "cloth-seller": ["I sell cloth, and the coats made from it", "I deal in wool and linen"],
+    "hedge-witch": ["I know herbs, and a little more", "folk come to me when the herbs won't do"],
+    "wise-woman": ["folk bring me their ailments", "I know which leaf does what"],
+    "wise-man": ["folk bring me their ailments", "I know which leaf does what"],
+    "midwife": ["I bring the babies in", "I see to births, and the sick"],
+    "miller": ["I grind the corn", "I run the mill"], "brewer": ["I brew the ale", "I keep the brew-house"],
+    "beekeeper": ["I keep the bees", "the hives are mine"], "eel-catcher": ["I trap eels", "I take eels from the water"],
+    "shepherd": ["I keep sheep up on the tops", "the flock's mine"], "thatcher": ["I thatch roofs", "I keep the rain off folk"],
+    "ferryman": ["I take folk across", "I keep the ferry"], "gravedigger": ["I dig the graves", "I see folk to the ground"],
+    "rat-catcher": ["I catch rats", "rats - I'm the reason you don't see many"],
+}
+GENERIC_SELF = ["I'm the {job} here", "{job} by trade", "I do the {job}'s work round here", "I'm what passes for a {job} in these parts"]
+
+RULES = {
+    # ---------------------------------------------------------------- first meeting: what they're doing as you come up
+    "nervous:meet_beat": ["{the_npc.cap} starts as you come close, nearly dropping {tool}.", "{the_npc.cap} looks up too quickly, then away.",
+                          "{the_npc.cap} goes still, like a hare in the grass, as you approach.", "{the_npc.cap} flinches, then tries to make it look like a stretch.",
+                          "{the_npc.cap} clutches {tool} a little tighter as you come over."],
+    "suspicious:meet_beat": ["{the_npc.cap} watches you come the whole way, eyes narrowed.", "{the_npc.cap} sets down {tool} and folds {his} arms.",
+                             "{the_npc.cap} looks you up and down, lingering on your weapon.", "{the_npc.cap} doesn't stop what {he}'s doing, but {he} doesn't take {his} eyes off you either."],
+    "gruff:meet_beat": ["{the_npc.cap} grunts without looking up.", "{the_npc.cap} spares you a glance and goes back to {tool}.",
+                        "{the_npc.cap} straightens slowly, as if you've interrupted something important.", "{the_npc.cap} jerks {his} chin at you."],
+    "warm:meet_beat": ["{the_npc.cap} breaks into a smile as you come over.", "{the_npc.cap} puts down {tool} and comes to meet you.",
+                       "{the_npc.cap} waves you over before you've made up your mind.", "{the_npc.cap} looks up, and {his} face opens."],
+    "cheerful:meet_beat": ["{the_npc.cap} is whistling, and doesn't stop until you're right there.", "{the_npc.cap} grins at you over {tool}.",
+                           "{the_npc.cap} hails you from a dozen paces off.", "{the_npc.cap} laughs at something - perhaps you - and beckons."],
+    "melancholy:meet_beat": ["{the_npc.cap} looks up slowly, as if from a long way off.", "{the_npc.cap} sighs and sets {tool} aside.",
+                             "{the_npc.cap} gives you a tired, crooked smile.", "{the_npc.cap} is staring at nothing in particular, and takes a moment to notice you."],
+    "shrewd:meet_beat": ["{the_npc.cap} takes your measure in one long look - boots, purse, blade.", "{the_npc.cap} smiles, but {his} eyes are doing sums.",
+                         "{the_npc.cap} leans back and watches you approach with interest.", "{the_npc.cap} turns {tool} over in {his} fingers, considering you."],
+    "dreamy:meet_beat": ["{the_npc.cap} is humming to {himself} and doesn't notice you at first.", "{the_npc.cap} is watching the sky, and only slowly looks down at you.",
+                         "{the_npc.cap} blinks at you as if you'd appeared out of the air.", "{the_npc.cap} has stopped mid-task, {tool} forgotten, lost in thought."],
+
+    # ---------------------------------------------------------------- what they say first
+    "warm:greet": ["\"Well met, stranger! Sit, rest your feet.\"", "\"A new face! The road's been kind to bring you.\"", "\"Welcome, welcome. You look like you've walked a long way.\"",
+                   "\"Come in out of the weather, if you like.\"", "\"Hello! You'll want something warm in you, I expect.\"", "\"There now. A traveller. Good.\""],
+    "suspicious:greet": ["\"What do you want?\"", "\"I don't know you. Say your business.\"", "\"Strangers bring trouble, in my experience.\"",
+                         "\"Who sent you?\"", "\"You're not from round here.\"", "\"Keep your hands where I can see them.\""],
+    "nervous:greet": ["\"Oh! You gave me a fright.\"", "\"Is - is something wrong?\"", "\"Keep your voice down, if you would.\"",
+                      "\"I didn't hear you coming.\"", "\"Sorry - sorry. I'm a bit on edge today.\"", "\"Oh. Hello. Yes?\""],
+    "gruff:greet": ["\"Hm.\"", "\"If you're going to talk, talk.\"", "\"Busy. Make it quick.\"", "\"What.\"", "\"Well?\"", "\"Out with it.\""],
+    "cheerful:greet": ["\"Hello there! Grand day for it, whatever it is.\"", "\"Ha! Another traveller. Come, have news for me?\"", "\"There's a smile I haven't seen before!\"",
+                       "\"A visitor! Things are looking up.\"", "\"Well, hello! Where've you blown in from?\"", "\"Good to see a new face, it really is.\""],
+    "melancholy:greet": ["\"Ah. Another day, another face.\"", "\"Welcome, I suppose. Not that there's much here.\"", "\"You should have come in better times.\"",
+                         "\"Hello. Don't mind me.\"", "\"Oh. A traveller. We don't get many now.\"", "\"Mm. Good day, if it is one.\""],
+    "shrewd:greet": ["\"A traveller. And what might you be worth to me, I wonder?\"", "\"Information has a price, friend. Usually.\"", "\"You've a look about you. Adventurer?\"",
+                     "\"New in town, and in no hurry. Interesting.\"", "\"You'll be wanting something. Folk always are.\"", "\"Well now. What have we here?\""],
+    "dreamy:greet": ["\"Did you see the clouds this morning? Like whales.\"", "\"Oh - hello. I was somewhere else.\"", "\"The wind told me someone would come.\"",
+                     "\"Do you ever hear the stones hum? No? Just me, then.\"", "\"You've come from far off. I can see it on you.\"", "\"Hello. Were you in my dream? No, never mind.\""],
+
+    # ---------------------------------------------------------------- the exchange of names
+    "ask_name": ["\"And who might you be?\" You tell {him} your name.",
+                 "\"Haven't seen you before. Name?\" \"{player},\" you say. {he.cap} nods slowly.",
+                 "\"And you'd be?\" \"{player},\" you answer.",
+                 "\"Got a name, traveller?\" You give it: {player}.",
+                 "{he.cap} squints at you. \"Who are you, then?\" \"{player}.\"",
+                 "\"And you are...?\" You tell {him}: {player}.",
+                 "You give your name before {he} can ask. \"{player}.\" {he.cap} tries it out under {his} breath.",
+                 "\"You have a name, I suppose?\" \"{player}.\" \"Hm. It suits you.\"",
+                 "{he.cap} waits, eyebrows raised, until you offer your name: {player}.",
+                 "\"{player},\" you say, when the silence has gone on long enough.",
+                 "\"I'm {player},\" you say, and hold out a hand. After a moment {he} takes it.",
+                 "\"And what do I call you?\" \"{player} will do.\""],
+
+    # ---------------------------------------------------------------- how they introduce themselves
+    "npc_intro": ["\"I'm {name}. {job_self.cap}.\"", "\"Name's {name}. {job_self.cap}.\"", "\"{name},\" {he} offers, tapping {his} chest. \"{job_self.cap}.\"",
+                  "\"Folk call me {name}.\"", "{he.cap} wipes {his} hands. \"{name}. {job_self.cap}.\"", "\"I'm {name}. Pleased, I'm sure.\"",
+                  "\"{name}.\" A pause. \"{job_self.cap}, if you're wondering.\"", "\"Well, I'm {name}, and {job_self}.\"",
+                  "{he.cap} jerks a thumb at {his} own chest. \"{name}.\"", "\"They call me {name} round here. {job_self.cap}.\"",
+                  "\"{name},\" {he} says. \"{job_self.cap}.\"", "\"{name}. The {job} here, for my sins.\""],
+
+    # ---------------------------------------------------------------- beats before a line, later on, by how they feel about you
+    "cold:talk_beat": ["{name} doesn't look up.", "{name} folds {his} arms.", "{name} gives you a flat look.", "{name} sniffs.",
+                       "{name} keeps working.", "{name} answers without warmth."],
+    "neutral:talk_beat": ["{name} nods.", "{name} glances up.", "{name} pauses in {his} work.", "{name} scratches {his} jaw.",
+                          "{name} looks over.", "{name} shrugs a little.", "{name} sets down {tool}."],
+    "friendly:talk_beat": ["{name} smiles at you.", "{name} looks up, pleased.", "{name} leans in.", "{name} gives you a nod and a half-smile.",
+                           "{name} puts {tool} aside for you.", "{name} brightens."],
+    "devoted:talk_beat": ["{name}'s face lights up.", "{name} grips your arm in greeting.", "{name} beams at you.", "{name} drops everything to talk."],
+    # before a rumour or a piece of news
+    "rumour_beat": ["{name} lowers {his} voice.", "{name} glances about, then leans closer.", "{name} points down the road.",
+                    "{name} rubs {his} chin.", "{name} looks thoughtful.", "{name} taps the side of {his} nose.", "{name} frowns, remembering.",
+                    "{name} goes back to {tool} as {he} talks.", "{name} gestures vaguely at the hills."],
+    # before trade patter
+    "trade_beat": ["{name} spreads {his} hands over the goods.", "{name} pats the nearest bundle.", "{name} straightens a row of wares.",
+                   "{name} looks you over, then the goods, then you again.", "{name} lifts something up for you to see."],
+}
+
+
+def tool_for(npc):
+    """What their hands are busy with, as a phrase: 'her hammer', 'a twist of paper'."""
+    t = TOOL.get(npc.job) or ROLE_TOOL.get(npc.role, "a basket")
+    if t.split()[0] in ("a", "an", "the"):
+        return t
+    return f"{npc.pronouns()['his']} {t}"
+
+
+def self_lines(npc):
+    """Ways this person might describe their work."""
+    return JOB_SELF.get(npc.job, []) + [s.replace("{job}", npc.job) for s in GENERIC_SELF]

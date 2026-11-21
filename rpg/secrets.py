@@ -817,7 +817,8 @@ def s_keepsake(g, f, sec):
         done = f"{owner.name} turns the letter over, sees the hand, and goes very still. \"From {sec['sender']}… I thought {S.find_npc(g.world, sec['sender']).pronouns()['he'] if S.find_npc(g.world, sec['sender']) else 'they'}'d forgotten me.\""
     else:
         name = f"{sec['thing']} engraved '{owner.name}'"
-        it = Item("trinket", name, value=6, facts=dict(detail=f"engraved with the name {owner.name}"))
+        it = Item("trinket", name, value=6, facts=dict(detail=g.rng.choice(["worn smooth by years of handling", "small enough to lose in a pocket",
+                                                                               "a little chipped, but clearly cared for", "the letters cut with a careful hand"])))
         g.emit(f"In the grass by the {f.noun} you find a {sec['thing']}, lost a long time. Someone has engraved a name on it: {owner.name}.")
         title, desc = f"{owner.name}'s {sec['thing']}", f"Return the {sec['thing']} to {owner.name}"
         pr = owner.pronouns()

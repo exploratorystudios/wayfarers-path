@@ -13,6 +13,7 @@ from . import lex_landmarks as LM
 from . import secrets as SEC
 from . import living as LV
 from . import story as ST
+from . import lex_talk as TALK
 from .textgen import Grammar, tidy, article, cap, title
 
 PREP_WORDS = ("the ",)
@@ -61,6 +62,7 @@ class Narrator:
         self.g.add(V.DARK)
         self.g.add(LM.rules())
         self.g.extend(M.EXTEND)
+        self.g.add(TALK.RULES)           # conversation: replaces the older, thinner greeting and introduction lines
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -98,13 +100,39 @@ class Narrator:
             s = tidy(self.g.expand(template, c, scopes))
             # contradicting the moment is worst, then repeating ourselves, then a word used twice
             score = (10 * len(C.context_clashes(s, w.season, w.weather, w.time_of_day, biome))
-                     + (3 if s in self.recent else 0) + len(C.repeated_words(s)))
+                     + (3 if s in self.recent else 0) + len(C.repeated_words(s)) + self.echo(s))
             if best_score is None or score < best_score:
                 best, best_score = s, score
             if score == 0:
                 break
         self.recent.append(best)
+        self.remember_phrases(best)
         return best
+
+    @staticmethod
+    def _shingles(s):
+        words = [w.strip('.,;:!?"\'-()').lower() for w in s.split()]
+        words = [w for w in words if w]
+        return {" ".join(words[i:i + 4]) for i in range(len(words) - 3)}
+
+    def echo(self, s):
+        """How much of this sentence repeats phrasing used recently (runs of four words)."""
+        seen = getattr(self, "_phrases", None)
+        if not seen:
+            return 0
+        return min(4, sum(1 for sh in self._shingles(s) if sh in seen))
+
+    def remember_phrases(self, s):
+        if not hasattr(self, "_phrases") or not hasattr(self, "_phrase_q"):
+            self._phrases, self._phrase_q = {}, deque()
+        for sh in self._shingles(s):
+            self._phrases[sh] = self._phrases.get(sh, 0) + 1
+            self._phrase_q.append(sh)
+        while len(self._phrase_q) > 1500:          # about the last fifty or so passages
+            old = self._phrase_q.popleft()
+            self._phrases[old] -= 1
+            if not self._phrases[old]:
+                del self._phrases[old]
 
     def frag(self, template, ctx=None, scopes=None, tile=None):
         """Expand a fragment (no capitalisation or final full stop)."""
@@ -314,7 +342,7 @@ class Narrator:
         frames = ["The {noun} {verb} {where}. It is {a1} and {a2}. {d1.cap}; {d2}.",
                   "You take a closer look at the {noun}: {a2}, {a1}, {d1}. Looking longer, you notice {d2}.",
                   "Up close, the {a1} {noun} is {a2}. You see {d2}, and {d1}.",
-                  "The {noun} rewards attention. {d1.cap}. {d2.cap}. It is unmistakably {a1}."]
+                  "The {noun} rewards attention: {d1}, and {d2}. It is unmistakably {a1}."]
         s = self.say(self.pick(frames, "featfull"), c, self.scopes(biome))
         s = s.replace("You see its", "Its").replace("you notice its", "you notice that its")
         return s + (" " + now if now and len(fit) >= 2 else "")
@@ -499,12 +527,27 @@ class Narrator:
             return self.say(self.pick(frames, "npcfull_anon"), ctx)
         return self.say(self.pick(frames, "npcfull"), ctx)
 
+    def talk_ctx(self, n, first=False, **kw):
+        return dict(name=n.name, job=n.job, tool=TALK.tool_for(n), job_self=TALK.self_lines(n),
+                    the_npc=f"the {n.job}" if first else n.name, **n.pronouns(), **kw)
+
+    def attrib(self, n, line, beat="talk_beat"):
+        """Put a gesture before a spoken line so it's clear who's talking."""
+        if not line.startswith('"'):
+            return line
+        scope = [n.tier] if beat == "talk_beat" else []
+        return self.say("{%s}" % beat, self.talk_ctx(n), scope) + " " + line
+
+    def introduce(self, n):
+        return self.say("{npc_intro}", self.talk_ctx(n, first=True))
+
     def greet(self, n, player):
-        """First meeting: a temperament greeting and introductions. Later: a greeting
-        coloured by how they feel about you and how long you've been away."""
+        """First meeting: what they're doing as you come up, a greeting in their temperament,
+        and the exchange of names. Later: a greeting coloured by how they feel about you."""
         m, day = n.mem, self.w.day
         if m["met"] == 0:
-            return self.say("{greet}", {}, [n.demeanour]) + " " + self.say("{ask_name}", dict(player=player, **n.pronouns()))
+            ctx = self.talk_ctx(n, first=True, player=player)
+            return " ".join([self.say("{meet_beat}", ctx, [n.demeanour]), self.say("{greet}", ctx, [n.demeanour]), self.say("{ask_name}", ctx)])
         addr = player if m["knows_name"] else self.pick(["stranger", "traveller", "friend"])
         gap = day - m["last_day"]
         if gap >= 3:
@@ -516,7 +559,7 @@ class Narrator:
         line = self.say("{return_greet}", dict(addr=addr, name=n.name, gap=["again", "once more", "back again"], gap_line=gap_line, **n.pronouns()), [n.tier])
         if gap >= 3 and gap_line not in line:
             line += " " + gap_line
-        return line
+        return self.attrib(n, line)
 
     def recognise(self, n):
         return self.say("{recognise_line}", dict(name=n.name, **n.pronouns()), [n.tier])
