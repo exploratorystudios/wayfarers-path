@@ -123,7 +123,7 @@ OCCUPATIONS = {
 AGE = ["young", "youngish", "middle-aged", "grizzled", "elderly", "aged", "weathered"]
 BUILD = ["stooped", "broad-shouldered", "wiry", "stout", "gaunt", "tall", "short", "round-bellied", "bony", "sturdy"]
 HAIR = ["hair the colour of straw", "a shaved head", "grey braids", "a wild black mane", "thinning red hair", "a cloud of white hair",
-        "close-cropped brown hair", "a long plait wound around the head", "hair hidden under a linen coif"]
+        "close-cropped brown hair", "a long plait coiled at the crown", "hair hidden under a linen coif"]
 CLOTHES = ["a patched woollen tunic", "a leather apron scorched in places", "a faded blue kirtle", "a sheepskin jerkin",
            "a mud-stained smock", "a fine but threadbare coat", "layers of undyed wool", "a cloak pinned with a bone brooch"]
 MARK = ["a missing front tooth", "ink-stained fingers", "a burn scar on one forearm", "startlingly pale eyes", "a nose broken more than once",

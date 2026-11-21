@@ -104,22 +104,34 @@ AGE_BAND = {
     "middle-aged": "mid", "careworn": "mid", "weathered": "mid", "ageless-seeming": "any",
     "grizzled": "old", "elderly": "old", "ancient": "old", "aged": "old", "greying": "old", "white-haired": "old",
     "silver-haired": "old", "time-worn": "old",
-}
+    "callow": "young", "fledgling": "young", "unlined": "young", "barely grown": "young",
+    "seasoned": "mid", "work-hardened": "mid", "thirtyish": "mid", "sun-lined": "mid", "fortyish": "mid",
+    "wrinkled": "old",
+}   # keep the three groups the same size (8 words each), so no age reads as more repetitive than another
 AGE_NAMES_HAIR = {"greying", "white-haired", "silver-haired", "grizzled"}     # these already say what the hair looks like
 # hair: which ages it suits, and whether it states a colour or baldness
 HAIR_RULES = {
     "hair the colour of straw": ("young", "mid"), "a shaved head": ("young", "mid", "old"),
     "grey braids": ("old",), "a wild black mane": ("young", "mid"), "thinning red hair": ("mid", "old"),
     "a cloud of white hair": ("old",), "close-cropped brown hair": ("young", "mid"),
-    "a long plait wound around the head": ("young", "mid", "old"), "hair hidden under a linen coif": ("young", "mid", "old"),
+    "a long plait coiled at the crown": ("young", "mid", "old"), "hair hidden under a linen coif": ("young", "mid", "old"),
     "copper curls tied back with string": ("young", "mid"), "hair cropped close for lice": ("young", "mid", "old"),
     "a single thick braid": ("young", "mid", "old"), "a tangle of iron-grey hair": ("old", "mid"),
     "hair the colour of wet sand": ("young", "mid"), "a fringe cut straight across": ("young", "mid"),
     "a balding crown and a fierce beard": ("mid", "old"), "dark hair streaked with white": ("mid", "old"),
     "hair hidden under a felt cap": ("young", "mid", "old"),
+    "hair tied back with a strip of leather": ("young", "mid", "old"), "hair pinned up in a tidy knot": ("young", "mid", "old"),
+    "a hood worn up even indoors": ("young", "mid", "old"), "hair bound in a faded kerchief": ("young", "mid", "old"),
+    "hair worn long and loose": ("young", "mid", "old"), "hair cut short and practical": ("young", "mid", "old"),
+    "a straw hat pulled low": ("young", "mid", "old"), "two neat braids": ("young", "mid", "old"),
 }
-HAIR_NEUTRAL = {"a long plait wound around the head", "hair hidden under a linen coif", "a single thick braid",
-                "hair hidden under a felt cap", "hair cropped close for lice"}   # fine beside "white-haired"
+HAIR_NEUTRAL = {"a long plait coiled at the crown", "hair hidden under a linen coif", "a single thick braid",
+                "hair hidden under a felt cap", "hair cropped close for lice", "hair tied back with a strip of leather",
+                "hair pinned up in a tidy knot", "a hood worn up even indoors", "hair bound in a faded kerchief",
+                "hair worn long and loose", "hair cut short and practical", "a straw hat pulled low", "two neat braids"}   # fine beside "white-haired"
+# details vivid enough that the reader remembers them: keep them rare so they stay memorable
+HAIR_WEIGHT = {"hair cropped close for lice": 0.25, "a balding crown and a fierce beard": 0.5, "a wild black mane": 0.6,
+               "copper curls tied back with string": 0.6, "a shaved head": 0.6}
 BUILD_NOT_YOUNG = {"stooped", "hunched", "round-bellied"}
 YOUNG_JOBS = {"goose-girl", "goose-boy", "chandler's boy", "chandler's girl"}
 ROLE_AGES = {"elder": ("old",)}
@@ -134,6 +146,24 @@ JOB_LAND = {
 
 # an elder's title already says they are old; these would only say it again ("an elderly village elder")
 ELDER_AVOID = {"elderly", "aged", "ancient"}
+
+
+AGE_BANDS = ("young", "mid", "old")
+BAND_WEIGHT = {"young": 0.3, "mid": 0.4, "old": 0.3}     # how a village's people spread across the ages
+
+
+def band_ok(band, role, job):
+    """Which age group a person can belong to, given what they do."""
+    if role in ROLE_AGES and band not in ROLE_AGES[role]:
+        return False
+    if job in YOUNG_JOBS and band != "young":
+        return False
+    return True
+
+
+def age_words(band, pool):
+    """The age words that describe someone of this age group."""
+    return [w for w in pool if AGE_BAND.get(w) == band]
 
 
 def age_ok(age, role, job):

@@ -142,7 +142,22 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 .atlas-bar .sp { flex: 1; opacity: .8; font-size: .9rem; }
 .atlas-bar button { padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(233,220,192,.35); background: rgba(233,220,192,.08); color: #e9dcc0; font: .85rem var(--sans); }
 .atlas-bar button:hover { background: rgba(233,220,192,.18); }
-#atlasCanvas { max-width: min(100%, 1100px); max-height: calc(100vh - 80px); width: auto; height: auto; box-shadow: 0 25px 70px rgba(0,0,0,.6); border-radius: 3px; background: #e6d6b2; }
+.atlas-view { position: relative; width: min(96vw, 1180px); height: calc(100vh - 84px); overflow: hidden; border-radius: 4px; cursor: grab; touch-action: none;
+  box-shadow: 0 25px 70px rgba(0,0,0,.6); background: #3a2c1e; }
+.atlas-view.dragging { cursor: grabbing; }
+.atlas-view canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; }
+#atlasTrail { pointer-events: none; }
+.atlas-bar .tog { display: flex; align-items: center; gap: 6px; font: .85rem var(--sans); font-style: normal; cursor: pointer; padding: 0 6px; }
+.atlas-bar .zoom { min-width: 34px; }
+#mapwrap { position: relative; width: fit-content; margin: 0 auto; }
+#miniMap { position: absolute; left: 0; top: 0; border-radius: 6px; pointer-events: none; }
+#map.painted { background: transparent; position: relative; }
+#map.painted { gap: 0; padding: 0; }
+#map.painted .cell { background: transparent; box-shadow: inset -1px -1px 0 rgba(70, 50, 30, .26); filter: none; }
+#map.painted .cell:not(.v):not(.me) { box-shadow: inset -1px -1px 0 rgba(70, 50, 30, .15); }
+#map.painted .cell > span.site { display: none; }
+#map.painted .cell > span { color: #7a1e16; text-shadow: 0 0 2px #f3e7cc, 0 0 2px #f3e7cc; font-weight: 800; }
+#map.painted .cell.go:hover { box-shadow: inset 0 0 0 2px rgba(140, 40, 30, .7); }
 .journal { font-size: .82rem; line-height: 1.4; color: var(--ink-soft); }
 .journal li { margin: 0 0 6px; } .journal ul { margin: 0; padding-left: 16px; }
 .journal .fx { font-size: .74rem; color: var(--ink-faint); margin-top: 6px; }
@@ -300,7 +315,7 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
   <aside>
     <div class="panel">
       <h2 class="maphead">Map <button type="button" id="atlasBtn" title="Unfold a painted map of everywhere you've explored">Open map</button></h2>
-      <div id="map"></div>
+      <div id="mapwrap"><canvas id="miniMap" aria-hidden="true"></canvas><div id="map"></div></div>
       <div id="maptip">Click a tile next to you to walk there.</div>
       <div class="legend">
         <span><i style="background:var(--b-forest)"></i>forest</span><span><i style="background:var(--b-plains)"></i>open land</span>
@@ -339,8 +354,13 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 
 <div class="overlay atlas" id="atlasDlg" hidden role="dialog" aria-label="Map of the explored lands">
   <div class="atlas-wrap">
-    <div class="atlas-bar"><span class="sp" id="atlasNote">Unfolding the map…</span><button type="button" id="atlasSave">Save image</button><button type="button" id="atlasClose" aria-label="Close map">Close</button></div>
-    <canvas id="atlasCanvas" width="1400" height="1460"></canvas>
+    <div class="atlas-bar"><span class="sp" id="atlasNote">Unfolding the map…</span>
+      <label class="tog" title="Show or hide the road you've walked"><input type="checkbox" id="atlasTrailTog" checked> Your road</label>
+      <button type="button" class="zoom" id="atlasOut" title="Zoom out (−)" aria-label="Zoom out">−</button>
+      <button type="button" class="zoom" id="atlasIn" title="Zoom in (+)" aria-label="Zoom in">+</button>
+      <button type="button" id="atlasFit" title="Fit the whole map (0)">Fit</button>
+      <button type="button" id="atlasSave">Save image</button><button type="button" id="atlasClose" aria-label="Close map">Close</button></div>
+    <div class="atlas-view" id="atlasView"><canvas id="atlasCanvas"></canvas><canvas id="atlasTrail"></canvas></div>
   </div>
 </div>
 
@@ -387,12 +407,18 @@ function renderLine(line) {
   return p;
 }
 
+let startAtTop = false;     // a new game or a loaded save is read from its first line
 function appendLines(lines) {
   const log = $("log");
   const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
   log.querySelectorAll(".new").forEach(e => e.classList.remove("new"));
   for (const l of lines) log.appendChild(renderLine(l));
   while (log.childElementCount > 1500) log.firstElementChild.remove();
+  if (startAtTop && lines.length) {
+    startAtTop = false;
+    log.scrollTop = 0; window.scrollTo(0, 0);
+    return;
+  }
   if (atBottom || lines.some(l => l.startsWith("> "))) {
     // bring the newest command's output into view
     const echoes = log.querySelectorAll(".echo");
@@ -552,7 +578,8 @@ function renderMap(g) {
     const d = document.createElement("div");
     d.className = "cell" + (c.b ? " " + c.b : "") + (c.b && !c.v ? " dim" : "") + (c.p && !c.me ? " path" : "") + (c.me ? " me" : "") + (c.q ? " qmark" : "") + (c.t ? " tmark" : "");
     const glyph = (c.s && !c.me) ? GLYPH[c.s] : (c.q && !c.me) ? "?" : "";
-    if (glyph) { const g2 = document.createElement("span"); g2.textContent = glyph; d.appendChild(g2); }
+    if (glyph) { const g2 = document.createElement("span"); g2.textContent = glyph; if (c.s && !c.q) g2.className = "site"; d.appendChild(g2); }
+    if (c.v) d.classList.add("v");
     const dir = steps[x + "," + y];
     let tip = c.b ? (c.n ? `${c.n}, ${c.r}` : c.r) + (c.b === "lake" ? " (water)" : "") : (c.q ? "Somewhere out here lies the relic." : "Unexplored");
     if (c.q && c.b) tip += " — the relic is here";
@@ -563,6 +590,26 @@ function renderMap(g) {
     el.appendChild(d);
   }));
   el.onmouseleave = () => { $("maptip").textContent = "Click a tile next to you to walk there."; };
+  paintMini(g);
+}
+
+// the panel map: the painted land under the clickable grid, repainted only when what you know changes
+let miniKey = "";
+function paintMini(g) {
+  const m = g.map, el = $("map"), cv = $("miniMap");
+  if (!window.drawAtlas || m.seed === undefined) return;
+  const cells = m.cells.map(row => row.map(c => c.b ? { k: c.v ? 2 : 1, b: c.b, s: c.s } : { k: 0 }));
+  el.classList.add("painted");                         // measure the grid as it will be drawn (no gaps)
+  const dpr = window.devicePixelRatio || 1, w = el.offsetWidth, h = el.offsetHeight;
+  const key = m.seed + "|" + w + "|" + dpr + "|" + JSON.stringify(cells);
+  if (key !== miniKey) {
+    miniKey = key;
+    try {
+      window.drawAtlas(cv, { w: m.w, h: m.h, seed: m.seed, cells, regions: [], trail: [], goals: [] }, { mini: true, scale: w * dpr / 1220 });
+    } catch (e) { el.classList.remove("painted"); return; }
+  }
+  cv.style.width = w + "px"; cv.style.height = h + "px";
+  el.classList.add("painted");
 }
 
 function renderStatus(g) {
@@ -655,7 +702,7 @@ function renderSaves(saves) {   // compact list on the start screen
     const row = document.createElement("div"); row.className = "sv";
     row.innerHTML = `<div class="st">${saveTitle(s)}</div><div class="sd">${esc(saveDetail(s))}</div><div class="sb"></div>`;
     const b = document.createElement("button"); b.textContent = "Load"; b.type = "button"; b.disabled = !!s.broken;
-    b.onclick = () => post("/api/load", {slot: s.slot}).then(r => { if (!r.error) closeStart(); });
+    b.onclick = () => { startAtTop = true; post("/api/load", {slot: s.slot}).then(r => { if (r.error) startAtTop = false; else closeStart(); }); };
     row.querySelector(".sb").appendChild(b);
     list.appendChild(row);
   }
@@ -728,8 +775,9 @@ function drawSaves() {
   }
 }
 function loadSlot(slot) {
+  startAtTop = true;
   fetch("/api/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({slot, since: total})})
-    .then(r => r.json()).then(s => { if (s.error) { $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; $("cmd").focus(); });
+    .then(r => r.json()).then(s => { if (s.error) { startAtTop = false; $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; $("cmd").focus(); });
 }
 function trySave(name, force) {
   const g = state.game, slot = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "");
@@ -769,15 +817,39 @@ async function send(cmd) {
 }
 
 function openStart(closable) { $("start").hidden = false; $("closeStart").hidden = !closable; $("err").textContent = ""; setTimeout(() => $("nm").focus(), 50); }
-function closeStart() { $("start").hidden = true; $("cmd").focus(); }
+function closeStart() { $("start").hidden = true; $("cmd").focus({preventScroll: true}); }
 
 $("newForm").onsubmit = (e) => {
   e.preventDefault();
-  post("/api/new", {name: $("nm").value, seed: $("seed").value, klass: chosenClass}).then(r => { if (!r.error) closeStart(); });
+  startAtTop = true;
+  post("/api/new", {name: $("nm").value, seed: $("seed").value, klass: chosenClass}).then(r => { if (r.error) startAtTop = false; else closeStart(); });
 };
 $("closeStart").onclick = closeStart;
 // ---------------------------------------------------------------- the painted map
 let atlasData = null;
+const ATLAS_SCALE = 2;                     // painted at twice its size, so the ink stays crisp when you zoom in
+const view = { z: 1, x: 0, y: 0, fit: 1 };
+function applyView() {
+  const t = `translate(${view.x}px, ${view.y}px) scale(${view.z})`;
+  $("atlasCanvas").style.transform = t; $("atlasTrail").style.transform = t;
+}
+function clampView() {
+  const v = $("atlasView"), cw = $("atlasCanvas").offsetWidth * view.z, ch = $("atlasCanvas").offsetHeight * view.z;
+  const vw = v.clientWidth, vh = v.clientHeight;
+  view.x = cw <= vw ? (vw - cw) / 2 : Math.min(40, Math.max(vw - cw - 40, view.x));
+  view.y = ch <= vh ? (vh - ch) / 2 : Math.min(40, Math.max(vh - ch - 40, view.y));
+}
+function fitView() {
+  const v = $("atlasView"), c = $("atlasCanvas");
+  view.fit = Math.min(v.clientWidth / c.offsetWidth, v.clientHeight / c.offsetHeight);
+  view.z = view.fit; clampView(); applyView();
+}
+function zoomAt(f, px, py) {              // zoom by f, keeping the point under (px, py) where it is
+  const v = $("atlasView"), z2 = Math.max(view.fit * 0.9, Math.min(4, view.z * f));
+  if (px === undefined) { px = v.clientWidth / 2; py = v.clientHeight / 2; }
+  view.x = px - (px - view.x) * (z2 / view.z); view.y = py - (py - view.y) * (z2 / view.z); view.z = z2;
+  clampView(); applyView();
+}
 async function openAtlas() {
   if (!state || !state.game) return;
   $("atlasDlg").hidden = false; $("atlasNote").textContent = "Unfolding the map…";
@@ -787,17 +859,65 @@ async function openAtlas() {
     atlasData = data;
     try { await Promise.all([document.fonts.load('32px "IM Fell English"'), document.fonts.load('italic 16px "IM Fell English"'), document.fonts.load('19px "IM Fell English SC"')]); } catch (e) { /* draw with fallback fonts */ }
     await new Promise(r => setTimeout(r, 20));          // let the note paint before the heavy drawing
-    window.drawAtlas($("atlasCanvas"), data);
+    const c = $("atlasCanvas"), tr = $("atlasTrail");
+    window.drawAtlas(c, data, { scale: ATLAS_SCALE, trail: tr });
+    c.style.width = tr.style.width = c.width / ATLAS_SCALE + "px";
+    c.style.height = tr.style.height = c.height / ATLAS_SCALE + "px";
+    tr.style.display = $("atlasTrailTog").checked ? "" : "none";
+    fitView();
     const seen = data.cells.flat().filter(c => c.k === 2).length, all = data.cells.flat().filter(c => c.k).length;
-    $("atlasNote").textContent = `${seen} places walked, ${all - seen} more glimpsed. Your road is marked in red.`;
+    $("atlasNote").textContent = `${seen} places walked, ${all - seen} glimpsed. Scroll or pinch to zoom, drag to look around.`;
   } catch (e) { $("atlasNote").textContent = "The map wouldn't unfold: " + e; }
 }
-function closeAtlas() { $("atlasDlg").hidden = true; $("cmd").focus(); }
+function closeAtlas() { $("atlasDlg").hidden = true; $("cmd").focus({preventScroll: true}); }
 $("atlasBtn").onclick = openAtlas;
 $("atlasClose").onclick = closeAtlas;
 $("atlasDlg").addEventListener("click", (e) => { if (e.target === $("atlasDlg")) closeAtlas(); });
+$("atlasIn").onclick = () => zoomAt(1.4);
+$("atlasOut").onclick = () => zoomAt(1 / 1.4);
+$("atlasFit").onclick = fitView;
+try { $("atlasTrailTog").checked = localStorage.getItem("wp.trail") !== "off"; } catch (e) { /* storage blocked */ }
+$("atlasTrailTog").onchange = () => {
+  const on = $("atlasTrailTog").checked;
+  $("atlasTrail").style.display = on ? "" : "none";
+  try { localStorage.setItem("wp.trail", on ? "on" : "off"); } catch (e) { /* storage blocked */ }
+};
+window.addEventListener("resize", () => { if (!$("atlasDlg").hidden && atlasData) fitView(); if (state && state.game) paintMini(state.game); });
+{
+  const v = $("atlasView"), pts = new Map();
+  let last = null, pinch = null;
+  v.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = v.getBoundingClientRect();
+    zoomAt(Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0016)), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  v.addEventListener("dblclick", (e) => { const r = v.getBoundingClientRect(); zoomAt(1.8, e.clientX - r.left, e.clientY - r.top); });
+  v.addEventListener("pointerdown", (e) => {
+    v.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    v.classList.add("dragging"); last = [e.clientX, e.clientY];
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; }
+  });
+  v.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    const r = v.getBoundingClientRect();
+    if (pts.size === 2 && pinch) {            // two fingers: zoom about their midpoint
+      const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      zoomAt(d / pinch.d, (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top); pinch.d = d;
+    } else if (pts.size === 1 && last) {
+      view.x += e.clientX - last[0]; view.y += e.clientY - last[1]; last = [e.clientX, e.clientY];
+      clampView(); applyView();
+    }
+  });
+  const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { v.classList.remove("dragging"); last = null; } else last = [...pts.values()][0]; };
+  v.addEventListener("pointerup", up); v.addEventListener("pointercancel", up);
+}
 $("atlasSave").onclick = () => {
-  $("atlasCanvas").toBlob((b) => {
+  const c = $("atlasCanvas"), out = document.createElement("canvas");     // the map, plus your road if it's showing
+  out.width = c.width; out.height = c.height;
+  const o = out.getContext("2d"); o.drawImage(c, 0, 0);
+  if ($("atlasTrailTog").checked) o.drawImage($("atlasTrail"), 0, 0);
+  out.toBlob((b) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(b);
     a.download = atlasData ? `map-${atlasData.seed}-day${atlasData.day}.png` : "map.png";
@@ -833,7 +953,13 @@ $("cmd").addEventListener("keydown", (e) => {
   } else if (e.key === "Escape") { e.target.value = ""; }
 });
 document.addEventListener("keydown", (e) => {
-  if (!$("atlasDlg").hidden) { if (e.key === "Escape") { e.preventDefault(); closeAtlas(); } return; }
+  if (!$("atlasDlg").hidden) {
+    if (e.key === "Escape") { e.preventDefault(); closeAtlas(); }
+    else if (e.key === "+" || e.key === "=") zoomAt(1.4);
+    else if (e.key === "-") zoomAt(1 / 1.4);
+    else if (e.key === "0") fitView();
+    return;
+  }
   if (!$("savesDlg").hidden) {
     if (e.key === "Escape") { e.preventDefault(); if (Object.keys(svMode).length || !$("overwriteAsk").hidden) { svMode = {}; $("overwriteAsk").hidden = true; drawSaves(); } else closeSaves(); }
     return;

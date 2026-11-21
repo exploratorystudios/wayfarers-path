@@ -71,7 +71,7 @@ NEW_FEATURES = {
 
 # what each landmark is made of (keyed by the archetype's first noun)
 TAG = {
-    "oak": "tree", "yew": "tree", "willow": "tree", "hawthorn": "tree", "fallen beech": "earth", "bog oak": "earth", "rowan": "tree",
+    "oak": "tree", "yew": "tree", "willow": "tree", "hawthorn": "tree", "fallen beech": "log", "fallen tree": "log", "bog oak": "earth", "rowan": "tree",
     "stream": "water", "pool": "water", "dew pond": "water", "waterfall": "water", "tarn": "water", "holy well": "water", "hot spring": "water",
     "ring of toadstools": "fungus",
     "glade": "plant", "reed island": "plant",
@@ -131,6 +131,22 @@ _TAGS = {
         "fullmoon": ["Under the full moon the {noun} casts a long, sharp shadow.", "The {noun} looks pale and strange in the moonlight."],
         "dawn": ["The {noun} catches the first light and glows faintly red.", "Dew has beaded on the {noun} overnight."],
         "dusk": ["The {noun} throws a long shadow in the low light.", "The {noun} goes from grey to blue to black as the light fails."],
+    },
+    "log": {
+        "spring": ["Ferns are uncurling along the {noun}'s flank.", "Moss on the {noun} has gone a bright, wet green."],
+        "summer": ["Ants run in lines along the {noun}'s split bark.", "The {noun} smells warm and mushroomy in the heat."],
+        "autumn": ["Fungus has sprouted in tiers along the {noun}.", "Fallen leaves have drifted deep against the {noun}."],
+        "winter": ["The {noun} lies black against the frozen ground.", "Ice has formed in the pockets of the {noun}'s torn roots."],
+        "rain": ["Rain darkens the {noun}, and water pools in the pit its roots left.", "The {noun} is slick and black with rain."],
+        "storm": ["The storm roars through the standing trees around the {noun}, and you wonder which will fall next.", "Rain sheets off the {noun}."],
+        "snow": ["Snow lies along the top of the {noun} like a white spine.", "Snow has drifted against the {noun}."],
+        "frost": ["Frost furs the moss on the {noun}.", "The {noun}'s bark is stiff and white with rime."],
+        "fog": ["The {noun} is a long dark shape lying in the fog.", "Fog beads on the {noun} and drips from its roots."],
+        "wind": ["The wind whistles through the {noun}'s upturned roots.", "Dead leaves skitter along the {noun} in the wind."],
+        "dark": ["In the dark the {noun} looks like some great beast asleep.", "Something rustles in the hollow under the {noun}."],
+        "fullmoon": ["Moonlight lies along the length of the {noun}.", "Under the full moon the {noun}'s roots throw a tangle of shadow."],
+        "dawn": ["Dew beads the moss on the {noun}.", "A wren is already busy in the {noun}'s roots."],
+        "dusk": ["Long shadows gather under the {noun}.", "A blackbird scolds from the {noun}'s roots as the light goes."],
     },
     "earth": {
         "spring": ["New grass is pushing up over the {noun}.", "Primroses have opened in the shelter of the {noun}."],

@@ -27,10 +27,10 @@ HOURS = {"dawn": 6, "morning": 9, "midday": 12, "afternoon": 15, "dusk": 19, "ev
 WEATHERS = ["clear", "cloudy", "overcast", "drizzle", "rain", "storm", "fog", "wind", "snow"]
 W = CO.W
 
-YOUNG = W("young", "youngish", "youthful", "fresh-faced")
-OLD = W("elderly", "ancient", "grizzled", "white-haired", "silver-haired", "greying", "time-worn", "grey braids", "white hair",
+YOUNG = W("young", "youngish", "youthful", "fresh-faced", "callow", "fledgling", "unlined", "barely grown")
+OLD = W("elderly", "ancient", "wrinkled", "grizzled", "white-haired", "silver-haired", "greying", "time-worn", "grey braids", "white hair",
         "iron-grey", "balding", "thinning", "streaked with white")
-HAIR_COLOUR = W("straw", "black mane", "red hair", "brown hair", "copper curls", "wet sand", "iron-grey", "white hair", "grey braids", "streaked with white")
+HAIR_COLOUR = W("colour of straw", "black mane", "red hair", "brown hair", "copper curls", "wet sand", "iron-grey", "white hair", "grey braids", "streaked with white")
 HAIR_AGE = W("white-haired", "silver-haired", "greying", "grizzled")
 NO_HAIR = W("shaved head", "balding crown")
 RUSTLESS = W("bronze", "copper", "bone", "flint", "oak", "blackthorn", "leather", "gambeson", "quilted", "padded")

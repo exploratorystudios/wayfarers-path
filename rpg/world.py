@@ -152,6 +152,16 @@ class NPC:
             self.look["name_gender"] = g
         return g
 
+    @property
+    def age_band(self):
+        """young, mid or old: fixed when the person was made."""
+        b = self.look.get("age_band")
+        if b is None:       # older saves: work it out once from the word, then keep it
+            b = self.look["age_band"] = C.AGE_BAND.get(self.look.get("age"), "mid")
+            if b == "any":
+                b = self.look["age_band"] = "mid"
+        return b
+
     def pronouns(self):
         return PRONOUNS[self.gender]
 
@@ -470,10 +480,12 @@ class World:
                 return n
         return n
 
-    def pick(self, pool, ok):
-        """Choose from the options that agree with facts already decided."""
-        good = [x for x in pool if ok(x)]
-        return self.rng.choice(good or list(pool))
+    def pick(self, pool, ok, weight=None):
+        """Choose from the options that agree with facts already decided (optionally weighted)."""
+        good = [x for x in pool if ok(x)] or list(pool)
+        if weight:
+            return self.rng.choices(good, [weight.get(x, 1) for x in good])[0]
+        return self.rng.choice(good)
 
     def make_village(self, biome="plains"):
         r = self.rng
@@ -512,9 +524,13 @@ class World:
         lands = {self.tiles[home].biome} if home in self.tiles else {"plains"}
         lands |= {"water" if self.tiles[q].biome == "lake" else self.tiles[q].biome for _, q in self.neighbours(home)} if home in self.tiles else set()
         job = self.pick(E.OCCUPATIONS[role], lambda j: C.job_ok(j, lands))
-        age = self.pick(E.AGE, lambda a: C.age_ok(a, role, job))
-        look = dict(age=age, build=self.pick(E.BUILD, lambda b: C.build_ok(b, age)),
-                    hair=self.pick(E.HAIR, lambda h: C.hair_ok(h, age, gender)),
+        # age is a fact about the person (young / mid / old); the word is just how it's put
+        band = self.pick(C.AGE_BANDS, lambda b: C.band_ok(b, role, job), C.BAND_WEIGHT)
+        age = self.pick(C.age_words(band, E.AGE), lambda a: C.age_ok(a, role, job))
+        look = dict(age=age, age_band=band, build=self.pick(E.BUILD, lambda b: C.build_ok(b, age)),
+                    hair=self.pick(E.HAIR, lambda h: C.hair_ok(h, age, gender) and
+                                   all(n.look["hair"] != h for n in self.tiles[home].npcs) if home in self.tiles else C.hair_ok(h, age, gender),
+                                   C.HAIR_WEIGHT),
                     clothes=self.pick(E.CLOTHES, lambda c: all(n.look["clothes"] != c for n in self.tiles[home].npcs) if home in self.tiles else True),
                     mark=self.pick(E.MARK, lambda m: all(n.look["mark"] != m for n in self.tiles[home].npcs) if home in self.tiles else True),
                     surname=r.choice(E.SURNAME_PRE) + r.choice(E.SURNAME_SUF), name_gender=gender, culture=culture)

@@ -1,6 +1,11 @@
 // The painted map: a cartographer's chart of everywhere the player has explored.
-// drawAtlas(canvas, data) renders /api/atlas data. Everything is seeded, so the same
+// drawAtlas(canvas, data, opts) renders /api/atlas data. Everything is seeded, so the same
 // world always looks the same; only what you have explored changes.
+//   opts.scale  pixels per design unit (2 = crisp when zoomed in)
+//   opts.mini   just the land, for the map panel: no lettering, frame or decoration,
+//               fewer and bolder symbols (the panel's own grid and markers sit on top)
+//   opts.trail  a second canvas: the road you have walked is drawn there, on its own,
+//               so it can be shown or hidden without repainting the map
 (function () {
   "use strict";
   const W = 1400, H = 1460, X0 = 90, Y0 = 150;          // canvas size and where the map area starts
@@ -35,25 +40,38 @@
   const mix = (a, b, t) => a + (b - a) * t;
 
   // ---------------------------------------------------------------- the painting
-  function drawAtlas(canvas, A) {
+  function drawAtlas(canvas, A, opts) {
+    opts = opts || {};
+    const S = opts.scale || 1, MINI = !!opts.mini;
     const ctx = canvas.getContext("2d");
-    const N = A.w, T = (W - 2 * X0) / N;                 // tile size in pixels
+    const N = A.w, T = (W - 2 * X0) / N;                 // tile size in design units
     const seed = (A.seed % 100000) | 0;
     const cell = (x, y) => (x >= 0 && y >= 0 && x < N && y < A.h) ? A.cells[y][x] : { k: 0 };
     const kv = (x, y) => { const k = cell(x, y).k; return k === 2 ? 1 : k === 1 ? 0.62 : 0; };
+    // what part of the design is shown: the whole sheet, or (mini) just the land
+    const VX = MINI ? X0 : 0, VY = MINI ? Y0 : 0, VW = MINI ? W - 2 * X0 : W, VH = MINI ? A.h * T : H;
+    canvas.width = Math.round(VW * S); canvas.height = Math.round(VH * S);
+    const design = () => ctx.setTransform(S, 0, 0, S, -VX * S, -VY * S);
+    const RES = Math.min(S, 1);                           // textures are computed at most at design resolution
 
     // ---- paper
-    const paper = ctx.createImageData(W, H);
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const n = fbm(x / 160, y / 160, seed + 3, 4) - 0.5, fine = hash(x, y, seed) - 0.5;
-      const i = (y * W + x) * 4;
-      paper.data[i] = PAPER[0] + n * 26 + fine * 7; paper.data[i + 1] = PAPER[1] + n * 24 + fine * 7;
-      paper.data[i + 2] = PAPER[2] + n * 22 + fine * 6; paper.data[i + 3] = 255;
+    {
+      const pw = Math.ceil(VW * RES), ph = Math.ceil(VH * RES);
+      const off = document.createElement("canvas"); off.width = pw; off.height = ph;
+      const octx = off.getContext("2d"), paper = octx.createImageData(pw, ph);
+      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
+        const dx = VX + x / RES, dy = VY + y / RES;
+        const n = fbm(dx / 160, dy / 160, seed + 3, 4) - 0.5, fine = hash(dx | 0, dy | 0, seed) - 0.5;
+        const i = (y * pw + x) * 4;
+        paper.data[i] = PAPER[0] + n * 26 + fine * 7; paper.data[i + 1] = PAPER[1] + n * 24 + fine * 7;
+        paper.data[i + 2] = PAPER[2] + n * 22 + fine * 6; paper.data[i + 3] = 255;
+      }
+      octx.putImageData(paper, 0, 0);
+      design(); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, VX, VY, VW, VH);
     }
-    ctx.putImageData(paper, 0, 0);
 
     // ---- land and water, painted at half resolution then scaled (watercolour is soft anyway)
-    const R = 1, MW = Math.ceil((W - 2 * X0) / R), MH = Math.ceil(A.h * T / R);
+    const R = 1 / RES, MW = Math.ceil((W - 2 * X0) / R), MH = Math.ceil(A.h * T / R);
     const biomeAt = new Int8Array(MW * MH), known = new Float32Array(MW * MH), seenOnly = new Float32Array(MW * MH);
     const names = Object.keys(BIOME);
     const sampleB = (mx, my) => { const c = cell(Math.floor(mx), Math.floor(my)); return c.k ? names.indexOf(c.b) : -1; };
@@ -91,11 +109,10 @@
       }
     }
     const off = document.createElement("canvas"); off.width = MW; off.height = MH;
-    const octx = off.getContext("2d"), img = ctx.getImageData(X0, Y0, MW * R, MH * R), land = octx.createImageData(MW, MH);
+    const octx = off.getContext("2d"), land = octx.createImageData(MW, MH);
     for (let py = 0; py < MH; py++) for (let px = 0; px < MW; px++) {
       const j = py * MW + px, b = biomeAt[j];
-      const pi = ((py * R) * (MW * R) + px * R) * 4;
-      const P = [img.data[pi], img.data[pi + 1], img.data[pi + 2]];
+      const P = PAPER;
       let a = smooth(0.28, 0.72, known[j]);
       if (b < 0) a = 0;
       let C = b >= 0 ? BIOME[names[b]].slice() : P;
@@ -118,19 +135,20 @@
         a = Math.max(a, 0.9 * smooth(0.2, 0.6, known[j]));
       }
       const strength = a * (0.5 + 0.5 * seenOnly[j]) * 0.82;
-      const k = j * 4;
-      land.data[k] = mix(P[0], C[0], strength); land.data[k + 1] = mix(P[1], C[1], strength);
-      land.data[k + 2] = mix(P[2], C[2], strength); land.data[k + 3] = 255;
+      const k = j * 4;                                  // a wash laid over the paper: colour, and how much of it
+      land.data[k] = C[0]; land.data[k + 1] = C[1]; land.data[k + 2] = C[2]; land.data[k + 3] = Math.round(255 * strength);
     }
     octx.putImageData(land, 0, 0);
-    ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-    try { ctx.filter = "blur(0.9px)"; } catch (e) { /* no filter support: crisper edges */ }
+    ctx.save(); design(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    try { ctx.filter = `blur(${(MINI ? 0.4 : 0.9) * S}px)`; } catch (e) { /* no filter support: crisper edges */ }
     ctx.drawImage(off, X0, Y0, MW * R, MH * R); ctx.restore();
+    design();
 
     // ---- ink
     const ink = (a) => `rgba(${INK},${a})`;
     const jitter = (r, n) => (r() - 0.5) * n;
-    function stroke(a, w) { ctx.strokeStyle = ink(a); ctx.lineWidth = w; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(); }
+    function stroke(a, w) { ctx.strokeStyle = ink(a); ctx.lineWidth = Math.max(w, 0.75 / S); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(); }
+    const SYM = MINI ? 1.6 : 1;                           // symbols are drawn bigger (and fewer) on the mini map
     function line(r, x1, y1, x2, y2) {     // a slightly wavering pen line
       const mx = (x1 + x2) / 2 + jitter(r, 2), my = (y1 + y2) / 2 + jitter(r, 2);
       ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2);
@@ -219,37 +237,60 @@
       const a = c.k === 2 ? 0.95 : 0.42, cx = X0 + (x + 0.5) * T, cy = Y0 + (y + 0.5) * T;
       const busy = c.s ? 0.32 : 0;                          // keep the middle clear for a village or ruin
       const spot = (spread) => { for (let i = 0; i < 6; i++) { const px = cx + jitter(r, T * spread), py = cy + jitter(r, T * spread); if (!busy || Math.hypot(px - cx, py - cy) > T * busy) return [px, py]; } return null; };
+      const few = (n) => MINI ? Math.max(1, Math.round(n * 0.4)) : n;
       if (c.b === "forest") {
-        const n = c.k === 2 ? 9 : 5, list = [];
-        for (let i = 0; i < n; i++) { const p = spot(1.05); if (p) list.push(p); }
-        list.sort((p, q) => p[1] - q[1]).forEach(([px, py]) => tree(r, px, py, 8 + r() * 4, a, r() < 0.25));
+        const n = few(c.k === 2 ? 9 : 5), list = [];
+        for (let i = 0; i < n; i++) { const p = spot(MINI ? 0.8 : 1.05); if (p) list.push(p); }
+        list.sort((p, q) => p[1] - q[1]).forEach(([px, py]) => tree(r, px, py, (8 + r() * 4) * SYM, a, r() < 0.25));
       } else if (c.b === "hills") {
-        for (let i = 0; i < (c.k === 2 ? 3 : 2); i++) { const p = spot(0.8); if (p) hill(r, p[0], p[1], 13 + r() * 6, a); }
+        for (let i = 0; i < few(c.k === 2 ? 3 : 2); i++) { const p = spot(0.8); if (p) hill(r, p[0], p[1], (13 + r() * 6) * SYM, a); }
       } else if (c.b === "peaks") {
-        const list = []; for (let i = 0; i < (c.k === 2 ? 3 : 2); i++) { const p = spot(0.75); if (p) list.push(p); }
-        list.sort((p, q) => p[1] - q[1]).forEach(([px, py]) => peak(r, px, py, 15 + r() * 7, a));
+        const list = []; for (let i = 0; i < few(c.k === 2 ? 3 : 2); i++) { const p = spot(0.75); if (p) list.push(p); }
+        list.sort((p, q) => p[1] - q[1]).forEach(([px, py]) => peak(r, px, py, (15 + r() * 7) * SYM, a));
       } else if (c.b === "marsh") {
-        for (let i = 0; i < (c.k === 2 ? 5 : 3); i++) { const p = spot(0.9); if (p) tuft(r, p[0], p[1], 5 + r() * 2, a); }
-      } else if (c.b === "plains") {
+        for (let i = 0; i < few(c.k === 2 ? 5 : 3); i++) { const p = spot(0.9); if (p) tuft(r, p[0], p[1], (5 + r() * 2) * SYM, a); }
+      } else if (c.b === "plains" && !MINI) {
         for (let i = 0; i < (c.k === 2 ? 5 : 3); i++) { const p = spot(0.95); if (p) grass(r, p[0], p[1], 5 + r() * 2, a); }
         if (r() < 0.22) { const p = spot(0.8); if (p) tree(r, p[0], p[1], 7, a); }
       }
-      if (c.f) c.f.forEach((kind, i) => {
+      if (c.f && !MINI) c.f.forEach((kind, i) => {
         const draw = LANDMARK[kind]; if (!draw) return;
         const px = cx + (i ? -1 : 1) * T * 0.3 + jitter(r, 6), py = cy + T * 0.3 + jitter(r, 4);
         draw(r, px, py, a);
       });
     }
 
-    // the road you have walked
-    const tr = [];
-    A.trail.forEach((p, i) => { const last = tr[tr.length - 1]; if (!last || last.x !== p[0] || last.y !== p[1]) tr.push({ x: p[0], y: p[1] }); });
-    if (tr.length > 1) {
-      ctx.save(); ctx.setLineDash([7, 6]); ctx.beginPath();
-      const pt = (q, i) => { const r = mulberry(seed + q.x * 977 + q.y * 61 + 3); return [X0 + (q.x + 0.5 + jitter(r, 0.32)) * T, Y0 + (q.y + 0.5 + jitter(r, 0.32)) * T]; };
-      let [px, py] = pt(tr[0]); ctx.moveTo(px, py);
-      for (let i = 1; i < tr.length; i++) { const [nx, ny] = pt(tr[i]); ctx.quadraticCurveTo(px, py, (px + nx) / 2, (py + ny) / 2); px = nx; py = ny; }
-      ctx.lineTo(px, py); ctx.strokeStyle = "rgba(142,42,30,.72)"; ctx.lineWidth = 2.3; ctx.stroke(); ctx.restore();
+    if (MINI) {                                           // the panel shows sites as small icons, and nothing else
+      for (let y = 0; y < A.h; y++) for (let x = 0; x < N; x++) {
+        const c = cell(x, y); if (!c.s) continue;
+        const r = mulberry(seed + x * 31 + y * 1013), cx = X0 + (x + 0.5) * T, cy = Y0 + (y + 0.5) * T, a = c.k === 2 ? 1 : 0.6;
+        if (c.s === "village") { [[-14, 6], [13, 8], [0, -10]].forEach(([dx, dy]) => house(cx + dx, cy + dy, 22, a)); }
+        else if (c.s === "ruin") ruin(r, cx, cy + 16, 30, a);
+        else if (c.s === "shrine") shrine(cx, cy + 16, 26, a);
+        else if (c.s === "camp") tent(cx, cy + 16, 30, a);
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      return;
+    }
+
+    // the road you have walked, on its own layer (so it can be toggled)
+    if (opts.trail) {
+      const tc = opts.trail, tctx = tc.getContext("2d");
+      tc.width = canvas.width; tc.height = canvas.height;
+      tctx.setTransform(S, 0, 0, S, -VX * S, -VY * S);
+      const tr = [];
+      A.trail.forEach((p) => { const last = tr[tr.length - 1]; if (!last || last.x !== p[0] || last.y !== p[1]) tr.push({ x: p[0], y: p[1] }); });
+      if (tr.length > 1) {
+        tctx.setLineDash([7, 6]); tctx.beginPath();
+        const pt = (q) => { const r = mulberry(seed + q.x * 977 + q.y * 61 + 3); return [X0 + (q.x + 0.5 + jitter(r, 0.32)) * T, Y0 + (q.y + 0.5 + jitter(r, 0.32)) * T]; };
+        let [px, py] = pt(tr[0]); tctx.moveTo(px, py);
+        for (let i = 1; i < tr.length; i++) { const [nx, ny] = pt(tr[i]); tctx.quadraticCurveTo(px, py, (px + nx) / 2, (py + ny) / 2); px = nx; py = ny; }
+        tctx.lineTo(px, py);
+        tctx.lineCap = "round"; tctx.strokeStyle = `rgba(${PAPER.join(",")},.6)`; tctx.lineWidth = 4.5; tctx.stroke();   // a pale halo keeps it readable over ink
+        tctx.strokeStyle = "rgba(142,42,30,.8)"; tctx.lineWidth = 2.3; tctx.stroke();
+        const [sx, sy] = pt(tr[0]);                        // where the road began
+        tctx.setLineDash([]); tctx.beginPath(); tctx.arc(sx, sy, 5, 0, 7); tctx.fillStyle = "rgba(142,42,30,.85)"; tctx.fill();
+      }
     }
 
     // sites and their names

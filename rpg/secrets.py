@@ -20,7 +20,8 @@ from .textgen import article, cap
 
 VERBS = ["search", "climb", "drink", "touch", "read", "listen", "forage"]
 
-CLIMBABLE = {"oak", "yew", "willow", "hawthorn", "rowan", "fallen beech", "standing stone", "cairn", "outcrop", "stone circle", "eyrie",
+FALLEN = {"fallen tree", "fallen beech"}      # lying down: you walk them, you don't climb them
+CLIMBABLE = {"oak", "yew", "willow", "hawthorn", "rowan", "standing stone", "cairn", "outcrop", "stone circle", "eyrie",
              "sheepfold", "hunter's hide", "dovecote", "gibbet", "barrow", "hill fort", "chalk figure", "charcoal-burner's mound", "glacier",
              "bog oak", "hermit's cell", "reed island"}
 READ_KINDS = {"standing stone", "stone circle", "cairn", "gibbet", "hermit's cell", "dovecote", "bog oak", "holy well", "causeway",
@@ -47,14 +48,14 @@ def can(verb, f):
     if verb == "read":
         return k in READ_KINDS or any(w in d for d in f.details for w in READ_WORDS)
     if verb == "forage":
-        return t in ("tree", "plant", "fungus", "water", "earth")
+        return t in ("tree", "plant", "fungus", "water", "earth", "log")
     return False
 
 
 # ------------------------------------------------------------------ the deck
 # key: (verbs, where (tags or kinds), weight, condition)
 DECK = {
-    "cache":        ({"search"}, {"tree", "stone", "built", "earth"}, 3, None),
+    "cache":        ({"search"}, {"tree", "stone", "built", "earth", "log"}, 3, None),
     "old_blade":    ({"search"}, {"barrow", "cairn", "hill fort", "bog oak", "peat cutting", "cave mouth", "sunken punt", "old mine"}, 3, None),
     "nest":         ({"climb"}, {"oak", "yew", "willow", "rowan", "hawthorn", "eyrie", "dovecote", "gibbet"}, 2, None),
     "healing":      ({"drink"}, {"water"}, 3, None),
@@ -70,11 +71,11 @@ DECK = {
     "magpie":       ({"search", "climb"}, {"oak", "yew", "hawthorn", "rowan", "gibbet", "dovecote", "willow"}, 2, None),
     "slip":         ({"drink"}, {"stream", "waterfall", "pool", "tarn", "hot spring"}, 2, None),
     "stuck":        ({"climb"}, {"oak", "yew", "rowan", "hawthorn", "willow"}, 1, None),
-    "bees":         ({"search", "forage"}, {"oak", "yew", "fallen beech", "rowan", "hawthorn", "dovecote"}, 2, "warm"),
+    "bees":         ({"search", "forage"}, {"oak", "yew", "fallen beech", "rowan", "hawthorn", "dovecote", "fallen tree"}, 2, "warm"),
     "badger":       ({"search"}, {"badger sett", "hunter's hide", "charcoal-burner's mound"}, 3, None),
-    "keepsake":     ({"search"}, {"tree", "stone", "built", "earth", "water", "plant"}, 1, None),
+    "keepsake":     ({"search"}, {"tree", "stone", "built", "earth", "water", "plant", "log"}, 1, None),
     "letter":       ({"search"}, {"oak", "yew", "hunter's hide", "dovecote", "sheepfold", "hermit's cell", "cairn", "gibbet"}, 1, None),
-    "bones":        ({"search"}, {"barrow", "cave mouth", "peat cutting", "bog oak", "chasm", "old mine", "sunken punt", "fallen beech"}, 2, None),
+    "bones":        ({"search"}, {"barrow", "cave mouth", "peat cutting", "bog oak", "chasm", "old mine", "sunken punt", "fallen beech", "fallen tree"}, 2, None),
     "snared":       ({"search", "listen"}, {"hunter's hide", "track", "hawthorn", "glade", "sheepfold", "charcoal-burner's mound"}, 2, None),
     "clue":         ({"read", "search"}, {"standing stone", "cairn", "hermit's cell", "dovecote", "gibbet", "causeway", "stone circle", "bog oak"}, 2, None),
     "echo":         ({"listen"}, {"chasm", "old mine", "cave mouth", "waterfall", "holy well"}, 3, None),
@@ -226,6 +227,10 @@ def act(g, verb, f):
 
 
 def cant(g, verb, f):
+    if verb == "climb" and kind_of(f) in FALLEN:
+        return g.narr.pick([f"The {f.noun} is lying on its side - there's nothing to climb. Standing on its trunk wouldn't lift you above the trees around it.",
+                            f"There's no climbing a tree that's already down. From the {f.noun}'s trunk you'd see no further than the bracken.",
+                            f"The {f.noun} lies full length on the ground. You'd need a standing tree to see anything from."])
     return {
         "climb": f"There's no climbing the {f.noun}.",
         "drink": f"There's nothing to drink at the {f.noun}.",
@@ -260,6 +265,7 @@ def plain_search(g, f):
     finds = {"tree": ["beetles, a snail shell, a scatter of owl pellets", "dry leaves, a jay's feather, the husk of a nut", "spiders, a rusty nail, nothing more"],
              "water": ["cold fingers, smooth stones, a flash of a startled fish", "weed, silt and a broken clay pipe"],
              "stone": ["lichen, a spider's egg-sac, damp", "chips of stone and a lost button", "an old fire-blackened stone and some sheep droppings"],
+             "log": ["woodlice, a toad under the trunk, a scatter of owl pellets", "beetle galleries under loose bark, and a dormouse's empty nest", "rotten wood, fungus, a fox's droppings"],
              "earth": ["roots, flints and a worm or two", "rabbit droppings and a cracked bead", "nothing but soil and stones"],
              "built": ["rot, nettles and a mouse's nest", "a broken buckle and some rotten rope", "old straw and the smell of damp"],
              "ice": ["only cold, and blue depths you'd rather not lean over"], "fungus": ["only the soft give of the caps, and a sweet smell"],
@@ -305,7 +311,7 @@ def plain_drink(g, f):
 def plain_touch(g, f):
     t = tag_of(f)
     feel = {"tree": "rough bark, and under it a slow, patient life", "stone": "cold stone, rough with lichen", "water": "cold water closing round your fingers",
-            "earth": "damp earth that gives a little under your palm", "built": "old wood and stone, worn by other hands", "ice": "a cold that bites straight to the bone",
+            "earth": "damp earth that gives a little under your palm", "log": "soft, crumbling wood, cold and damp under the moss", "built": "old wood and stone, worn by other hands", "ice": "a cold that bites straight to the bone",
             "fungus": "soft caps, faintly greasy", "plant": "grass, cool and springy"}
     g.emit(g.narr.pick([f"You lay a hand on the {f.noun}: {feel.get(t, 'nothing out of the ordinary')}.",
                         f"You touch the {f.noun}. {cap(feel.get(t, 'Nothing happens'))}. Nothing more.",
@@ -391,7 +397,7 @@ def s_cache(g, f, sec):
     gold = g.rng.randint(8, 25)
     p.gold += gold
     where = {"tree": "in a hollow among the roots", "stone": "behind a loose stone", "built": "under a rotten board",
-             "earth": "a hand's depth down in the soft ground"}.get(tag_of(f), "tucked out of sight")
+             "earth": "a hand's depth down in the soft ground", "log": "in the dry hollow under the trunk"}.get(tag_of(f), "tucked out of sight")
     extra = ""
     if g.rng.random() < 0.5:
         it = w.make_item(2, g.rng.choice(["potion", "weapon", "armour", "trinket"]))

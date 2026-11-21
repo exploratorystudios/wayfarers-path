@@ -174,7 +174,7 @@ RULES = {
 # Feature archetypes: fixed facts chosen at world generation, re-phrased on every look.
 FEATURES = {
     "forest": [
-        dict(noun=["oak", "beech", "elm", "ash"], adj=["fallen", "uprooted", "storm-felled"], adj2=["moss-furred", "rotting", "beetle-bored", "huge"],
+        dict(kind="fallen tree", noun=["oak", "beech", "elm", "ash"], adj=["fallen", "uprooted", "storm-felled"], adj2=["moss-furred", "rotting", "beetle-bored", "huge"],
              verb=["lies", "sprawls"], where=["across the path", "among the bracken", "in the gap it tore in the canopy"],
              detail=["its root-plate standing taller than a man", "its bark sloughing off in great plates", "shelves of bracket fungus climbing its flank", "a pool of rainwater gathered in its torn roots", "nettles growing thickly where it fell"]),
         dict(noun=["stream", "brook", "rill"], adj=["clear", "peat-brown", "chattering", "sluggish"], adj2=["narrow", "shallow", "stony"],
@@ -282,4 +282,5 @@ for _b, _fs in FEATURES.items():
     for _a in _fs:
         _a.setdefault("kind", _a["noun"][0])
         for _n in _a["noun"]:
-            FEATURE_KIND.setdefault(_n, _a["kind"])
+            if _a["kind"] != "fallen tree":      # a plain "oak" means a standing one
+                FEATURE_KIND.setdefault(_n, _a["kind"])

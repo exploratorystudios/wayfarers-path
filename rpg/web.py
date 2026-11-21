@@ -156,7 +156,7 @@ class Session:
                     cell["exits"] = [d for d, ok in dirs.items() if ok]
                 row.append(cell)
             rows.append(row)
-        return dict(w=w.W, h=w.H, cells=rows, pos=list(g.pos))
+        return dict(w=w.W, h=w.H, cells=rows, pos=list(g.pos), seed=g.seed)
 
 
 def atlas(g):

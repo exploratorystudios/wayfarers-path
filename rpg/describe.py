@@ -281,6 +281,9 @@ class Narrator:
         if not f.where.startswith(PREP_WORDS):
             frames += ["{where.cap} {verb} {adjp.a} {noun}.", "{where.cap} {verb} {adjp.a} {noun}, {d}.",
                        "{where.cap}, {adjp.a} {noun} {verb}.", "Just {where}, {adjp.a} {noun} {verb}, {d}."]
+        w = self.w
+        if all(C.context_clashes(d, w.season, w.weather, w.time_of_day, biome) for d in f.details):
+            frames = [fr for fr in frames if "{d}" not in fr]      # nothing fixed about it is true right now: leave the detail out
         # striking openers ("One thing stands out...") are noticed when they recur: use them sparingly
         loud = ("Not far off", "The eye goes", "catches your attention", "Off to one side", "One thing stands out", "Close by", "Just {where}")
         weighted = [(fr, 0.35 if any(x in fr for x in loud) else 1.0) for fr in frames]
@@ -298,8 +301,15 @@ class Narrator:
         if len(fit) >= 2:
             d1, d2 = fit[:2]
         else:       # a detail is false right now: let the moment take its place
-            d1 = fit[0]
-            d2 = (now[0].lower() + now[1:].rstrip(".")) if now else self.pick(["little else of note", "nothing more to it than that"])
+            w = self.w
+            clean = not C.context_clashes(fit[0], w.season, w.weather, w.time_of_day, biome)
+            filler = self.pick(["little else of note", "nothing more to it than that"])
+            line = (now[0].lower() + now[1:].rstrip(".")) if now else None
+            if clean:
+                d1, d2 = fit[0], line or filler
+            else:   # every fixed detail is false right now (no "unbroken by any ripple" in the rain)
+                d1, d2 = line or "nothing about it that stands out just now", filler
+                now = ""
         c.update(a1=f.adjs[0], a2=f.adjs[1], d1=d1, d2=d2)
         frames = ["The {noun} {verb} {where}. It is {a1} and {a2}. {d1.cap}; {d2}.",
                   "You take a closer look at the {noun}: {a2}, {a1}, {d1}. Looking longer, you notice {d2}.",

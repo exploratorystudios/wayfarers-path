@@ -27,11 +27,12 @@ python3 play.py --classic --load X  # resume a save in the terminal
   everywhere you've explored: watercolour land that fades into blank parchment,
   inked forests, hills and peaks, villages and landmarks, region names, the dashed
   red line of every road you've walked, and an X where the relic lies once you know.
-  **Save image** keeps a copy. Drawn by `rpg/web/atlas.js`, seeded, so a world
+  Scroll or pinch to zoom, drag to pan, and the **Your road** switch shows or hides
+  your trail. **Save image** keeps a copy. Drawn by `rpg/web/atlas.js`, seeded, so a world
   always looks the same. The lettering is IM Fell English by Igino Marini, bundled in
   `rpg/web/fonts/` under the SIL Open Font License, so it works offline.
-* **Map** (top right): reveals as you explore. Click a tile next to you to walk
-  there. Dots show the suggested route, and a purple ? marks the relic once
+* **Map** (top right): the same painted land in miniature under a light grid,
+  revealed as you explore. Click a tile next to you to walk there. Dots show the suggested route, and a purple ? marks the relic once
   you've been told where it is.
 * **Status and pack**: health and experience bars, quest progress, and
   one-click use/equip/examine for everything you carry.

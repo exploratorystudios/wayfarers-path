@@ -46,12 +46,26 @@ def ensure(g):
                 g_ = n.look.get("name_gender")
                 n.job = "headwoman" if g_ == "female" else "headman" if g_ == "male" else "village elder"
             if n.gender == "female" and n.look.get("hair") in ("a balding crown and a fierce beard",):
-                n.look["hair"] = "dark hair streaked with white" if n.look.get("age") not in ("young", "youngish", "youthful", "fresh-faced") else "a single thick braid"
+                n.look["hair"] = "dark hair streaked with white" if n.age_band != "young" else "a single thick braid"
+            n.age_band          # older saves: fix the age group in place
             if n.look.get("age") == "ancient":
                 n.look["age"] = "aged"
             if n.role == "elder" and n.look.get("age") in ("elderly", "aged"):
                 from .coherence import HAIR_NEUTRAL
                 n.look["age"] = "white-haired" if n.look.get("hair") in HAIR_NEUTRAL else "time-worn"   # never white hair beside copper curls
+    # older worlds: a fallen oak/ash/elm/beech was filed as a standing oak (climb to the top of it, light on its crown)
+    from . import secrets as SEC
+    for t in w.tiles.values():
+        for f in t.features:
+            if f.kind == "oak" and f.noun in ("oak", "beech", "elm", "ash") and set(f.adjs) & {"fallen", "uprooted", "storm-felled"}:
+                f.kind = "fallen tree"
+                sec = (f.state or {}).get("secret")
+                if sec and not sec.get("found"):
+                    where = SEC.DECK.get(sec["key"], (None, set()))[1]
+                    if "fallen tree" in where or "log" in where:
+                        sec["verbs"] = sorted(v for v in sec["verbs"] if SEC.can(v, f)) or ["search"]
+                    else:
+                        f.state["secret"] = None      # a nest high in its branches can't be there any more
     if not hasattr(w, "secrets_placed"):
         from . import secrets
         secrets.place_all(w)
