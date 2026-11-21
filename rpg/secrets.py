@@ -368,7 +368,7 @@ def reveal_places(g, radius):
     w = g.world
     out = []
     for (x, y), t in w.tiles.items():
-        if abs(x - g.pos[0]) + abs(y - g.pos[1]) <= radius and not t.visited and not getattr(t, "glimpsed", False):
+        if (x, y) != tuple(g.pos) and abs(x - g.pos[0]) + abs(y - g.pos[1]) <= radius and not t.visited and not getattr(t, "glimpsed", False):
             t.glimpsed = True
             if t.site and t.site["kind"] in ("village", "ruin", "shrine"):
                 t.site_seen = True
@@ -381,7 +381,7 @@ def reveal(g, radius):
     w = g.world
     names = []
     for (x, y), t in w.tiles.items():
-        if abs(x - g.pos[0]) + abs(y - g.pos[1]) <= radius and not t.visited and not getattr(t, "glimpsed", False):
+        if (x, y) != tuple(g.pos) and abs(x - g.pos[0]) + abs(y - g.pos[1]) <= radius and not t.visited and not getattr(t, "glimpsed", False):
             t.glimpsed = True
             if t.site and t.site["kind"] in ("village", "ruin", "shrine"):
                 t.site_seen = True

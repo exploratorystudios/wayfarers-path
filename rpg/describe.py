@@ -666,7 +666,7 @@ class Narrator:
         w, r = self.w, self.rng
         opts = []
         q = w.tiles[w.quest_pos]
-        opts.append(("quest", f"the {w.relic.name} lies in a {q.site['state']} {q.site['purpose']} {self.dir_phrase(here, w.quest_pos)}, "
+        opts.append(("quest", f"the {w.relic.name} lies in {article(q.site['state'] + ' ' + q.site['purpose'])} {self.dir_phrase(here, w.quest_pos)}, "
                               f"in {w.region_of(w.quest_pos)['name']}. Something old guards it.", None))
         for sp in w.species:
             homes = [p for p in w.land if any(c.species is sp for c in w.tiles[p].creatures)]

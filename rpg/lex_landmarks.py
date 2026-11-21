@@ -27,7 +27,7 @@ NEW_FEATURES = {
         dict(noun=["bog oak", "sunken trunk"], adj=["half-buried", "huge", "ancient"], adj2=["peat-stained", "iron-hard", "glistening"],
              verb=["lies", "rises", "juts"], where=["out of the peat", "half-swallowed by the mire", "beside a channel"],
              detail=["wood turned black as jet by the bog", "the stumps of branches like broken teeth", "old axe-marks where someone tried to cut it", "strange marks scratched into the dark wood"]),
-        dict(noun=["sunken punt", "drowned boat"], adj=["rotted", "half-sunk", "abandoned"], adj2=["flat-bottomed", "weed-grown", "small"],
+        dict(noun=["sunken punt", "drowned boat"], adj=["rotted", "waterlogged", "abandoned"], adj2=["flat-bottomed", "weed-grown", "small"],
              verb=["lies", "settles", "wallows"], where=["in a reedy channel", "against a mud bank", "in the shallows"],
              detail=["a pole still lying across its thwarts", "a name painted on its side, nearly gone", "a nest of reeds built in its stern", "its bottom staved in as if on purpose"]),
         dict(noun=["reed island", "hummock"], adj=["small", "raised", "tussocky"], adj2=["solid", "lonely", "secret"],
@@ -65,7 +65,7 @@ NEW_FEATURES = {
              detail=["a cross scratched over its doorway", "a stone bench worn smooth", "a little walled plot where nothing grows", "a bell hanging silent at the door"]),
         dict(noun=["hot spring", "steaming pool"], adj=["bubbling", "milky", "small"], adj2=["sulphurous", "warm", "mineral-crusted"],
              verb=["bubbles", "steams", "lies"], where=["in a basin of rock", "at the foot of the cliff", "among yellow-stained stones"],
-             detail=["a smell of rotten eggs hanging over it", "rocks around it crusted orange and white", "the water too hot to keep a hand in", "a stone seat someone set at its edge"]),
+             detail=["a yellow crust of sulphur round its rim", "rocks around it crusted orange and white", "the water too hot to keep a hand in", "a stone seat someone set at its edge"]),
     ],
 }
 

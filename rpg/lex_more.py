@@ -190,7 +190,7 @@ FEATURES_MORE = {
              detail=["a deer's flattened bed in the grass", "a fallen branch furred with moss", "a stump at its centre like a table", "brambles crowding its edges"]),
         dict(noun=["badger sett", "fox earth"], adj=["large", "old", "busy"], adj2=["sandy", "well-worn"],
              verb=["burrows", "sprawls"], where=["into a bank beneath the roots", "under a tangle of holly", "into the slope"],
-             detail=["mounds of fresh spoil at its entrances", "a well-trodden path leading away from it", "a musky smell hanging about it", "old bedding dragged out to air"]),
+             detail=["mounds of fresh spoil at its entrances", "a well-trodden path leading away from it", "tufts of russet fur caught at its mouth", "old bedding dragged out to air"]),
     ],
     "marsh": [
         dict(noun=["eel trap", "fish weir"], adj=["wicker", "broken", "old"], adj2=["half-sunk", "weed-hung"],

@@ -8,6 +8,7 @@ seed with its own dice, so the story is the same however often you ask, and olde
 import random
 
 from . import names as NAMES
+from .textgen import article
 
 MEANT = [
     "the heart of the harvest rites", "what the founders swore their oath on", "the luck of this village",
@@ -78,7 +79,7 @@ def speech(g, npc):
     region = w.region_of(w.quest_pos)["name"]
     village = w.tiles[w.start].site["name"]
     relic = w.relic.name
-    place = f"a {q.site['purpose']} {n.dir_phrase(g.pos, w.quest_pos)}, in {region}"
+    place = f"{article(q.site['purpose'])} {n.dir_phrase(g.pos, w.quest_pos)}, in {region}"
     when = t["when"]
     fill = dict(when=when, when_c=when[0].upper() + when[1:], place=place, who=t["who"], region=region, village=village)
     loss = t["loss"].format(**fill)
