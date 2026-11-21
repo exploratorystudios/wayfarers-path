@@ -4,14 +4,17 @@ const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.29.3/full/";
 importScripts(PYODIDE + "pyodide.js");
 
 const status = (text) => postMessage({status: text});
-let py, handle, syncTimer = null, syncing = Promise.resolve();
+let py, handle, syncing = Promise.resolve();
 
-function persist() {               // write /saves back to IndexedDB, batching bursts of saves
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => {
-    syncing = syncing.then(() => new Promise((res) => py.FS.syncfs(false, (e) => { if (e) console.error("save sync failed", e); res(); })));
-  }, 300);
+// Write /saves back to IndexedDB at once (one sync at a time, in order). Waiting even a moment
+// lost the newest save whenever the page was refreshed or closed inside that moment.
+function persist() {
+  syncing = syncing.then(() => new Promise((res) => py.FS.syncfs(false, (e) => { if (e) console.error("save sync failed", e); res(); })));
+  return syncing;
 }
+// requests that make a save you asked for: answer only once it is safely stored
+const SAVING = (path, body) => path === "/api/saves" || path === "/api/new" ||
+  (path === "/api/cmd" && /^\s*(save|quit|exit|q)\b/i.test((JSON.parse(body || "{}").cmd || "")));
 
 const ready = (async () => {
   status("Fetching the Python runtime…");
@@ -48,9 +51,13 @@ onmessage = async (e) => {
   const {id, method, path, query, body} = e.data;
   try {
     await ready;
-    const [code, obj] = JSON.parse(handle(method, path, query || "", body || ""));
+    const reply = handle(method, path, query || "", body || "");
+    if (method === "POST") {
+      const stored = persist();
+      if (SAVING(path, body)) await stored;
+    }
+    const [code, obj] = JSON.parse(reply);
     postMessage({id, code, body: JSON.stringify(obj)});
-    if (method === "POST") persist();
   } catch (err) {
     postMessage({id, code: 500, body: JSON.stringify({error: String(err && err.message || err)})});
   }
