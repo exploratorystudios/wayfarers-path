@@ -125,9 +125,15 @@ something, lead someone home, find a place. `journal` lists them, with direction
 The map outlines their goals.
 
 **A living world** (`rpg/living.py`). Days pass and things happen. Villages develop
-troubles: a beast at the folds, a fever, someone lost in the wilds, a haunting, a
-stolen heirloom, a fouled well. They ask for your help, and troubles *wait for
-you*: they never fail or get worse while you're away. When the season turns, every
+troubles, thirteen kinds of them (`rpg/troubles.py`): a beast at the folds, a fever,
+someone lost in the wilds, a haunting, a stolen heirloom, a fouled well, strayed
+livestock, a letter or parcel to carry to another village, supplies only a trader
+sells, a wedding that wants a gift, a blight on the fields, a feud between neighbours
+(take a side, or try to make peace, which takes a steady spirit), and work that needs
+hands (harvest, lambing, haymaking or storm repairs, by season). Each is told with
+several titles, openings, requests and endings. The next one leans away from the
+kinds you've seen lately and toward ones you haven't. They ask for your help, and
+troubles *wait for you*: they never fail or get worse while you're away. When the season turns, every
 village keeps its festival (the Mayday garlanding, midsummer fires, harvest home,
 midwinter wassail), and villagers press food on you. Creatures drift back into
 empty country. News travels as rumour.
@@ -370,7 +376,9 @@ load, so wording fixes reach old games too.
 | Landmark kinds, how they look in each season/weather/hour | `rpg/lex_landmarks.py` (`NEW_FEATURES`, `TAG`, `_TAGS`, `_KINDS`) |
 | Landmark secrets and what the verbs do | `rpg/secrets.py` (`DECK`, `HINTS`, one function per secret) |
 | Road encounters                    | `rpg/encounters.py` (`DECK`, a start function and outcomes) |
-| Village troubles, festivals        | `rpg/living.py` (`TROUBLES`, `FESTIVALS`) |
+| Village troubles                   | `rpg/troubles.py` (`KINDS`, `TITLES`, `ASKS`, variant lists) |
+| Festivals                          | `rpg/living.py` (`FESTIVALS`) |
+| How many of each landmark secret a world holds; the dead travellers | `rpg/secrets.py` (`CAP`, `TRAVELLERS`) |
 | Name traditions (retrain after editing the list) | `../fantasy_names.txt`, then `python3 tools/name_analysis.py` |
 | Creature intent narration / temperaments | `rpg/lex_more.py` → `MIND`; `rpg/mind.py` → `TEMPER`, `TRAIT` |
 

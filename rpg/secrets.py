@@ -147,12 +147,33 @@ COND_WORDS = {"night": "by night", "dark": "after dark", "dark_or_fog": "in dark
               "warm": "in the warm months"}
 
 
+# how many of each secret one world holds: the ones that start a story are kept rare, so they stay special
+CAP = {"bones": 2, "keepsake": 3, "letter": 2, "ghost": 2, "vision": 2, "raven": 2, "clue": 2, "magpie": 2, "cursed_stone": 2,
+       "hermit": 2, "hidden_door": 2, "old_blade": 3, "wishing": 3, "fairy": 4, "healing": 4, "snared": 3, "cache": 30}
+# the dead traveller under the landmark: who they were, what they carried, where it should go
+TRAVELLERS = [
+    ("a pilgrim", "pilgrim's badge", "of lead, stamped with a worn saint", "shrine", "the shrine they never reached",
+     "You hang the pilgrim's badge at the shrine among the other offerings. Somewhere a journey ends."),
+    ("a soldier", "soldier's name-tag", "a tin tag stamped with a name you can just read", "village", "a village, so someone knows",
+     "You leave the name-tag with the village elder, who promises to ask about. Someone, somewhere, will finally know."),
+    ("a drover", "drover's tally-stick", "a notched hazel stick, every notch a beast brought safe to market", "village", "the drovers' village it came from",
+     "You hand the tally-stick to an old drover, who turns it over and goes very quiet. \"I knew him,\" is all he says."),
+    ("a pedlar", "pedlar's sealed licence", "a scrap of vellum with a wax seal, giving leave to trade the roads", "village", "the market it was sealed in",
+     "You give the licence to the reeve. \"So that's where old Wat got to,\" someone murmurs."),
+    ("a hermit", "hermit's prayer-rope", "a knotted cord, worn smooth by a lifetime of fingers", "shrine", "holy ground",
+     "You lay the prayer-rope on the shrine. For a moment the air is very still."),
+    ("a shepherd", "shepherd's horn", "a small horn, cracked, carved with a ram's head", "village", "the shepherd's people",
+     "You give the horn to the shepherds by the village fold. One of them puts it to his lips, and it still sounds."),
+]
+
+
 def place_all(world):
     """Give about half of all landmarks a secret. Fixed per world (its own seeded RNG)."""
     r = random.Random(f"{world.seed}-secrets")
     feats = [(p, f) for p in world.land for f in world.tiles[p].features]
     npcs = [n for v in world.villages for n in world.tiles[v].npcs]
     shrines = [p for p in world.land if world.tiles[p].site and world.tiles[p].site["kind"] == "shrine"]
+    placed = {}
     for p, f in feats:
         if f.state is None:
             f.state = {}
@@ -162,7 +183,7 @@ def place_all(world):
             f.state["secret"] = None
             continue
         k, t = kind_of(f), tag_of(f)
-        options = [(key, wt) for key, (verbs, where, wt, cond) in DECK.items() if k in where or t in where]
+        options = [(key, wt) for key, (verbs, where, wt, cond) in DECK.items() if (k in where or t in where) and placed.get(key, 0) < CAP.get(key, 4)]
         if not options:
             f.state["secret"] = None
             continue
@@ -182,6 +203,7 @@ def place_all(world):
                                      "a soldier who never got home", "a child who wandered off", "a miller who cheated his neighbours"]),
                        token=r.choice(["tarnished ring", "broken spur", "wooden token", "rusted key", "knot of red hair", "lead pilgrim's badge"]))
         f.state["secret"] = sec
+        placed[key] = placed.get(key, 0) + 1
 
 
 def hint(narr, f):
@@ -834,8 +856,11 @@ s_letter = s_keepsake
 
 
 def s_bones(g, f, sec):
-    S.ask(g, f"Under the {f.noun} lie the bones of a traveller, long dead, a pilgrim's badge still pinned to the rags.",
-          [("Take the badge to the nearest shrine", "bones_take", dict(shrine=sec.get("shrine"), noun=f.noun)),
+    if "who" not in sec:
+        sec["who"] = g.rng.randrange(len(TRAVELLERS))
+    who, token, look, dest, where, _ = TRAVELLERS[sec["who"] % len(TRAVELLERS)]
+    S.ask(g, f"Under the {f.noun} lie the bones of {who}, long dead. In the rags is a {token} - {look}.",
+          [(f"Take the {token} to {where}", "bones_take", dict(shrine=sec.get("shrine"), noun=f.noun, who=sec["who"])),
            ("Cover the bones and leave them be", "bones_cover", dict(noun=f.noun)), ("Leave them", "bones_leave", {})], leave=2)
 
 
@@ -843,15 +868,20 @@ def s_bones(g, f, sec):
 def _bones_take(g, d):
     from .world import Item
     w = g.world
-    target = tuple(d["shrine"]) if d.get("shrine") else w.start
-    it = Item("trinket", "pilgrim's badge", value=1, facts=dict(detail="of lead, stamped with a worn saint"))
+    who, token, look, dest, where, done = TRAVELLERS[d.get("who", 0) % len(TRAVELLERS)]
+    if dest == "shrine":
+        target = tuple(d["shrine"]) if d.get("shrine") else w.start
+    else:      # a village other than the nearest you came from, if there is one
+        vs = sorted(w.villages, key=lambda v: abs(v[0] - g.pos[0]) + abs(v[1] - g.pos[1]))
+        target = g.rng.choice(vs[:3]) if vs else w.start
+    place = w.tiles[target].site["name"] if w.tiles[target].site and w.tiles[target].site.get("name") else "holy ground"
+    it = Item("trinket", token, value=1, facts=dict(detail=look))
     g.player.inv.append(it)
-    S.new_quest(g, "deliver", "The pilgrim's badge", "Carry the dead pilgrim's badge to the shrine they never reached",
-                dict(xp=15, buff=("blessed", 24), chronicle="You finished a dead pilgrim's journey for them.",
-                     story="you carried a dead pilgrim's badge to the shrine they never reached", story_like=2),
-                target=target, item=it.name, source="bones",
-                data=dict(done_text="You hang the pilgrim's badge at the shrine among the other offerings. Somewhere a journey ends."))
-    g.emit("You unpin the badge gently. It weighs almost nothing.")
+    S.new_quest(g, "deliver", f"The {token}", f"Carry the dead {who.split()[-1]}'s {token.split(' ', 1)[-1] if token.startswith(who.split()[-1]) else token} to {place}",
+                dict(xp=15, buff=("blessed", 24), chronicle=f"You finished a dead {who.split()[-1]}'s last journey for them.",
+                     story=f"you carried a dead {who.split()[-1]}'s {token} home", story_like=2),
+                target=target, item=it.name, source="bones", data=dict(done_text=done))
+    g.emit(g.narr.pick([f"You take the {token} gently. It weighs almost nothing.", f"You wrap the {token} in a scrap of cloth and put it away carefully."]))
 
 
 @S.choice_handler("bones_cover")

@@ -91,7 +91,7 @@ RULES = {
                  "\"And you'd be?\" \"{player},\" you answer.",
                  "\"Got a name, traveller?\" You give it: {player}.",
                  "{he.cap} squints at you. \"Who are you, then?\" \"{player}.\"",
-                 "\"And you are...?\" You tell {him}: {player}.",
+                 "\"And you are?\" You tell {him}: {player}.",
                  "You give your name before {he} can ask. \"{player}.\" {he.cap} tries it out under {his} breath.",
                  "\"You have a name, I suppose?\" \"{player}.\" \"Hm. It suits you.\"",
                  "{he.cap} waits, eyebrows raised, until you offer your name: {player}.",

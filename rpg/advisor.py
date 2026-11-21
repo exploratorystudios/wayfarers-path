@@ -349,7 +349,7 @@ def _living(g, add, t, route_to, novice):
     for q in S.active(g):
         giver = next((n for n in t.npcs if n.name == q["giver"]), None)
         if giver:
-            has = q["kind"] == "bring" and (q["data"].get("message") or any(i.name == q["item"] or i.kind == q["data"].get("any_kind") for i in p.inv))
+            has = q["kind"] == "bring" and (q["data"].get("message") or S.bring_match(g, q) is not None)
             if has or (q["kind"] == "slay" and q["stage"] == "slain"):
                 add(96, f"talk {giver.ref()}", f"Talk to {giver.name}", f"Finish: {q['title']}.")
     # standing where an errand points
@@ -366,8 +366,16 @@ def _living(g, add, t, route_to, novice):
     for q in sorted(S.active(g), key=lambda q: (q["id"] != focus, q["id"])):
         target = q["target"]
         if q["kind"] == "bring" and not q["data"].get("message"):
-            ready = any(i.name == q["item"] or i.kind == q["data"].get("any_kind") for i in p.inv)
+            ready = S.bring_match(g, q) is not None
             target = q["giver_home"] if ready else None
+            if not ready:          # something a stall sells: buy it if it's here
+                for s_ in g.sellers():
+                    if not s_.mem.get("wares_seen"):
+                        continue
+                    want = next((it for it in s_.stock if it.name == q["item"] or it.kind == q["data"].get("any_kind") or it.name in q["data"].get("any_name", ())), None)
+                    if want and g.buy_price(s_, want) <= p.gold:
+                        add(80, f"buy {want.name}", f"Buy the {want.name}", f"For: {q['title']}.")
+                        break
         elif q["kind"] == "bring":
             target = q["giver_home"]
         elif q["kind"] == "slay" and q["stage"] == "slain":

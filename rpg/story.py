@@ -270,6 +270,13 @@ def on_kill(g, creature):
                 finish(g, q)
 
 
+def bring_match(g, q):
+    """The item in your pack that would satisfy a 'bring' quest, if any."""
+    d = q["data"]
+    return next((i for i in g.player.inv if i.name == q["item"] or (d.get("any_kind") and i.kind == d["any_kind"])
+                 or i.name in d.get("any_name", ())), None)
+
+
 def on_talk(g, npc):
     """Hand in quests to the person who gave them. Returns True if something was handed in."""
     done = False
@@ -280,7 +287,7 @@ def on_talk(g, npc):
             finish(g, q, q["data"].get("done_text"))
             done = True
         elif q["kind"] == "bring":
-            it = next((i for i in g.player.inv if i.name == q["item"] or (q["data"].get("any_kind") and i.kind == q["data"]["any_kind"])), None)
+            it = bring_match(g, q)
             if it:
                 g.player.inv.remove(it)
                 if it is g.player.weapon:
