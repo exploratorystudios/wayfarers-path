@@ -596,6 +596,7 @@ function renderMap(g) {
   }));
   el.onmouseleave = () => { $("maptip").textContent = "Click a tile next to you to walk there."; };
   paintMini(g);
+  scheduleAtlas();
 }
 
 // the panel map: the painted land under the clickable grid, repainted only when what you know changes
@@ -855,24 +856,80 @@ function zoomAt(f, px, py) {              // zoom by f, keeping the point under 
   view.x = px - (px - view.x) * (z2 / view.z); view.y = py - (py - view.y) * (z2 / view.z); view.z = z2;
   clampView(); applyView();
 }
+// The map is painted in the background whenever what you know changes, so opening it is instant
+// and an open map keeps up as you play. A worker does the heavy painting off the main thread;
+// without one, the page paints during idle moments instead.
+const atlas = { key: null, want: null, data: null, map: null, road: null, busy: false, worker: null, timer: 0, shownKey: null };
+function atlasKey(d) {
+  return JSON.stringify([d.seed, d.cells.map(r => r.map(c => (c.k || 0) + (c.s || "") + (c.f ? c.f.length : ""))),
+                         d.pos, d.goals, d.trail.length, d.relic, d.relic_found, d.regions.length]);
+}
+try {
+  if (typeof OffscreenCanvas !== "undefined" && typeof Worker !== "undefined") {
+    atlas.worker = new Worker("/atlas-worker.js");
+    atlas.worker.onmessage = (e) => {
+      atlas.busy = false;
+      if (e.data.error) { atlas.worker = null; return paintNext(); }       // fall back to painting on the page
+      atlas.map = e.data.map; atlas.road = e.data.road; atlas.key = e.data.key;
+      atlas.data = atlas.pending; showAtlas();
+      paintNext();
+    };
+    atlas.worker.onerror = () => { atlas.worker = null; atlas.busy = false; paintNext(); };
+  }
+} catch (e) { atlas.worker = null; }
+function scheduleAtlas() {               // after each turn: fetch what the map should show, a moment after things settle
+  clearTimeout(atlas.timer);
+  atlas.timer = setTimeout(async () => {
+    try {
+      const d = await (await fetch("/api/atlas")).json();
+      if (d.error) return;
+      const key = atlasKey(d);
+      if (key === atlas.key && atlas.map) { atlas.data = d; return; }
+      atlas.want = { key, d };
+      paintNext();
+    } catch (e) { /* try again next turn */ }
+  }, 350);
+}
+function paintNext() {
+  if (atlas.busy || !atlas.want || atlas.want.key === atlas.key) return;
+  const { key, d } = atlas.want;
+  atlas.want = null; atlas.busy = true; atlas.pending = d;
+  if (atlas.worker) {
+    atlas.worker.postMessage({ key, data: d, scale: ATLAS_SCALE });
+    return;
+  }
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 60));
+  idle(async () => {
+    try { await Promise.all([document.fonts.load('32px "IM Fell English"'), document.fonts.load('italic 16px "IM Fell English"'), document.fonts.load('19px "IM Fell English SC"')]); } catch (e) { /* fallback fonts */ }
+    const m = document.createElement("canvas"), r = document.createElement("canvas");
+    window.drawAtlas(m, d, { scale: ATLAS_SCALE, trail: r });
+    atlas.map = m; atlas.road = r; atlas.key = key; atlas.data = d; atlas.busy = false;
+    showAtlas(); paintNext();
+  });
+}
+function showAtlas() {                   // put the latest painting on screen if the map is open (keeping your zoom)
+  if ($("atlasDlg").hidden || !atlas.map || atlas.shownKey === atlas.key) return;
+  const c = $("atlasCanvas"), tr = $("atlasTrail"), first = !atlas.shownKey;
+  for (const [cv, src] of [[c, atlas.map], [tr, atlas.road]]) {
+    cv.width = src.width; cv.height = src.height;
+    cv.getContext("2d").drawImage(src, 0, 0);
+    cv.style.width = src.width / ATLAS_SCALE + "px"; cv.style.height = src.height / ATLAS_SCALE + "px";
+  }
+  tr.style.display = $("atlasTrailTog").checked ? "" : "none";
+  atlasData = atlas.data;
+  if (first) fitView(); else { clampView(); applyView(); }
+  atlas.shownKey = atlas.key;
+  const d = atlas.data, seen = d.cells.flat().filter(x => x.k === 2).length, all = d.cells.flat().filter(x => x.k).length;
+  $("atlasNote").textContent = `${seen} places walked, ${all - seen} glimpsed. Scroll or pinch to zoom, drag to look around.`;
+}
 async function openAtlas() {
   if (!state || !state.game) return;
-  $("atlasDlg").hidden = false; $("atlasNote").textContent = "Unfolding the map…";
-  try {
-    const data = await (await fetch("/api/atlas")).json();
-    if (data.error) { $("atlasNote").textContent = data.error; return; }
-    atlasData = data;
-    try { await Promise.all([document.fonts.load('32px "IM Fell English"'), document.fonts.load('italic 16px "IM Fell English"'), document.fonts.load('19px "IM Fell English SC"')]); } catch (e) { /* draw with fallback fonts */ }
-    await new Promise(r => setTimeout(r, 20));          // let the note paint before the heavy drawing
-    const c = $("atlasCanvas"), tr = $("atlasTrail");
-    window.drawAtlas(c, data, { scale: ATLAS_SCALE, trail: tr });
-    c.style.width = tr.style.width = c.width / ATLAS_SCALE + "px";
-    c.style.height = tr.style.height = c.height / ATLAS_SCALE + "px";
-    tr.style.display = $("atlasTrailTog").checked ? "" : "none";
-    fitView();
-    const seen = data.cells.flat().filter(c => c.k === 2).length, all = data.cells.flat().filter(c => c.k).length;
-    $("atlasNote").textContent = `${seen} places walked, ${all - seen} glimpsed. Scroll or pinch to zoom, drag to look around.`;
-  } catch (e) { $("atlasNote").textContent = "The map wouldn't unfold: " + e; }
+  $("atlasDlg").hidden = false;
+  atlas.shownKey = null;                 // a fresh open fits the whole sheet
+  if (atlas.map && atlas.data && state.game.map && atlas.data.seed !== state.game.map.seed) { atlas.map = null; atlas.key = null; }   // another game's map
+  if (atlas.map) showAtlas();
+  if (!atlas.map || atlas.busy || atlas.want) $("atlasNote").textContent = atlas.map ? "Adding what you've seen lately…" : "Unfolding the map…";
+  scheduleAtlas();
 }
 function closeAtlas() { $("atlasDlg").hidden = true; $("cmd").focus({preventScroll: true}); }
 $("atlasBtn").onclick = openAtlas;

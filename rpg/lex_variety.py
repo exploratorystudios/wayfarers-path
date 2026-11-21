@@ -306,7 +306,7 @@ LIST_POOLS = {
                     "a pipe that never seems to go out", "a quiet, watchful stillness", "freckles like spilled grain", "a slow, careful way of speaking",
                     "a limp from an old break", "a silver ring worn on a thumb"],
     ("E", "RELIC_NOUN"): ["bell", "cup", "comb", "spindle", "circlet", "shield-boss", "key", "book", "staff", "brooch", "drinking horn", "censer"],
-    ("E", "RELIC_ADJ"): ["Winter", "Singing", "Bloodless", "Starlit", "Hearthfire", "Quiet", "Thousand-Year", "Wyrm-Bound", "Salt", "Morning", "Unsleeping", "Iron"],
+    ("E", "RELIC_ADJ"): ["Winter", "Singing", "Bloodless", "Skyfallen", "Hearthfire", "Quiet", "Thousand-Year", "Wyrm-Bound", "Salt", "Morning", "Unsleeping", "Iron"],
     ("L", "NAME_PRE"): ["Ald", "Bly", "Cran", "Dray", "Egg", "Frith", "Gort", "Holm", "Ickle", "Kell", "Lang", "Mal", "Nor", "Pen", "Quen", "Ris", "Sel", "Tor", "Ulver", "Wend", "Yar", "Swal", "Thrim", "Bleak"],
     ("L", "NAME_SUF"): ["hythe", "garth", "wold", "fold", "barrow", "minster", "hope", "shaw", "beck", "marsh", "heath", "field", "wich", "nell", "grave", "toft"],
     ("L", "NAME_ADJ"): ["Forgotten", "Moaning", "Restless", "Briar", "Raven's", "Broken", "Burning", "Hushed", "Fallow", "Thorny", "Witching", "Gallows", "Sunken", "Hollowed"],

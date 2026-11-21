@@ -29,7 +29,9 @@ python3 play.py --classic --load X  # resume a save in the terminal
   red line of every road you've walked, and an X where the relic lies once you know.
   Scroll or pinch to zoom, drag to pan, and the **Your road** switch shows or hides
   your trail. **Save image** keeps a copy. Drawn by `rpg/web/atlas.js`, seeded, so a world
-  always looks the same. The lettering is IM Fell English by Igino Marini, bundled in
+  always looks the same. It is repainted in the background (a worker,
+  `rpg/web/atlas-worker.js`) whenever what you know changes, so it opens instantly
+  and keeps up live if you leave it open while you play. The lettering is IM Fell English by Igino Marini, bundled in
   `rpg/web/fonts/` under the SIL Open Font License, so it works offline.
 * **Map** (top right): the same painted land in miniature under a light grid,
   revealed as you explore. Click a tile next to you to walk there. Dots show the suggested route, and a purple ? marks the relic once
@@ -167,6 +169,20 @@ the terminal version) invents one for you.
 retrains the model (`rpg/data/names_model.json`), and checks the output: whether
 it copies, and how its vowel share, endings and length compare with the real
 names.
+
+### Place names (`rpg/places.py`)
+
+Villages, towns and regions are named the way real places got their names: a
+founder's name worn down plus an element meaning farm, stream or clearing (a
+fresh name from the model, clipped: "Asa" becomes *Asby*), or a feature plus an
+element (*Oakley*, *Stanbeck*). Some get a prefix or suffix (*Long Wendham*,
+*Sloeworth-under-Edge*); market towns can be *Chipping* or *Market* something.
+Endings follow the local tradition: -by, -thwaite, -garth in the north, -ton,
+-ham, -ley in the middle, -combe, -leigh, -port in the south. Regions pair a
+biome word (Weald, Moss, Fells, Hanger, Levels, Brae...) with a root, an
+adjective (*the Gloaming Copse*), a place (*the Frith of Swinholm*) or a
+possessive (*Yala's Fells*). Within a world no root, ending or adjective is used
+twice. Across 40 test worlds, 1,504 of 1,523 names were distinct.
 
 ## You only know what you've found out
 

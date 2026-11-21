@@ -254,8 +254,8 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(data)
             return
-        if path == "/atlas.js":
-            data = (STATIC / "atlas.js").read_bytes()
+        if path in ("/atlas.js", "/atlas-worker.js"):
+            data = (STATIC / path[1:]).read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/javascript; charset=utf-8")
             self.send_header("Content-Length", str(len(data)))

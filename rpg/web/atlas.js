@@ -39,6 +39,9 @@
   const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   const mix = (a, b, t) => a + (b - a) * t;
 
+  // a scratch canvas: a page canvas in the page, an OffscreenCanvas in a background worker
+  const blank = () => (typeof document !== "undefined" ? document.createElement("canvas") : new OffscreenCanvas(1, 1));
+
   // ---------------------------------------------------------------- the painting
   function drawAtlas(canvas, A, opts) {
     opts = opts || {};
@@ -57,7 +60,7 @@
     // ---- paper
     {
       const pw = Math.ceil(VW * RES), ph = Math.ceil(VH * RES);
-      const off = document.createElement("canvas"); off.width = pw; off.height = ph;
+      const off = blank(); off.width = pw; off.height = ph;
       const octx = off.getContext("2d"), paper = octx.createImageData(pw, ph);
       for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
         const dx = VX + x / RES, dy = VY + y / RES;
@@ -108,7 +111,7 @@
         if (x > 0 && y < MH - 1) d[j] = Math.min(d[j], d[j + MW - 1] + 1.414);
       }
     }
-    const off = document.createElement("canvas"); off.width = MW; off.height = MH;
+    const off = blank(); off.width = MW; off.height = MH;
     const octx = off.getContext("2d"), land = octx.createImageData(MW, MH);
     for (let py = 0; py < MH; py++) for (let px = 0; px < MW; px++) {
       const j = py * MW + px, b = biomeAt[j];
@@ -476,9 +479,10 @@
     ctx.restore();
   }
 
-  window.drawAtlas = drawAtlas;
+  const root = typeof window !== "undefined" ? window : self;      // the page, or a worker
+  root.drawAtlas = drawAtlas;
   // which tile is under a point of the sheet (design units), for hover notes
-  window.atlasTileAt = (A, px, py) => {
+  root.atlasTileAt = (A, px, py) => {
     const T = (W - 2 * X0) / A.w, x = Math.floor((px - X0) / T), y = Math.floor((py - Y0) / T);
     return x >= 0 && y >= 0 && x < A.w && y < A.h ? [x, y] : null;
   };

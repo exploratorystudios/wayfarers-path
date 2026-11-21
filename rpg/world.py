@@ -12,6 +12,7 @@ from . import coherence as C
 from . import names as NAMES
 from . import arts as ARTS
 from . import goods as GOODS
+from . import places as PLACES
 
 V.apply_fact_pools(L, E)
 
@@ -256,11 +257,17 @@ class World:
         self.season = r.choice(SEASONS)
         self.weather = r.choice(["clear", "cloudy", "overcast", "fog"])
         self.moon0 = r.randrange(8)
+        try:
+            people = NAMES.gen()
+        except (OSError, ValueError):
+            people = None
+        self.namer = PLACES.Namer(seed, people)      # place names: their own dice, never saved
         self._terrain()
         self._regions()
         self._species()
         self._sites()
         self._populate()
+        del self.namer
 
     # ------------------------------------------------------------- terrain
     def _terrain(self):
@@ -350,9 +357,7 @@ class World:
             if t.region >= 0:
                 continue
             comp = self._flood(p, lambda a, b: self.tiles[b].biome == self.tiles[a].biome)
-            name = self.make_place_name(t.biome)
-            while name in used:
-                name = self.make_place_name(t.biome)
+            name = self.namer.region(t.biome, self.culture_of(p))
             used.add(name)
             for q in comp:
                 self.tiles[q].region = len(self.regions)
@@ -462,7 +467,7 @@ class World:
         for i, p in enumerate(small):
             scales[p] = "hamlet" if i % 2 == 0 else "village"
         for p in villages:
-            self.tiles[p].site = self.make_village(self.tiles[p].biome, scales[p])
+            self.tiles[p].site = self.make_village(self.tiles[p].biome, scales[p], p)
             self.tiles[p].danger = 0
         self.relic = Item("relic", f"{r.choice(E.RELIC_ADJ)} {r.choice(E.RELIC_NOUN)}", value=500,
                           facts=dict(material=r.choice(["gold", "silver", "black iron", "bone", "crystal", "bronze"]),
@@ -501,14 +506,10 @@ class World:
 
     SIZE_WORDS = {"hamlet": ["hamlet", "huddle", "steading"], "village": ["village"], "town": ["market town", "town"]}
 
-    def make_village(self, biome="plains", scale="village"):
+    def make_village(self, biome="plains", scale="village", pos=None):
         r = self.rng
-        taken = {self.tiles[p].site["name"] for p in self.land if self.tiles[p].site and self.tiles[p].site.get("kind") == "village"}
-        name = r.choice(L.NAME_PRE) + r.choice(L.NAME_SUF)
-        for _ in range(20):
-            if name not in taken:
-                break
-            name = r.choice(L.NAME_PRE) + r.choice(L.NAME_SUF)
+        namer = getattr(self, "namer", None) or PLACES.Namer(f"{self.seed}-late")
+        name = namer.settlement(self.culture_of(pos) if pos else "Westron", scale)
         facts = {k: r.choice(v) for k, v in E.VILLAGE.items()}
         facts["scale"] = scale
         facts["size"] = r.choice(self.SIZE_WORDS[scale])
