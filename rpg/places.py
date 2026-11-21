@@ -172,3 +172,46 @@ class Namer:
                 self.names.add(name)
                 return name
         return name
+
+
+# ---------------------------------------------------------------- the world's own name
+# Every world has a name as a whole, above its regions and villages: worked out from the seed alone
+# (with its own dice), so it never changes and worlds saved before it existed get one too.
+REALM_ENDS = ["ia", "oria", "aria", "or", "ond", "eth", "mere", "orn", "avel", "oth", "ara", "dor", "wyn", "ys",
+              "enmark", "garde", "holm", "ador", "ellion", "anthe", "ost", "andar", "esse", "umbra"]
+REALM_ADJ = ["Sundered", "Ageless", "Ashen", "Hallowed", "Twilit", "Unbroken", "Fallen", "Gilded", "Shrouded",
+             "Forsaken", "Evergreen", "Ninefold", "Hollow", "Silent", "Undying", "Wandering", "Weeping", "Iron",
+             "Elder", "Thousand-Year", "Unconquered", "Drowned", "Hidden", "Forgotten", "Old", "Last", "Bright", "Grey"]
+REALM_NOUNS = ["Realm", "Kingdom", "Marches", "Dominion", "Reaches", "Holds", "Crownlands", "Commonwealth", "Wilds",
+               "Shires", "Principality", "Expanse", "Lands", "Vales", "Protectorate", "Empire", "Domain", "March"]
+REALM_EPITHETS = ["the Ninefold Realm", "Land of Long Winters", "the Hollow Crown", "Last of the Old Kingdoms",
+                  "the World Under Ash", "the Kingdom of Bells", "Cradle of Kings", "the Country of Lost Roads",
+                  "Where the Old Gods Sleep", "the Land Between the Ages", "Realm of the Twice-Crowned",
+                  "the Unwritten Kingdom", "Last Light of the West", "Land of a Thousand Barrows", "the Weeping Crown",
+                  "the Long Twilight", "the Kingless Country", "the Land That Remembers", "Hearth of the World",
+                  "the Realm Beyond the Wall", "Seat of the Seven Thrones", "the Broken Crown", "the Quiet Kingdom",
+                  "the Land of Kept Oaths", "the Ember Throne", "the Green Dominion", "Home of the Hundred Banners",
+                  "the Realm of Ash and Bells", "the Country of Saints", "the Dreaming Lands"]
+
+
+def world_title(seed, people=None):
+    """A grandiose name for a whole world, e.g. 'Valdoria, Land of Long Winters' or 'The Sundered Marches of Ostmere'."""
+    rng = random.Random(f"{seed}-world-title")
+    culture = rng.choice(["Archaic", "Westron", "Northish", "Southron"])
+    root = None
+    if people is not None:
+        try:
+            root = _clip(people.generate(rng, culture, rng.choice(["female", "male"])))
+        except Exception:
+            root = None
+    if not root or len(root) < 3:
+        root = rng.choice(FEATURES)
+    name = _join(root, rng.choice(REALM_ENDS))
+    roll = rng.random()
+    if roll < 0.35:
+        return f"{name}, {rng.choice(REALM_EPITHETS)}"
+    if roll < 0.7:
+        return f"The {rng.choice(REALM_ADJ)} {rng.choice(REALM_NOUNS)} of {name}"
+    if roll < 0.88:
+        return f"The {rng.choice(REALM_NOUNS)} of {name}"
+    return name

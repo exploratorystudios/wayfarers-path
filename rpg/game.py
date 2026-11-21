@@ -123,6 +123,7 @@ class Game:
         self.examined = set()    # (pos, noun) pairs already looked at
         self.last_save_turn = 0
         self.show_hints = True
+        self.run_id, self.started = self.new_run_id(self.player.name), time.time()   # this character's save folder
         self.quests, self.companions, self.pending, self.quest_seq = [], [], None, 0
         self.buffs, self.encounters_seen, self.last_encounter_turn = {}, set(), -99
         self.died = False
@@ -184,7 +185,9 @@ class Game:
             abil = ", ".join(f"{K.ABILITIES[a]['label']} ({a})" for a in s["abilities"])
             self.emit(f"({s['name']}: {abil}. {s['passive'][0]}: {s['passive'][1]})")
         self.emit("")
-        self.emit(f"(World seed {self.seed}: the same seed gives the same world, but never the same words.)")
+        realm = self.world.title
+        realm = "t" + realm[1:] if realm.startswith("The ") else realm
+        self.emit(f"(This world is {realm}. Its seed is {self.seed}: the same seed gives the same world, but never the same words.)")
         self.show_location()
         self.emit("")
         self.emit(f"{cap(elder.called())} seems to be waiting for someone. Perhaps you should talk to {elder.pronouns()['him']}.")
@@ -1063,16 +1066,81 @@ class Game:
         self.__dict__.update(state)
         self.out = print
 
+    # ------------------------------------------------------------ saves
+    # Each character has a folder, saves/<folder>/<slot>.sav, with a small .json summary beside each
+    # save and run.json for the character as a whole. A folder is named for the character plus a short
+    # random tag, so two travellers called Wren never share one (or one autosave). A save is named as
+    # "folder/slot"; a bare slot means this character's save of that name, or failing that the newest
+    # save of that name belonging to anyone.
+
     @staticmethod
     def safe_slot(slot):
         return "".join(ch for ch in str(slot).strip().lower().replace(" ", "-") if ch.isalnum() or ch in "-_")[:40]
 
-    @classmethod
-    def slot_path(cls, slot):
-        return SAVE_DIR / f"{cls.safe_slot(slot) or 'save'}.sav"
+    @staticmethod
+    def new_run_id(name):
+        return f"{(Game.safe_slot(name) or 'wanderer')[:24]}-{os.urandom(3).hex()}"
+
+    def ensure_run(self):
+        """Characters from before folders get one the first time they are saved."""
+        if not getattr(self, "run_id", None):
+            self.run_id = self.new_run_id(self.player.name)
+        if not getattr(self, "started", None):
+            self.started = time.time()
 
     @staticmethod
-    def list_saves():
+    def save_ref(path):
+        return f"{path.parent.name}/{path.stem}"
+
+    @classmethod
+    def migrate_saves(cls):
+        """Move saves from before character folders into one folder per character (by name and world)."""
+        if not SAVE_DIR.exists():
+            return
+        import hashlib
+        for path in sorted(SAVE_DIR.glob("*.sav"), key=lambda p: p.stat().st_mtime):
+            side = path.with_suffix(".json")
+            try:
+                m = json.loads(side.read_text())
+            except (OSError, ValueError):
+                try:
+                    with open(path, "rb") as f:
+                        m = pickle.load(f)["game"].meta()
+                except Exception:
+                    m = {}
+            name, seed = m.get("name") or "unknown", m.get("seed")
+            folder = SAVE_DIR / f"{(cls.safe_slot(name) or 'unknown')[:24]}-{hashlib.sha1(f'{name}|{seed}'.encode()).hexdigest()[:6]}"
+            folder.mkdir(exist_ok=True)
+            dest = folder / path.name
+            n = 2
+            while dest.exists():
+                dest = folder / f"{path.stem}-{n}.sav"
+                n += 1
+            mtime = path.stat().st_mtime
+            os.replace(path, dest)
+            if side.exists():
+                os.replace(side, dest.with_suffix(".json"))
+            run = folder / "run.json"
+            try:
+                info = json.loads(run.read_text())
+            except (OSError, ValueError):
+                info = {}
+            info.setdefault("name", name)
+            info.setdefault("seed", seed)
+            info["started"] = min(info.get("started", mtime), mtime)     # the oldest save is our best guess
+            run.write_text(json.dumps(info))
+
+    @classmethod
+    def run_info(cls, folder):
+        try:
+            return json.loads((SAVE_DIR / folder / "run.json").read_text())
+        except (OSError, ValueError):
+            return {}
+
+    @classmethod
+    def list_saves(cls, run=None):
+        """Save files, newest first: one character's (run=folder) or everyone's."""
+        cls.migrate_saves()
         if not SAVE_DIR.exists():
             return []
         def age(p):
@@ -1080,19 +1148,21 @@ class Game:
                 return -p.stat().st_mtime
             except OSError:          # deleted while we looked
                 return 0
-        return sorted((p for p in SAVE_DIR.glob("*.sav") if p.exists()), key=age)
+        pattern = f"{cls.safe_slot(run)}/*.sav" if run else "*/*.sav"
+        return sorted((p for p in SAVE_DIR.glob(pattern) if p.exists()), key=age)
 
     def meta(self):
         """A small summary written next to each save, so saves can be listed without loading them."""
         w, p = self.world, self.player
         return dict(name=p.name, klass=p.class_name, level=p.level, hp=max(0, p.hp), maxhp=p.maxhp,
-                    day=w.day, place=self.narr.header(self.pos), seed=self.seed,
+                    day=w.day, place=self.narr.header(self.pos), seed=self.seed, world=w.title,
+                    started=getattr(self, "started", None),
                     relic=w.relic in p.inv, won=self.won, died=self.died, turns=getattr(self, "turns", 0))
 
     @classmethod
     def save_info(cls, path):
         """Details of one save file. Older saves without a summary are opened once and given one."""
-        info = dict(slot=path.stem, saved=path.stat().st_mtime)
+        info = dict(saved=path.stat().st_mtime)
         side = path.with_suffix(".json")
         try:
             info.update(json.loads(side.read_text()))
@@ -1109,13 +1179,16 @@ class Game:
                     info.update(m)
             except Exception:
                 info["broken"] = "unreadable"
-        info["slot"], info["saved"] = path.stem, path.stat().st_mtime
+        if info.get("seed") is not None and not info.get("world"):
+            from . import places, names
+            info["world"] = places.world_title(info["seed"], names.gen())
+        info.update(id=cls.save_ref(path), slot=path.stem, run=path.parent.name, saved=path.stat().st_mtime)
         return info
 
     @classmethod
-    def list_save_info(cls):
+    def list_save_info(cls, run=None):
         out = []
-        for p in cls.list_saves():
+        for p in cls.list_saves(run):
             try:
                 out.append(cls.save_info(p))
             except OSError:          # deleted while we looked
@@ -1123,48 +1196,97 @@ class Game:
         return out
 
     @classmethod
-    def delete_save(cls, slot):
-        path = cls.slot_path(slot)
-        if not path.exists():
-            raise FileNotFoundError(slot)
-        path.unlink()
-        path.with_suffix(".json").unlink(missing_ok=True)
+    def list_runs(cls):
+        """Characters with saves, the most recently played first, each with its saves (newest first)."""
+        runs = {}
+        for s in cls.list_save_info():
+            runs.setdefault(s["run"], []).append(s)
+        out = []
+        for folder, saves in runs.items():
+            latest = next((s for s in saves if not s.get("broken")), saves[0])
+            info = cls.run_info(folder)
+            started = latest.get("started") or info.get("started") or min(s["saved"] for s in saves)
+            out.append(dict(run=folder, name=latest.get("name") or info.get("name") or folder, klass=latest.get("klass"),
+                            level=latest.get("level"), world=latest.get("world"), seed=latest.get("seed", info.get("seed")),
+                            started=started, saved=saves[0]["saved"], died=latest.get("died"), won=latest.get("won"),
+                            latest=latest["id"], saves=saves))
+        return sorted(out, key=lambda r: -r["saved"])
 
     @classmethod
-    def rename_save(cls, old, new):
-        src, safe = cls.slot_path(old), cls.safe_slot(new)
-        if not src.exists():
-            raise FileNotFoundError(old)
+    def find_save(cls, ref, run=None):
+        """The file a save name points at, or None: 'folder/slot', or a bare slot (this character's first)."""
+        ref = str(ref or "").strip()
+        if "/" in ref:
+            folder, _, slot = ref.partition("/")
+            p = SAVE_DIR / cls.safe_slot(folder) / f"{cls.safe_slot(slot)}.sav"
+            return p if cls.safe_slot(folder) and p.exists() else None
+        slot = cls.safe_slot(ref)
+        if not slot:
+            return None
+        if run:
+            p = SAVE_DIR / cls.safe_slot(run) / f"{slot}.sav"
+            if p.exists():
+                return p
+        return next((p for p in cls.list_saves() if p.stem == slot), None)
+
+    @classmethod
+    def delete_save(cls, ref, run=None):
+        path = cls.find_save(ref, run)
+        if path is None:
+            raise FileNotFoundError(ref)
+        path.unlink()
+        path.with_suffix(".json").unlink(missing_ok=True)
+        if not any(path.parent.glob("*.sav")):              # the character's last save: tidy the folder away
+            shutil.rmtree(path.parent, ignore_errors=True)
+        return path
+
+    @classmethod
+    def delete_run(cls, run):
+        folder = SAVE_DIR / cls.safe_slot(run)
+        if not cls.safe_slot(run) or not folder.is_dir():
+            raise FileNotFoundError(run)
+        shutil.rmtree(folder)
+
+    @classmethod
+    def rename_save(cls, ref, new, run=None):
+        src, safe = cls.find_save(ref, run), cls.safe_slot(new)
+        if src is None:
+            raise FileNotFoundError(ref)
         if not safe:
             raise ValueError("a save name needs at least one letter or number")
-        dst = cls.slot_path(safe)
+        dst = src.parent / f"{safe}.sav"
         if dst == src:
             return safe
         if dst.exists():
-            raise ValueError(f"there is already a save called '{safe}'")
+            raise ValueError(f"this character already has a save called '{safe}'")
         os.replace(src, dst)
         if src.with_suffix(".json").exists():
             os.replace(src.with_suffix(".json"), dst.with_suffix(".json"))
         return safe
 
     def save(self, slot="quicksave", quiet=False):
-        SAVE_DIR.mkdir(exist_ok=True)
-        path = self.slot_path(slot)
+        self.ensure_run()
+        folder = SAVE_DIR / self.run_id
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{self.safe_slot(slot) or 'save'}.sav"
         tmp = path.with_suffix(".tmp")
         with open(tmp, "wb") as f:
             pickle.dump(dict(version=SAVE_VERSION, game=self), f)
         os.replace(tmp, path)
         path.with_suffix(".json").write_text(json.dumps(self.meta()))
+        run = folder / "run.json"
+        if not run.exists():
+            run.write_text(json.dumps(dict(name=self.player.name, seed=self.seed, world=self.world.title, started=self.started)))
         self.last_save_turn = getattr(self, "turns", 0)
         if not quiet:
             self.save_slot = path.stem
             self.emit(f"Game saved to '{path.stem}'. (Day {self.world.day}, {self.narr.header(self.pos)})")
 
     @classmethod
-    def load(cls, slot, out=print):
+    def load(cls, slot, out=print, run=None):
         """Load a save file. Saves are pickles: only load files you created yourself."""
-        path = cls.slot_path(slot)
-        if not path.exists():
+        path = cls.find_save(slot, run)
+        if path is None:
             raise FileNotFoundError(slot)
         with open(path, "rb") as f:
             data = pickle.load(f)
@@ -1173,9 +1295,16 @@ class Game:
         g = data["game"]
         g.out = out
         g.width = min(90, shutil.get_terminal_size((80, 24)).columns - 2)
+        g.run_id = path.parent.name                     # a save belongs to the character whose folder it is in
+        if not getattr(g, "started", None):
+            g.started = cls.run_info(g.run_id).get("started") or path.stat().st_mtime
         g.save_slot = path.stem
         g.last_save_turn = getattr(g, "turns", 0)
         return g
+
+    def save_id(self):
+        slot = getattr(self, "save_slot", None)
+        return f"{self.run_id}/{slot}" if slot and getattr(self, "run_id", None) else None
 
     def cmd_save(self, rest):
         if self.combat:
@@ -1193,48 +1322,56 @@ class Game:
             return f"{i['slot']}: ({i['broken']})"
         when = time.strftime("%d %b %H:%M", time.localtime(i["saved"]))
         state = " - dead" if i.get("died") else " - won" if i.get("won") else " - carrying the relic" if i.get("relic") else ""
-        return (f"{i['slot']}: {i['name']}, level {i['level']} {i['klass'].lower()}, day {i['day']}, "
-                f"{i['place']}{state}  (saved {when})")
+        return f"{i['slot']}: level {i['level']}, day {i['day']}, {i['place']}{state}  (saved {when})"
 
     def cmd_saves(self, rest):
-        saves = self.list_save_info()
-        if not saves:
+        runs = self.list_runs()
+        if not runs:
             return self.out("No saves yet. Type 'save [name]' to make one.")
-        self.out("Saves (newest first):")
-        for i in saves:
-            self.out("  " + self.describe_save(i))
-        self.out("  load [name] · rename [old] [new] · delete [name]")
+        mine = getattr(self, "run_id", None)
+        runs.sort(key=lambda r: r["run"] != mine)                 # this character first
+        self.out("Saves, by character:")
+        for r in runs:
+            began = time.strftime("%d %b %Y %H:%M", time.localtime(r["started"])) if r.get("started") else "?"
+            who = f"{r['name']}, level {r['level']} {(r['klass'] or '').lower()}".rstrip()
+            self.out(f"  {who}{'  (you)' if r['run'] == mine else ''}")
+            self.out(f"    {r['world'] or 'an unnamed world'} · seed {r['seed']} · began {began} · folder {r['run']}")
+            for s in r["saves"]:
+                self.out("      " + self.describe_save(s))
+        self.out("  load [name] · rename [old] [new] · delete [name]   (another character's save: load folder/name)")
 
     def cmd_delete(self, rest):
         if not rest:
             return self.emit("Delete which save? (Type 'saves' to list them.)")
-        slot = self.safe_slot(rest[0])
-        if not self.slot_path(slot).exists():
-            return self.emit(f"No save called '{slot}'. (Type 'saves' to list them.)")
+        path = self.find_save(rest[0], getattr(self, "run_id", None))
+        if path is None:
+            return self.emit(f"No save called '{self.safe_slot(rest[0])}'. (Type 'saves' to list them.)")
+        ref = rest[0] if "/" in rest[0] else path.stem if path.parent.name == getattr(self, "run_id", None) else self.save_ref(path)
         if rest[1:2] != ["yes"]:
-            return self.emit(f"Deleting '{slot}' can't be undone. Type 'delete {slot} yes' to confirm.")
-        self.delete_save(slot)
-        if getattr(self, "save_slot", None) == slot:
+            return self.emit(f"Deleting '{ref}' can't be undone. Type 'delete {ref} yes' to confirm.")
+        self.delete_save(self.save_ref(path))
+        if self.save_ref(path) == self.save_id():
             self.save_slot = None
-        self.emit(f"Deleted the save '{slot}'.")
+        self.emit(f"Deleted the save '{ref}'.")
 
     def cmd_rename(self, rest):
         if len(rest) < 2:
             return self.emit("Usage: rename [old name] [new name]")
+        path = self.find_save(rest[0], getattr(self, "run_id", None))
         try:
-            new = self.rename_save(rest[0], rest[1])
+            new = self.rename_save(rest[0], rest[1], getattr(self, "run_id", None))
         except FileNotFoundError:
             return self.emit(f"No save called '{self.safe_slot(rest[0])}'.")
         except ValueError as e:
             return self.emit(f"Can't rename: {e}.")
-        if getattr(self, "save_slot", None) == self.safe_slot(rest[0]):
+        if path is not None and self.save_ref(path) == self.save_id():
             self.save_slot = new
-        self.emit(f"Renamed '{self.safe_slot(rest[0])}' to '{new}'.")
+        self.emit(f"Renamed '{path.stem}' to '{new}'.")
 
     def cmd_load(self, rest):
         slot = rest[0] if rest else "quicksave"
         try:
-            g = Game.load(slot, self.out)
+            g = Game.load(slot, self.out, getattr(self, "run_id", None))
         except FileNotFoundError:
             self.emit(f"No save called '{slot}'. (Type 'saves' to list them.)")
             return False

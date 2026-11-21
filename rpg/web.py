@@ -63,6 +63,7 @@ class Session:
         g = Game(seed=seed, name=name or None, out=self.out, klass=klass if klass in K.CLASSES else "knight")
         self.attach(g)
         g.intro()
+        g.save("autosave", quiet=True)          # every character has an autosave from the very start
 
     def load(self, slot):
         g = Game.load(slot, self.out)
@@ -90,7 +91,7 @@ class Session:
         total = self.offset + len(self.log)
         start = max(0, since - self.offset) if since >= self.offset else 0
         base = dict(epoch=self.epoch, total=total, lines=self.log[start:],
-                    saves=Game.list_save_info(), classes=CLASS_LIST)
+                    runs=Game.list_runs(), classes=CLASS_LIST)
         if g is None:
             return dict(base, game=None)
         w, p = g.world, g.player
@@ -120,7 +121,8 @@ class Session:
             choice=dict(text=g.pending["text"], options=[o["label"] for o in g.pending["options"]]) if getattr(g, "pending", None) else None,
             journal=S.journal_lines(g) if hasattr(g, "quests") else [], effects=S.effects_line(g) if hasattr(g, "buffs") else "",
             companions=[c["name"] for c in getattr(g, "companions", [])],
-            save_slot=getattr(g, "save_slot", None),
+            save_slot=getattr(g, "save_slot", None), save_id=g.save_id(), run_id=getattr(g, "run_id", None),
+            world=g.world.title,
             unsaved=getattr(g, "turns", 0) > getattr(g, "last_save_turn", 0),
             can_save="" if not (g.combat or g.died) else ("You can't save mid-fight." if g.combat else "The dead can't save."),
             suggestions=[dict(cmd=s.cmd, label=s.label, why=s.why) for s in sugs],
@@ -253,15 +255,22 @@ def dispatch(method, path, query="", data=None):
                 if "hints" in data:
                     SESSION.game.show_hints = bool(data["hints"])
             elif path == "/api/saves":
-                op, slot = data.get("op"), str(data.get("slot") or "")
+                op, slot = data.get("op"), str(data.get("slot") or "")     # slot: a save id, "folder/name"
+                g = SESSION.game
+                mine = g.save_id() if g else None
                 if op == "delete":
-                    Game.delete_save(slot)
-                    if SESSION.game and getattr(SESSION.game, "save_slot", None) == Game.safe_slot(slot):
-                        SESSION.game.save_slot = None
+                    path = Game.delete_save(slot)
+                    if mine and Game.save_ref(path) == mine:
+                        g.save_slot = None
+                elif op == "delete_run":
+                    Game.delete_run(str(data.get("run") or ""))
+                    if g and getattr(g, "run_id", None) == Game.safe_slot(str(data.get("run") or "")):
+                        g.save_slot = None
                 elif op == "rename":
+                    path = Game.find_save(slot)
                     new = Game.rename_save(slot, str(data.get("to") or ""))
-                    if SESSION.game and getattr(SESSION.game, "save_slot", None) == Game.safe_slot(slot):
-                        SESSION.game.save_slot = new
+                    if mine and path and Game.save_ref(path) == mine:
+                        g.save_slot = new
                 elif op == "save":
                     if SESSION.game is None:
                         return {"error": "no game running"}, 400

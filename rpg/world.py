@@ -243,6 +243,18 @@ def _fbm(rng, w, h):
 class World:
     W = H = 16
 
+    @property
+    def title(self):
+        """The world's own name, from the seed alone (so saves from before it existed have one too)."""
+        t = self.__dict__.get("_title")
+        if t is None:
+            try:
+                people = NAMES.gen()
+            except Exception:
+                people = None
+            t = self._title = PLACES.world_title(self.seed, people)
+        return t
+
     def __init__(self, seed, player_name=""):
         self.seed = seed
         self.player_name = player_name

@@ -94,8 +94,20 @@ In game (either version): `save [slot]` (plain `save` reuses your current slot),
 `saves` (lists each save's character, level, day, place and time), `rename [old] [new]`,
 `delete [slot]` (asks you to confirm). On the web page the **Saves** button opens a manager that
 does all of this, warns before replacing a save or loading over unsaved progress, and marks
-which save the current game belongs to. Quitting autosaves to `autosave`; after death you can reload. Saves live in `saves/` (in the browser's storage on the GitHub Pages build; Python pickles, so only load
-files you made yourself).
+which save the current game belongs to.
+
+Saves are kept per character: `saves/<character>/<slot>.sav`, where the folder is the character's
+name plus a short random tag, so two characters with the same name never share saves. The
+start screen has a **Continue** card for each character, showing their name, their world's name,
+level and class, and the date and time they began (handy for telling two Wrens apart). The Saves
+manager groups saves the same way and can delete a whole character. Every character has their own
+`autosave`, written as soon as the game begins and again when you quit (after every turn on the
+GitHub Pages build). After death you can reload. Save names only need to be unique within one
+character. A bare name in `load`/`rename`/`delete` means this character's save. To reach
+another character's save, use `folder/name`; `saves` lists the folder names. Saves from before
+folders are sorted into one folder per character automatically. They live in `saves/` (in the
+browser's storage on the GitHub Pages build). They are Python pickles, so only load files you
+made yourself.
 
 No dependencies; Python 3.8+.
 
@@ -226,6 +238,12 @@ biome word (Weald, Moss, Fells, Hanger, Levels, Brae...) with a root, an
 adjective (*the Gloaming Copse*), a place (*the Frith of Swinholm*) or a
 possessive (*Yala's Fells*). Within a world no root, ending or adjective is used
 twice. Across 40 test worlds, 1,504 of 1,523 names were distinct.
+
+Each world also has a name of its own, worked out from the seed with separate dice, so it never
+changes and older saves get one too. A clipped name takes a grand ending (*-oria*, *-mere*,
+*-garde*, *-enmark*). It then stands alone, takes an epithet (*Valdoria, Land of Long Winters*,
+*Datador, the Hollow Crown*), or sits in a title (*The Sundered Marches of Ostmere*). Across 2,000
+seeds, 1,997 world names were distinct. It appears in the opening lines and on the save screens.
 
 ## You only know what you've found out
 

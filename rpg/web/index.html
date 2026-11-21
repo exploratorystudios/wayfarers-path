@@ -260,8 +260,30 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 .svnew { display: flex; gap: 8px; margin: 4px 0 16px; }
 .svnew input { flex: 1; min-width: 0; }
 .svnote { font-size: .8rem; color: var(--ink-faint); margin: 0 0 12px; }
+.svrun { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.svrun:first-child { border-top: none; padding-top: 0; }
+.svrun-head { display: flex; gap: 10px; align-items: flex-start; }
+.svrun-head .sb { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.svrun-head .sb button { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: .8rem; }
+.svrun-head .sb button.danger { color: var(--bad); }
+.svrun-head .sb button.danger.go { background: var(--bad); color: #fff; border-color: var(--bad); }
+.svrun > .ask { font-size: .82rem; }
+.svrun-saves { display: flex; flex-direction: column; gap: 6px; padding-left: 10px; border-left: 2px solid var(--line); }
+.svrun.mine .svrun-saves { border-left-color: var(--accent); }
+.who { flex: 1; min-width: 0; }
+.who .nm { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.who .nm .badge { font-family: var(--sans); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 1px 6px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
+.who .nm .badge.dim { background: var(--line); color: var(--ink-soft); }
+.who .world { font-family: var(--serif); font-style: italic; color: var(--ink-soft); font-size: .92rem; line-height: 1.3; }
+.who small { display: block; color: var(--ink-faint); font-size: .76rem; margin-top: 2px; }
+.sv.run { grid-template-columns: minmax(0, 1fr) auto; }
+.sv.run .who { grid-column: 1; }
+.sv.run .sd { grid-column: 1; }
+.sv.run .sb { grid-row: 1 / span 2; align-self: center; }
 .linkbtn { background: none; border: none; color: var(--accent); padding: 0; font-size: .82rem; text-decoration: underline; }
-@media (max-width: 560px) { .sv { grid-template-columns: minmax(0, 1fr); } .sv .sb { grid-column: 1; grid-row: auto; justify-content: flex-start; } }
+.saves button.linkbtn { display: inline; width: auto; margin: 0; padding: 0; border: none; background: none; }
+@media (max-width: 560px) { .sv, .sv.run { grid-template-columns: minmax(0, 1fr); } .sv .sb, .sv.run .sb { grid-column: 1; grid-row: auto; justify-content: flex-start; }
+  .svrun-head { flex-wrap: wrap; } .svrun-head .sb { justify-content: flex-start; } }
 
 @media (min-width: 761px) and (max-width: 900px) {
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); height: auto; min-height: 100vh; }
@@ -625,7 +647,7 @@ function apply(s) {
   appendLines(s.lines);
   total = s.total;
   state = s;
-  renderSaves(s.saves);
+  renderSaves(s.runs);
   renderClasses(s.classes);
   if (!s.game) { if ($("savesDlg").hidden) openStart(false); return; }
   const g = s.game;
@@ -885,38 +907,53 @@ function ago(t) {
   if (d < 86400 * 7) return `${Math.floor(d / 86400)} d ago`;
   return new Date(t * 1000).toLocaleDateString();
 }
-function saveDetail(s) {
+function saveDetail(s, brief) {
   if (s.broken) return `Can't be loaded: ${s.broken}.`;
   const st = s.died ? " · dead" : s.won ? " · victorious" : s.relic ? " · carrying the relic" : "";
-  return `${s.name}, level ${s.level} ${s.klass.toLowerCase()} · ${s.hp}/${s.maxhp} HP · day ${s.day} · ${s.place}${st} · saved ${ago(s.saved)}`;
+  return (brief ? "" : `Level ${s.level} · `) +
+         `${s.hp}/${s.maxhp} HP · day ${s.day} · ${s.place}${st} · saved ${ago(s.saved)}`;
 }
 function saveTitle(s) {
-  const g = state && state.game, cur = g && g.save_slot === s.slot;
+  const g = state && state.game, cur = g && g.save_id === s.id;
   return `<span>${esc(s.slot)}</span>` + (cur ? '<span class="badge">this game</span>' : "") +
          (s.slot === "autosave" ? '<span class="badge dim">auto</span>' : "");
 }
+function when(t) {
+  try { return new Date(t * 1000).toLocaleString([], {day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"}); }
+  catch (e) { return new Date(t * 1000).toLocaleString(); }
+}
+function runHead(r, mine) {        // who, which world, when they set out
+  const st = r.died ? '<span class="badge dim">fallen</span>' : r.won ? '<span class="badge">victorious</span>' : "";
+  return `<div class="who"><div class="nm">${esc(r.name)}${mine ? '<span class="badge">playing</span>' : ""}${st}</div>` +
+    `<div class="world">${esc(r.world || "an unnamed world")}</div>` +
+    `<small>Level ${r.level ?? "?"} ${esc((r.klass || "").toLowerCase())} · began ${esc(when(r.started))} · seed ${esc(String(r.seed ?? "?"))}</small></div>`;
+}
+const allSaves = () => (state && state.runs || []).flatMap(r => r.saves);
+const myRun = () => { const g = state && state.game; return g && (state.runs || []).find(r => r.run === g.run_id); };
 function needsLoadWarning() { const g = state && state.game; return g && !g.over && g.unsaved; }
 
-function renderSaves(saves) {   // compact list on the start screen
-  $("savesBox").hidden = !saves.length;
+function renderSaves(runs) {   // the start screen: one card per character, continuing from their newest save
+  runs = runs || [];
+  $("savesBox").hidden = !runs.length;
   const list = $("savesList"); list.innerHTML = "";
-  for (const s of saves.slice(0, 4)) {
-    const row = document.createElement("div"); row.className = "sv";
-    row.innerHTML = `<div class="st">${saveTitle(s)}</div><div class="sd">${esc(saveDetail(s))}</div><div class="sb"></div>`;
-    const b = document.createElement("button"); b.textContent = "Load"; b.type = "button"; b.disabled = !!s.broken;
-    b.onclick = () => { startAtTop = true; post("api/load", {slot: s.slot}).then(r => { if (r.error) startAtTop = false; else closeStart(); }); };
+  for (const r of runs.slice(0, 5)) {
+    const latest = r.saves[0], row = document.createElement("div"); row.className = "sv run";
+    row.innerHTML = `${runHead(r, false)}<div class="sd">${esc(saveDetail(latest, true))}${r.saves.length > 1 ? ` · ${r.saves.length} saves` : ""}</div><div class="sb"></div>`;
+    const b = document.createElement("button"); b.textContent = "Continue"; b.type = "button"; b.className = "go"; b.disabled = !!latest.broken;
+    b.title = `Load '${latest.slot}', ${r.name}'s newest save`;
+    b.onclick = () => { startAtTop = true; post("api/load", {slot: latest.id}).then(x => { if (x.error) startAtTop = false; else closeStart(); }); };
     row.querySelector(".sb").appendChild(b);
     list.appendChild(row);
   }
+  $("manageFromStart").textContent = runs.length > 5 ? `All ${runs.length} characters and their saves…` : "Manage saves…";
   if (!$("savesDlg").hidden) drawSaves();
 }
 
-let svMode = {};   // slot -> "rename" | "delete" | "load" while a row is asking something
+let svMode = {};   // save id (or "run:" + folder) -> "rename" | "delete" | "load" while a row is asking something
 function openSaves() {
   svMode = {}; $("svErr").textContent = ""; $("overwriteAsk").hidden = true;
   const g = state && state.game;
-  $("saveName").value = (g && g.save_slot && g.save_slot !== "autosave") ? g.save_slot
-                        : (g ? g.player.name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-") : "");
+  $("saveName").value = (g && g.save_slot && g.save_slot !== "autosave") ? g.save_slot : (g ? "quicksave" : "");
   if (!$("start").hidden) ovClosed("start");
   $("start").hidden = true; $("savesDlg").hidden = false; drawSaves(); ovOpen("saves");
   setTimeout(() => (g && !g.can_save && !touchUI() ? $("saveName") : $("closeSaves")).focus(), 30);
@@ -932,7 +969,8 @@ async function saveOp(body) {
 }
 
 function drawSaves() {
-  const g = state && state.game, saves = state ? state.saves : [];
+  const g = state && state.game, runs = [...(state && state.runs || [])];
+  runs.sort((a, b) => (g && b.run === g.run_id) - (g && a.run === g.run_id));      // the character you're playing first
   $("saveNewBox").hidden = !g;
   if (g) {
     $("saveName").disabled = $("saveNew").querySelector("button").disabled = !!g.can_save;
@@ -940,41 +978,57 @@ function drawSaves() {
       : g.unsaved ? (g.save_slot ? `Unsaved progress since your last save to '${g.save_slot}'.` : "This game hasn't been saved yet.")
       : "Everything is saved.";
   } else $("saveNote").textContent = "";
-  if (!saves.length) $("saveNote").textContent += (g ? " " : "") + "No saves yet.";
+  if (!runs.length) $("saveNote").textContent += (g ? " " : "") + "No saves yet.";
   const list = $("svList"); list.innerHTML = "";
-  for (const s of saves) {
-    const row = document.createElement("div");
-    row.className = "sv" + (g && g.save_slot === s.slot ? " cur" : "");
-    const mode = svMode[s.slot];
-    row.innerHTML = `<div class="st">${mode === "rename" ? "" : saveTitle(s)}</div><div class="sd">${esc(saveDetail(s))}</div><div class="sb"></div>`;
-    const bar = row.querySelector(".sb");
-    const btn = (label, cls, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (cls) b.className = cls; b.onclick = fn; bar.appendChild(b); return b; };
-    const ask = (text) => { const a = document.createElement("div"); a.className = "ask"; a.textContent = text; row.appendChild(a); };
-    const set = (m) => { svMode = m ? {[s.slot]: m} : {}; drawSaves(); };
-    if (mode === "rename") {
-      const f = document.createElement("form"); f.style.margin = 0;
-      f.innerHTML = `<input value="${esc(s.slot)}" maxlength="40" aria-label="New name for ${esc(s.slot)}">`;
-      const inp = f.querySelector("input");
-      const go = () => { const v = inp.value.trim(); if (!v || v === s.slot) return set(null); saveOp({op: "rename", slot: s.slot, to: v}).then(ok => ok && set(null)); };
-      f.onsubmit = (e) => { e.preventDefault(); go(); };
-      inp.onkeydown = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); set(null); } };
-      row.querySelector(".st").appendChild(f);
-      btn("Rename", "go", go); btn("Cancel", "", () => set(null));
-      setTimeout(() => { inp.focus(); inp.select(); }, 20);
-    } else if (mode === "delete") {
-      ask(`Delete '${s.slot}' for good? This can't be undone.`);
-      btn("Delete", "danger go", () => saveOp({op: "delete", slot: s.slot}).then(() => set(null))).focus();
-      btn("Keep it", "", () => set(null));
-    } else if (mode === "load") {
-      ask(g && g.save_slot ? `Your progress since saving to '${g.save_slot}' will be lost.` : "Your current game hasn't been saved and will be lost.");
-      btn("Load anyway", "go", () => loadSlot(s.slot)).focus();
-      btn("Cancel", "", () => set(null));
-    } else {
-      btn("Load", "", () => needsLoadWarning() ? set("load") : loadSlot(s.slot)).disabled = !!s.broken;
-      btn("Rename", "", () => set("rename"));
-      btn("Delete", "danger", () => set("delete"));
+  for (const r of runs) {
+    const mine = g && r.run === g.run_id, group = document.createElement("section");
+    group.className = "svrun" + (mine ? " mine" : "");
+    group.innerHTML = `<div class="svrun-head">${runHead(r, mine)}<div class="sb"></div></div><div class="svrun-saves"></div>`;
+    const rkey = "run:" + r.run, hbar = group.querySelector(".svrun-head .sb");
+    const hbtn = (label, cls, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (cls) b.className = cls; b.onclick = fn; hbar.appendChild(b); return b; };
+    if (svMode[rkey] === "delete") {
+      const a = document.createElement("div"); a.className = "ask";
+      a.textContent = `Delete ${r.name} and all ${r.saves.length} of their saves for good?` + (mine ? " (The game you're playing carries on, unsaved.)" : "");
+      group.querySelector(".svrun-head").after(a);
+      hbtn("Delete all", "danger go", () => saveOp({op: "delete_run", run: r.run}).then(() => { svMode = {}; drawSaves(); })).focus();
+      hbtn("Keep", "", () => { svMode = {}; drawSaves(); });
+    } else hbtn("Delete character", "danger", () => { svMode = {[rkey]: "delete"}; drawSaves(); });
+    const inner = group.querySelector(".svrun-saves");
+    for (const s of r.saves) {
+      const row = document.createElement("div");
+      row.className = "sv" + (g && g.save_id === s.id ? " cur" : "");
+      const mode = svMode[s.id];
+      row.innerHTML = `<div class="st">${mode === "rename" ? "" : saveTitle(s)}</div><div class="sd">${esc(saveDetail(s))}</div><div class="sb"></div>`;
+      const bar = row.querySelector(".sb");
+      const btn = (label, cls, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (cls) b.className = cls; b.onclick = fn; bar.appendChild(b); return b; };
+      const ask = (text) => { const a = document.createElement("div"); a.className = "ask"; a.textContent = text; row.appendChild(a); };
+      const set = (m) => { svMode = m ? {[s.id]: m} : {}; drawSaves(); };
+      if (mode === "rename") {
+        const f = document.createElement("form"); f.style.margin = 0;
+        f.innerHTML = `<input value="${esc(s.slot)}" maxlength="40" aria-label="New name for ${esc(s.slot)}">`;
+        const inp = f.querySelector("input");
+        const go = () => { const v = inp.value.trim(); if (!v || v === s.slot) return set(null); saveOp({op: "rename", slot: s.id, to: v}).then(ok => ok && set(null)); };
+        f.onsubmit = (e) => { e.preventDefault(); go(); };
+        inp.onkeydown = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); set(null); } };
+        row.querySelector(".st").appendChild(f);
+        btn("Rename", "go", go); btn("Cancel", "", () => set(null));
+        setTimeout(() => { inp.focus(); inp.select(); }, 20);
+      } else if (mode === "delete") {
+        ask(`Delete '${s.slot}' for good? This can't be undone.`);
+        btn("Delete", "danger go", () => saveOp({op: "delete", slot: s.id}).then(() => set(null))).focus();
+        btn("Keep it", "", () => set(null));
+      } else if (mode === "load") {
+        ask(g && g.save_slot ? `Your progress since saving to '${g.save_slot}' will be lost.` : "Your current game hasn't been saved and will be lost.");
+        btn("Load anyway", "go", () => loadSlot(s.id)).focus();
+        btn("Cancel", "", () => set(null));
+      } else {
+        btn("Load", "", () => needsLoadWarning() ? set("load") : loadSlot(s.id)).disabled = !!s.broken;
+        btn("Rename", "", () => set("rename"));
+        btn("Delete", "danger", () => set("delete"));
+      }
+      inner.appendChild(row);
     }
-    list.appendChild(row);
+    list.appendChild(group);
   }
 }
 function loadSlot(slot) {
@@ -985,7 +1039,7 @@ function loadSlot(slot) {
 function trySave(name, force) {
   const g = state.game, slot = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "");
   if (!slot) { $("svErr").textContent = "A save name needs at least one letter or number."; return; }
-  const clash = state.saves.find(s => s.slot === slot);
+  const clash = ((myRun() || {}).saves || []).find(s => s.slot === slot);    // names only clash within one character
   const box = $("overwriteAsk");
   if (clash && !force && g.save_slot !== slot) {
     box.hidden = false;

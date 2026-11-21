@@ -112,8 +112,10 @@ def suggest(g, n=6):
     # ---------------------------------------------------------------- game over
     if g.over:
         if g.died or not g.won:
-            for i, s in enumerate(g.list_saves()[:4]):
-                add(100 - i, f"load {s.stem}", f"Load '{s.stem}'", "Pick up from that save.")
+            mine = g.list_saves(getattr(g, "run_id", None)) if getattr(g, "run_id", None) else []
+            for i, s in enumerate(mine[:4] or g.list_saves()[:4]):
+                ref = s.stem if mine else f"{s.parent.name}/{s.stem}"
+                add(100 - i, f"load {ref}", f"Load '{s.stem}'", "Pick up from that save.")
         return _finish(out, n, getattr(g, 'recent_cmds', []))
 
     # ---------------------------------------------------------------- combat

@@ -258,13 +258,16 @@ def catalog(g):
     act("Info", "help", "All commands", "Every typed command, at a glance.")
 
     # ------------------------------------------------------------ game
-    saves = [s.stem for s in g.list_saves()]
+    mine = getattr(g, "run_id", None)
+    saves = [s.stem for s in g.list_saves(mine)] if mine else []
+    others = [s for s in g.list_save_info() if s["run"] != mine][:12]
     act("Game", "manage", "Manage saves…", "See every save with its details; load, rename or delete them.",
         "saves", ui="saves")
     act("Game", "save", "Save…", "Save your progress to a named slot.", "save {slot}",
         [dict(name="slot", prompt="Save to which slot?", text="quicksave", choices=saves)],
         enabled=not fighting, reason="You can't save mid-fight.")
     act("Game", "load", "Load…", "Return to a saved game.", "load {slot}",
-        [dict(name="slot", prompt="Load which save?", options=[_opt(s, s) for s in saves])],
-        enabled=saves, reason="No saves yet.")
+        [dict(name="slot", prompt="Load which save?", options=[_opt(s, s, "this character") for s in saves] +
+              [_opt(f"{o.get('name', '?')}: {o['slot']}", o["id"], o.get("world") or "") for o in others])],
+        enabled=bool(saves or others), reason="No saves yet.")
     return out

@@ -28,10 +28,12 @@ def classic(args):
             print(f"Couldn't load '{slot}': {e}")
             return
     seed = int(args[0]) if args and args[0].isdigit() else None
-    saves = Game.list_saves()
-    if saves and seed is None:
-        print("Saved games: " + ", ".join(p.stem for p in saves))
-        slot = ask("Type a save name to continue it, or press Enter for a new world: ")
+    runs = Game.list_runs()
+    if runs and seed is None:
+        print("Saved characters:")
+        for r in runs[:8]:
+            print(f"  {r['name']} ({r['world'] or 'seed ' + str(r['seed'])}): " + ", ".join(s["id"] for s in r["saves"][:4]))
+        slot = ask("Type a save (e.g. " + runs[0]["latest"] + ") to continue it, or press Enter for a new world: ")
         if slot:
             try:
                 return Game.load(slot).run(resumed=True)
@@ -52,7 +54,9 @@ def classic(args):
         print(f"     {', '.join(ABILITIES[a]['label'] for a in c['abilities'])}; {c['passive'][0]}: {c['passive'][1]}")
     pick = ask("Choose a class [1-5, Enter for Knight]: ")
     klass = keys[int(pick) - 1] if pick.isdigit() and 1 <= int(pick) <= len(keys) else (pick.lower() if pick.lower() in CLASSES else "knight")
-    Game(seed=seed, name=name, klass=klass).run()
+    g = Game(seed=seed, name=name, klass=klass)
+    g.save("autosave", quiet=True)          # every character has an autosave from the very start
+    g.run()
 
 
 def main():
