@@ -95,6 +95,20 @@ def collect(worlds=30, seed0=7000):
         for _ in range(15):
             it = w.make_item(rng.randint(1, 4))
             yield "item", c, it.name + ". " + n.item_full(it)
+        # procedural stories: the asking, every hint, the twist
+        from rpg import plots as P
+        for v in w.villages:
+            for npc in w.tiles[v].npcs:
+                plot = P.make(g, npc)
+                if not plot:
+                    continue
+                F = plot["F"]
+                yield "story", c, " ".join(P.fill(rng.choice(x), F) for x in (P.OBJECTS[plot["okey"]]["lines"], P.MOTIVES[plot["motive"]][1]))
+                for st in plot["steps"]:
+                    if st.get("intro"):
+                        yield "story", c, P.fill(P.fill(st["intro"], st), F)
+                if plot["twist"]:
+                    yield "story", c, P.fill(P.TWISTS[plot["twist"]][1], F)
 
 
 def sentences(text):
@@ -110,6 +124,8 @@ RULES = [(name, ("place", "site", "intro", "feature"), (lambda pred: lambda c: p
           (lambda rx, unless: lambda s: rx.search(s) and not (unless and unless.search(s)))(rx, unless))
          for name, rx, pred, unless in CO.CONTEXT] + [
     ("young and old together", ("npc",), None, lambda s: YOUNG.search(s) and OLD.search(s)),
+    ("unfilled slot in a story", ("story",), None, lambda s: "{" in s or "}" in s),
+    ("a name where a pronoun belongs", ("story",), None, lambda s: bool(__import__("re").search(r"\b(he|she|it) (he|she|it)\b", s))),
     ("age said twice on an elder", ("npc",), None, lambda s: W("elderly", "aged", "ancient").search(s) and W("elder", "eldest").search(s)),
     ("hair-age and hair colour clash", ("npc",), None, lambda s: HAIR_AGE.search(s) and (HAIR_COLOUR.search(s) or NO_HAIR.search(s))),
     ("young elder", ("npc",), None, lambda s: YOUNG.search(s) and W("elder", "eldest", "headman", "headwoman", "moot-speaker", "warden", "reeve", "keeper of the moot-stone", "steward", "village head").search(s)),

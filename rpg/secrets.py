@@ -83,6 +83,7 @@ DECK = {
     "hot_bath":     ({"drink", "touch"}, {"hot spring"}, 6, None),
     "ringing":      ({"touch"}, {"stone circle", "standing stone"}, 2, None),
     "heirloom":     ({"search"}, set(), 0, None),
+    "plot":         ({"search"}, set(), 0, None),
     "magpie_nest":  ({"search", "climb"}, set(), 0, None),
     "hidden_door":  ({"search"}, {"outcrop", "barrow", "hill fort", "cave mouth", "old mine"}, 1, None),
 }
@@ -140,11 +141,22 @@ def cond_met(w, cond):
         return w.time_of_day == "dawn" or (w.is_dark and "full" in w.moon_line)
     if cond == "warm":
         return w.season in ("spring", "summer")
+    if cond == "fog":
+        return w.weather == "fog"
+    if cond == "fog_or_rain":
+        return w.weather in ("fog", "rain", "drizzle", "storm")
+    if cond == "dawn":
+        return w.time_of_day == "dawn"
+    if cond == "dusk":
+        return w.time_of_day in ("dusk", "evening")
+    if cond == "day":
+        return not w.is_dark
     return True
 
 
 COND_WORDS = {"night": "by night", "dark": "after dark", "dark_or_fog": "in darkness or fog", "dawn_or_moon": "at dawn, or under a full moon",
-              "warm": "in the warm months"}
+              "warm": "in the warm months", "fog": "in fog", "fog_or_rain": "in fog or rain", "dawn": "at dawn", "dusk": "at dusk",
+              "day": "by daylight"}
 
 
 # how many of each secret one world holds: the ones that start a story are kept rare, so they stay special
@@ -999,7 +1011,8 @@ SECRET = {"cache": s_cache, "old_blade": s_old_blade, "nest": s_nest, "healing":
           "cursed_stone": s_cursed_stone, "magpie": s_magpie, "magpie_nest": s_magpie_nest, "slip": s_slip, "stuck": s_stuck, "bees": s_bees,
           "badger": s_badger, "keepsake": s_keepsake, "letter": s_letter, "bones": s_bones, "snared": s_snared, "clue": s_clue, "echo": s_echo,
           "chalk_walk": s_chalk_walk, "hot_bath": s_hot_bath, "ringing": s_ringing, "hidden_door": s_hidden_door,
-          "heirloom": lambda g, f, sec: __import__("rpg.living", fromlist=["x"]).heirloom_found(g, f, sec)}
+          "heirloom": lambda g, f, sec: __import__("rpg.living", fromlist=["x"]).heirloom_found(g, f, sec),
+          "plot": lambda g, f, sec: __import__("rpg.plots", fromlist=["x"]).searched(g, f, sec)}
 
 
 def offer(g, f, it):

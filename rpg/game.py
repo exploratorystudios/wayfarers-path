@@ -662,7 +662,9 @@ class Game:
             p.inv.append(gift)
             self.emit(n.say("{npc_gives}", dict(name=npc.name, a_thing=article(gift.name))))
         if not self.pending and not self.over:
-            LV.offer_trouble(self, npc)
+            if not LV.offer_trouble(self, npc) and not self.pending:
+                from . import plots
+                plots.offer(self, npc)
 
     def cmd_give(self, rest):
         t, p = self.world.tiles[self.pos], self.player

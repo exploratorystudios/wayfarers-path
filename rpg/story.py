@@ -218,6 +218,7 @@ def finish(g, q, text=None, success=True):
     if bits:
         g.emit("(Reward: " + ", ".join(bits) + ".)")
     g.emit(f"(Journal: {q['title']} - done.)")
+    g._last_journal = q["title"]
     record(g, r.get("chronicle") or f"You completed: {q['title']}.", "quest", pos=g.pos,
            story=r.get("story"), like=r.get("story_like", 2))
     if q.get("on_done"):

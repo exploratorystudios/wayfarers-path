@@ -216,6 +216,28 @@ menu in the action bar. Each class levels differently. In testing, the advisor
 bot wins 72-100% of worlds depending on class. Saves from before classes load
 as a classless Wanderer.
 
+## Procedural stories (`rpg/plots.py`)
+
+Besides the village troubles, almost anyone you talk to may ask for help with a
+story the game assembles on the spot from five layers:
+
+| Layer | Count | Examples |
+|-------|-------|----------|
+| Motive | 36 | grief, debt, love, guilt, rivalry, a vow, an omen, a wager, a betrothal |
+| Object | 24 | a lost child or runaway apprentice, a bolted horse or lost hawk, a beast or something dead, a stolen charter or keepsake, a fouled shrine, a neglected grave, news from another village |
+| Obstacles (one to three) | 40 | tracks at a landmark, a sign that only shows by moonlight or in fog, a guardian beast, a witness in another village, a toll-keeper or fence to pay, persuade or lean on, someone who wants a whetstone or a herb first, an offering at a shrine |
+| Twist (about half the time) | 32 | the beast is guarding young; the runaway doesn't want to come back; the heirloom is cursed, or a fake, or was never theirs; the asker lied; the news is bad and nobody has told them |
+| Ending (your choice) | 20 | return it, spare it, let them stay, take it to its true owner, destroy it, keep it, sell it to a rival, tell the truth or a kinder story, expose what you found |
+
+Every layer is filled from the world: real villagers in real villages, landmarks
+and regions near the asker, creatures that live there, the season. The 40
+obstacles are stories laid over a few things the game already does (search a
+landmark, fight, talk to someone, pay or persuade them using your stats, bring
+something, deliver something, go somewhere), and each step becomes an ordinary
+journal errand, so the map, the advisor and saving all work. Recently used pieces
+are avoided. In testing, 413 generated stories all ran to their end, and no two
+had the same shape.
+
 ## Stats, schools and books (`rpg/arts.py`)
 
 You have four stats, **might**, **grace**, **wits** and **spirit**. The game
@@ -377,6 +399,7 @@ load, so wording fixes reach old games too.
 | Landmark secrets and what the verbs do | `rpg/secrets.py` (`DECK`, `HINTS`, one function per secret) |
 | Road encounters                    | `rpg/encounters.py` (`DECK`, a start function and outcomes) |
 | Village troubles                   | `rpg/troubles.py` (`KINDS`, `TITLES`, `ASKS`, variant lists) |
+| Procedural stories                 | `rpg/plots.py` (`MOTIVES`, `OBJECTS`, `OBSTACLES`, `TWISTS`, `ENDINGS`) |
 | Festivals                          | `rpg/living.py` (`FESTIVALS`) |
 | How many of each landmark secret a world holds; the dead travellers | `rpg/secrets.py` (`CAP`, `TRAVELLERS`) |
 | Name traditions (retrain after editing the list) | `../fantasy_names.txt`, then `python3 tools/name_analysis.py` |

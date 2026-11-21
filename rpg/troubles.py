@@ -501,6 +501,9 @@ def _trouble_feud(g, d):
 def found(g, q):
     """Arriving where a 'find' quest points."""
     w = g.world
+    if q["data"].get("plot") and not q["data"].get("search"):
+        from . import plots
+        return plots.arrived(g, q)
     if q["data"].get("search"):
         g.emit(f"(This is the place. Search the {q['data'].get('noun', 'landmark')}.)")
         return
@@ -532,6 +535,9 @@ def found(g, q):
 
 
 def quest_done(g, q):
+    if q.get("on_done") == "plot":
+        from . import plots
+        return plots.step_done(g, q)
     if q.get("on_done") != "trouble":
         return
     w = g.world
