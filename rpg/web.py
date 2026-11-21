@@ -12,7 +12,6 @@ Binds to 127.0.0.1 only. Endpoints:
 """
 import json
 import threading
-import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -207,6 +206,93 @@ CLASS_LIST = [dict(id=k, name=c["name"], blurb=c["blurb"], difficulty=c["difficu
 SESSION = Session()
 
 
+def _query(query):
+    return dict(part.partition("=")[::2] for part in query.split("&") if part)
+
+
+def dispatch(method, path, query="", data=None):
+    """Answer one API request: returns (json-able object, status code).
+
+    Shared by the local HTTP server below and the in-browser build (static/), which runs this
+    module under Pyodide and calls dispatch() directly instead of going over the network."""
+    data = data or {}
+    if method == "GET":
+        if path == "/api/name":
+            import random as _r
+            from . import names as NM
+            q = _query(query)
+            gender = q.get("gender") if q.get("gender") in ("female", "male", "any") else "any"
+            culture = q.get("culture") if q.get("culture") in ("Archaic", "Westron", "Northish", "Southron") else _r.choice(["Archaic", "Westron", "Northish", "Southron"])
+            return dict(name=NM.gen().generate(_r.Random(), culture, gender), culture=culture, gender=gender), 200
+        if path == "/api/atlas":
+            with SESSION.lock:
+                if SESSION.game is None:
+                    return {"error": "no game running"}, 400
+                return atlas(SESSION.game), 200
+        if path == "/api/state":
+            v = _query(query).get("since", "")
+            with SESSION.lock:
+                return SESSION.state(int(v) if v.isdigit() else 0), 200
+        return {"error": "not found"}, 404
+    since = int(data.get("since") or 0)
+    with SESSION.lock:
+        try:
+            if path == "/api/new":
+                seed = data.get("seed")
+                seed = int(seed) if str(seed or "").strip().isdigit() else None
+                SESSION.new(str(data.get("name") or "")[:40].strip(), seed, str(data.get("klass") or ""))
+                since = 0
+            elif path == "/api/load":
+                SESSION.load(str(data.get("slot") or "autosave"))
+                since = 0
+            elif path == "/api/settings":
+                if SESSION.game is None:
+                    return {"error": "no game running"}, 400
+                if "hints" in data:
+                    SESSION.game.show_hints = bool(data["hints"])
+            elif path == "/api/saves":
+                op, slot = data.get("op"), str(data.get("slot") or "")
+                if op == "delete":
+                    Game.delete_save(slot)
+                    if SESSION.game and getattr(SESSION.game, "save_slot", None) == Game.safe_slot(slot):
+                        SESSION.game.save_slot = None
+                elif op == "rename":
+                    new = Game.rename_save(slot, str(data.get("to") or ""))
+                    if SESSION.game and getattr(SESSION.game, "save_slot", None) == Game.safe_slot(slot):
+                        SESSION.game.save_slot = new
+                elif op == "save":
+                    if SESSION.game is None:
+                        return {"error": "no game running"}, 400
+                    if not Game.safe_slot(slot):
+                        raise ValueError("a save name needs at least one letter or number")
+                    SESSION.command("save " + Game.safe_slot(slot))
+                else:
+                    return {"error": "unknown save operation"}, 400
+            elif path == "/api/cmd":
+                if SESSION.game is None:
+                    return {"error": "no game running"}, 400
+                SESSION.command(str(data.get("cmd") or ""))
+            else:
+                return {"error": "not found"}, 404
+        except FileNotFoundError:
+            return {"error": "no such save"}, 400
+        except ValueError as e:
+            return {"error": str(e)}, 400
+        except Exception as e:
+            return {"error": f"{type(e).__name__}: {e}"}, 500
+        return SESSION.state(since), 200
+
+
+def autosave():
+    """Save the running game to 'autosave' if it is worth keeping (on quit / page close)."""
+    with SESSION.lock:
+        g = SESSION.game
+        if g and not g.died and not g.over:
+            g.save("autosave", quiet=True)
+            return True
+    return False
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "WayfarersPath/1.0"
 
@@ -222,6 +308,16 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def send_file(self, file, ctype, cache=None):
+        data = file.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        if cache:
+            self.send_header("Cache-Control", cache)
+        self.end_headers()
+        self.wfile.write(data)
+
     def body(self):
         n = int(self.headers.get("Content-Length") or 0)
         if n > MAX_BODY:
@@ -231,51 +327,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path, _, query = self.path.partition("?")
         if path in ("/", "/index.html"):
-            data = (STATIC / "index.html").read_bytes()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-            return
-        if path == "/api/name":
-            import random as _r
-            from . import names as NM
-            q = dict(part.partition("=")[::2] for part in query.split("&") if part)
-            gender = q.get("gender") if q.get("gender") in ("female", "male", "any") else "any"
-            culture = q.get("culture") if q.get("culture") in ("Archaic", "Westron", "Northish", "Southron") else _r.choice(["Archaic", "Westron", "Northish", "Southron"])
-            return self.send_json(dict(name=NM.gen().generate(_r.Random(), culture, gender), culture=culture, gender=gender))
+            return self.send_file(STATIC / "index.html", "text/html; charset=utf-8")
         if path.startswith("/fonts/") and path[7:] in FONTS:      # bundled map lettering (SIL Open Font License)
-            data = (STATIC / "fonts" / path[7:]).read_bytes()
-            self.send_response(200)
-            self.send_header("Content-Type", "font/woff2")
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "max-age=86400")
-            self.end_headers()
-            self.wfile.write(data)
-            return
+            return self.send_file(STATIC / "fonts" / path[7:], "font/woff2", "max-age=86400")
         if path in ("/atlas.js", "/atlas-worker.js"):
-            data = (STATIC / path[1:]).read_bytes()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/javascript; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-            return
-        if path == "/api/atlas":
-            with SESSION.lock:
-                if SESSION.game is None:
-                    return self.send_json({"error": "no game running"}, 400)
-                return self.send_json(atlas(SESSION.game))
-        if path == "/api/state":
-            since = 0
-            for part in query.split("&"):
-                k, _, v = part.partition("=")
-                if k == "since" and v.isdigit():
-                    since = int(v)
-            with SESSION.lock:
-                return self.send_json(SESSION.state(since))
-        self.send_json({"error": "not found"}, 404)
+            return self.send_file(STATIC / path[1:], "text/javascript; charset=utf-8")
+        self.send_json(*dispatch("GET", path, query))
 
     def do_POST(self):
         # same-origin only: refuse cross-site form posts from other pages
@@ -286,56 +343,11 @@ class Handler(BaseHTTPRequestHandler):
             data = self.body()
         except Exception as e:
             return self.send_json({"error": str(e)}, 400)
-        since = int(data.get("since") or 0)
-        with SESSION.lock:
-            try:
-                if self.path == "/api/new":
-                    seed = data.get("seed")
-                    seed = int(seed) if str(seed or "").strip().isdigit() else None
-                    SESSION.new(str(data.get("name") or "")[:40].strip(), seed, str(data.get("klass") or ""))
-                    since = 0
-                elif self.path == "/api/load":
-                    SESSION.load(str(data.get("slot") or "autosave"))
-                    since = 0
-                elif self.path == "/api/settings":
-                    if SESSION.game is None:
-                        return self.send_json({"error": "no game running"}, 400)
-                    if "hints" in data:
-                        SESSION.game.show_hints = bool(data["hints"])
-                elif self.path == "/api/saves":
-                    op, slot = data.get("op"), str(data.get("slot") or "")
-                    if op == "delete":
-                        Game.delete_save(slot)
-                        if SESSION.game and getattr(SESSION.game, "save_slot", None) == Game.safe_slot(slot):
-                            SESSION.game.save_slot = None
-                    elif op == "rename":
-                        new = Game.rename_save(slot, str(data.get("to") or ""))
-                        if SESSION.game and getattr(SESSION.game, "save_slot", None) == Game.safe_slot(slot):
-                            SESSION.game.save_slot = new
-                    elif op == "save":
-                        if SESSION.game is None:
-                            return self.send_json({"error": "no game running"}, 400)
-                        if not Game.safe_slot(slot):
-                            raise ValueError("a save name needs at least one letter or number")
-                        SESSION.command("save " + Game.safe_slot(slot))
-                    else:
-                        return self.send_json({"error": "unknown save operation"}, 400)
-                elif self.path == "/api/cmd":
-                    if SESSION.game is None:
-                        return self.send_json({"error": "no game running"}, 400)
-                    SESSION.command(str(data.get("cmd") or ""))
-                else:
-                    return self.send_json({"error": "not found"}, 404)
-            except FileNotFoundError:
-                return self.send_json({"error": "no such save"}, 400)
-            except ValueError as e:
-                return self.send_json({"error": str(e)}, 400)
-            except Exception as e:
-                return self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
-            return self.send_json(SESSION.state(since))
+        self.send_json(*dispatch("POST", self.path, "", data))
 
 
 def serve(port=8765, open_browser=True):
+    import webbrowser
     httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     url = f"http://127.0.0.1:{port}/"
     print(f"Wayfarer's Path is running at {url}  (Ctrl-C to stop; your progress autosaves)")
@@ -346,9 +358,6 @@ def serve(port=8765, open_browser=True):
     except KeyboardInterrupt:
         pass
     finally:
-        with SESSION.lock:
-            g = SESSION.game
-            if g and not g.died and not g.over:
-                g.save("autosave", quiet=True)
-                print("\nProgress saved to 'autosave'.")
+        if autosave():
+            print("\nProgress saved to 'autosave'.")
         httpd.server_close()

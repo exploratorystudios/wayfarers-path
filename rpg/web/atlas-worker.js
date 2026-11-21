@@ -1,15 +1,15 @@
 // Paints the full map in the background, so it's ready the moment you open it.
 // The page posts {key, data, scale}; this paints the map and your road onto
 // offscreen canvases and hands back finished bitmaps.
-importScripts("/atlas.js");
+importScripts("atlas.js");
 
 let fontsReady = null;
 function loadFonts() {
   if (fontsReady) return fontsReady;
   const faces = [
-    ["IM Fell English", "/fonts/IMFellEnglish-Regular.woff2", {}],
-    ["IM Fell English", "/fonts/IMFellEnglish-Italic.woff2", { style: "italic" }],
-    ["IM Fell English SC", "/fonts/IMFellEnglishSC-Regular.woff2", {}],
+    ["IM Fell English", "fonts/IMFellEnglish-Regular.woff2", {}],
+    ["IM Fell English", "fonts/IMFellEnglish-Italic.woff2", { style: "italic" }],
+    ["IM Fell English SC", "fonts/IMFellEnglishSC-Regular.woff2", {}],
   ];
   fontsReady = Promise.all(faces.map(([family, url, desc]) => {
     try {

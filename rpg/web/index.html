@@ -708,7 +708,7 @@ function renderSaves(saves) {   // compact list on the start screen
     const row = document.createElement("div"); row.className = "sv";
     row.innerHTML = `<div class="st">${saveTitle(s)}</div><div class="sd">${esc(saveDetail(s))}</div><div class="sb"></div>`;
     const b = document.createElement("button"); b.textContent = "Load"; b.type = "button"; b.disabled = !!s.broken;
-    b.onclick = () => { startAtTop = true; post("/api/load", {slot: s.slot}).then(r => { if (r.error) startAtTop = false; else closeStart(); }); };
+    b.onclick = () => { startAtTop = true; post("api/load", {slot: s.slot}).then(r => { if (r.error) startAtTop = false; else closeStart(); }); };
     row.querySelector(".sb").appendChild(b);
     list.appendChild(row);
   }
@@ -728,7 +728,7 @@ function closeSaves() { $("savesDlg").hidden = true; if (!(state && state.game))
 
 async function saveOp(body) {
   $("svErr").textContent = "";
-  const r = await fetch("/api/saves", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({...body, since: total})});
+  const r = await fetch("api/saves", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({...body, since: total})});
   const s = await r.json();
   if (s.error) { $("svErr").textContent = s.error; return false; }
   apply(s); return true;
@@ -782,7 +782,7 @@ function drawSaves() {
 }
 function loadSlot(slot) {
   startAtTop = true;
-  fetch("/api/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({slot, since: total})})
+  fetch("api/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({slot, since: total})})
     .then(r => r.json()).then(s => { if (s.error) { startAtTop = false; $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; $("cmd").focus(); });
 }
 function trySave(name, force) {
@@ -819,7 +819,7 @@ async function send(cmd) {
   if (!cmd || busy || !state || !state.game) return;
   busy = true;
   history.unshift(cmd); hIdx = -1;
-  try { await post("/api/cmd", {cmd}); } finally { busy = false; $("cmd").focus(); }
+  try { await post("api/cmd", {cmd}); } finally { busy = false; $("cmd").focus(); }
 }
 
 function openStart(closable) { $("start").hidden = false; $("closeStart").hidden = !closable; $("err").textContent = ""; setTimeout(() => $("nm").focus(), 50); }
@@ -828,7 +828,7 @@ function closeStart() { $("start").hidden = true; $("cmd").focus({preventScroll:
 $("newForm").onsubmit = (e) => {
   e.preventDefault();
   startAtTop = true;
-  post("/api/new", {name: $("nm").value, seed: $("seed").value, klass: chosenClass}).then(r => { if (r.error) startAtTop = false; else closeStart(); });
+  post("api/new", {name: $("nm").value, seed: $("seed").value, klass: chosenClass}).then(r => { if (r.error) startAtTop = false; else closeStart(); });
 };
 $("closeStart").onclick = closeStart;
 // ---------------------------------------------------------------- the painted map
@@ -866,7 +866,7 @@ function atlasKey(d) {
 }
 try {
   if (typeof OffscreenCanvas !== "undefined" && typeof Worker !== "undefined") {
-    atlas.worker = new Worker("/atlas-worker.js");
+    atlas.worker = new Worker("atlas-worker.js");
     atlas.worker.onmessage = (e) => {
       atlas.busy = false;
       if (e.data.error) { atlas.worker = null; return paintNext(); }       // fall back to painting on the page
@@ -881,7 +881,7 @@ function scheduleAtlas() {               // after each turn: fetch what the map 
   clearTimeout(atlas.timer);
   atlas.timer = setTimeout(async () => {
     try {
-      const d = await (await fetch("/api/atlas")).json();
+      const d = await (await fetch("api/atlas")).json();
       if (d.error) return;
       const key = atlasKey(d);
       if (key === atlas.key && atlas.map) { atlas.data = d; return; }
@@ -1010,13 +1010,13 @@ $("atlasSave").onclick = () => {
 };
 $("rollName").onclick = async () => {
   try {
-    const r = await (await fetch("/api/name?gender=" + $("nmList").value)).json();
+    const r = await (await fetch("api/name?gender=" + $("nmList").value)).json();
     $("nm").value = r.name;
   } catch (e) { $("err").textContent = "Couldn't invent a name just now."; }
 };
 $("menuBtn").onclick = () => openStart(!!(state && state.game));
 $("saveBtn").onclick = () => send("save");
-const setHints = (on) => state && state.game && post("/api/settings", {hints: on});
+const setHints = (on) => state && state.game && post("api/settings", {hints: on});
 $("hintsBtn").onclick = () => setHints(!state.game.hints);
 $("hideHints").onclick = () => setHints(false);
 document.querySelectorAll("#compass button").forEach(b => b.onclick = () => send(b.dataset.dir));
@@ -1056,7 +1056,7 @@ document.addEventListener("keydown", (e) => {
   $("cmd").focus();
 });
 
-fetch("/api/state?since=0").then(r => r.json()).then(apply);
+fetch("api/state?since=0").then(r => r.json()).then(apply);
 </script>
 </body>
 </html>

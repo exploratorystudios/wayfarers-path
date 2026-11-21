@@ -10,6 +10,24 @@ python3 play.py --classic [seed]    # plain terminal version
 python3 play.py --classic --load X  # resume a save in the terminal
 ```
 
+### Playing on GitHub Pages
+
+The same game also runs with no server at all. `tools/build_static.py` copies the page into `site/`,
+zips the `rpg/` package into `rpg.zip` and adds `static/py-worker.js`, which runs the Python game in
+the browser with [Pyodide](https://pyodide.org) in a background worker. A small bridge
+(`static/bridge.js`) answers the page's `api/...` requests from that worker instead of the network,
+so the page itself is identical to the local one. Saves are written to an IndexedDB-backed folder,
+so they stay in that browser on that device; `autosave` is refreshed after every turn outside a
+fight, since closing the tab is how you quit. The first visit downloads about 10 MB of runtime, and
+later visits load it from the browser cache.
+
+`.github/workflows/pages.yml` builds and deploys this on every push to `main`. To turn it on, set
+the repository's **Settings → Pages → Source** to **GitHub Actions**. To try the build locally:
+
+```
+python3 tools/build_static.py && python3 -m http.server -d site 8000   # then open http://127.0.0.1:8000
+```
+
 ### The web page
 
 * **Story log** on the left.
@@ -57,7 +75,7 @@ In game (either version): `save [slot]` (plain `save` reuses your current slot),
 `saves` (lists each save's character, level, day, place and time), `rename [old] [new]`,
 `delete [slot]` (asks you to confirm). On the web page the **Saves** button opens a manager that
 does all of this, warns before replacing a save or loading over unsaved progress, and marks
-which save the current game belongs to. Quitting autosaves to `autosave`; after death you can reload. Saves live in `saves/` (Python pickles, so only load
+which save the current game belongs to. Quitting autosaves to `autosave`; after death you can reload. Saves live in `saves/` (in the browser's storage on the GitHub Pages build; Python pickles, so only load
 files you made yourself).
 
 No dependencies; Python 3.8+.
