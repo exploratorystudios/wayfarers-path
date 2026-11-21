@@ -24,6 +24,8 @@ from .world import DIRS
 
 STATIC = Path(__file__).resolve().parent / "web"
 FONTS = {"IMFellEnglish-Regular.woff2", "IMFellEnglish-Italic.woff2", "IMFellEnglishSC-Regular.woff2"}
+APP_FILES = {"manifest.webmanifest": "application/manifest+json", "icon.svg": "image/svg+xml",
+             "icon-192.png": "image/png", "icon-512.png": "image/png"}
 MAX_LOG = 3000
 MAX_BODY = 4096
 NO_WRAP = 10 ** 6
@@ -332,6 +334,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_file(STATIC / "fonts" / path[7:], "font/woff2", "max-age=86400")
         if path in ("/atlas.js", "/atlas-worker.js"):
             return self.send_file(STATIC / path[1:], "text/javascript; charset=utf-8")
+        if path[1:] in APP_FILES:                                   # home-screen icon and manifest
+            return self.send_file(STATIC / path[1:], APP_FILES[path[1:]], "max-age=86400")
         self.send_json(*dispatch("GET", path, query))
 
     def do_POST(self):

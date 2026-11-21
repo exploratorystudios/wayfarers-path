@@ -10,6 +10,25 @@ python3 play.py --classic [seed]    # plain terminal version
 python3 play.py --classic --load X  # resume a save in the terminal
 ```
 
+### On a phone
+
+Narrower than 760px, the page switches to a phone layout:
+- **Tabs:** a bar along the bottom switches between Story, Map, Traveller, Journal and Pack. A dot
+  marks a tab with something new (story text, a journal entry, an item), and red means trouble (a
+  fight, or low health).
+- **Status strip:** a strip under the place name always shows health, your class resource, coins
+  and the time; tap it for the full Traveller page.
+- **Menus:** action menus and the ☰ menu open as sheets from the bottom of the screen. The phone's
+  Back button closes a sheet, or steps up one submenu, instead of leaving the game.
+- **Suggestions:** ideas scroll sideways, and a pending choice is listed in full.
+- **Map:** tap a neighbouring tile to walk there, or any tile to name it. On the painted map, pinch
+  and drag, and tap a marker to see which errand it belongs to.
+- **Reading:** "hide actions" tucks the controls away to leave more room for the story, and the ☰
+  menu has a text-size setting. Both are remembered.
+- **Keyboard:** it only opens when you tap the command box.
+- **Home screen:** the page can be added to a home screen as an app (it has a web manifest and
+  icon).
+
 ### Playing on GitHub Pages
 
 The same game also runs with no server at all. `tools/build_static.py` copies the page into `site/`,

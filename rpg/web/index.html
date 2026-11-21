@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#1e1b16" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fbf6ea" media="(prefers-color-scheme: light)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Wayfarer's Path">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Wayfarer's Path</title>
 <style>
 :root {
@@ -40,7 +48,7 @@ header .place { color: var(--ink-soft); font-family: var(--serif); font-style: i
 
 /* ---------------------------------------------------------------- story */
 .story { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
-#log { position: relative; flex: 1; overflow-y: auto; padding: 22px max(22px, 6%) 12px; font-family: var(--serif); font-size: 1.08rem; line-height: 1.6; }
+#log { position: relative; flex: 1; overflow-y: auto; padding: 22px max(22px, 6%) 12px; font-family: var(--serif); font-size: calc(1.08rem * var(--log-scale, 1)); line-height: 1.6; }
 #log p { margin: 0 0 .7em; max-width: 46em; }
 #log .new { animation: fade .5s ease both; }
 @keyframes fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
@@ -255,7 +263,7 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 .linkbtn { background: none; border: none; color: var(--accent); padding: 0; font-size: .82rem; text-decoration: underline; }
 @media (max-width: 560px) { .sv { grid-template-columns: minmax(0, 1fr); } .sv .sb { grid-column: 1; grid-row: auto; justify-content: flex-start; } }
 
-@media (max-width: 900px) {
+@media (min-width: 761px) and (max-width: 900px) {
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); height: auto; min-height: 100vh; }
   header { order: -2; flex-wrap: wrap; padding: 10px 16px; }
   header .place { flex-basis: 100%; order: 3; }
@@ -268,6 +276,139 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
   .ideas { max-height: 34vh; overflow-y: auto; }
   .ideas, #cmdform, .actions { padding-left: 16px; padding-right: 16px; }
   .pop { left: 8px; width: calc(100% - 16px); max-height: 55vh; }
+}
+
+/* ---------------------------------------------------------------- phones */
+.mbtn, .hud, .tabs, #sendBtn, #dockToggle { display: none; }
+.shade { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 25; }
+.shade[hidden], .sheet[hidden] { display: none; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 85dvh; overflow-y: auto; background: var(--panel);
+  border: 1px solid var(--line); border-bottom: none; border-radius: 16px 16px 0 0; box-shadow: 0 -14px 40px rgba(0,0,0,.35);
+  padding: 4px 12px calc(10px + env(safe-area-inset-bottom)); }
+.sheet .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 8px auto 8px; }
+.sheet .mi { display: block; width: 100%; text-align: left; padding: 12px 10px; border: none; border-radius: 10px; background: none; color: var(--ink); font-size: 1rem; }
+.sheet .mi:active, .sheet .mi:hover { background: var(--panel-2); }
+.sheet small { display: block; font-size: .8rem; color: var(--ink-soft); margin-top: 1px; }
+.sheet b { font-weight: 600; }
+.sheet .mi:disabled { opacity: .5; }
+.sheet .mrow { display: flex; align-items: center; gap: 12px; padding: 10px; border-top: 1px solid var(--line); }
+.sheet .mrow > span:first-child { flex: 1; }
+.sheet .switch { border: none; padding: 6px; }
+.sheet .switch .track { width: 44px; height: 26px; border-radius: 13px; }
+.sheet .switch .knob { width: 20px; height: 20px; top: 2px; left: 2px; }
+.sheet .switch[aria-checked="true"] .knob { transform: translateX(18px); }
+.sheet .sizer { display: flex; gap: 8px; }
+.sheet .sizer button { width: 48px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); }
+.sheet .mi.close { text-align: center; margin-top: 6px; border: 1px solid var(--line); color: var(--ink-soft); }
+
+@media (max-width: 760px) {
+  html, body { overscroll-behavior: none; }
+  button, input, select, .cell { touch-action: manipulation; }
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; height: 100vh; height: 100dvh; }
+  header { flex-wrap: wrap; gap: 6px 10px; padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
+  header h1, header .switch, header .hbtn { display: none; }
+  header .place { flex: 1; min-width: 0; font-size: 1rem; color: var(--ink); }
+  .mbtn { display: grid; place-items: center; width: 42px; height: 38px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); color: var(--ink-soft); padding: 0; }
+  .hud { display: flex; flex-basis: 100%; align-items: center; gap: 12px; padding: 0; border: none; background: none; text-align: left;
+    font-size: .78rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; min-height: 18px; }
+  .hud .meter { display: inline-flex; align-items: center; gap: 5px; }
+  .hud .meter i { display: inline-block; width: 44px; height: 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+  .hud .meter u { display: block; height: 100%; background: var(--good); transition: width .4s ease; }
+  .hud .meter.low u { background: var(--bad); } .hud .meter.low b { color: var(--bad); }
+  .hud .meter.res u { background: #6f8fd6; } .hud .meter.faith u { background: #d6b25a; } .hud .meter.stamina u { background: #77b39a; }
+  .hud b { color: var(--ink); font-weight: 600; }
+  .hud .fight { color: var(--bad); font-weight: 700; }
+  .hud .when { margin-left: auto; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; }
+
+  .story, aside { grid-row: 2; grid-column: 1; min-height: 0; }
+  body:not([data-tab="story"]) .story { display: none; }
+  body[data-tab="story"] aside { display: none; }
+  .story { border-right: none; }
+  aside { overflow-y: auto; overscroll-behavior: contain; padding: 12px max(12px, env(safe-area-inset-right)) 16px max(12px, env(safe-area-inset-left)); }
+  aside .panel { display: none; }
+  body[data-tab="map"] #mapPanel, body[data-tab="status"] #statusPanel, body[data-tab="journal"] #journalPanel, body[data-tab="inv"] #invPanel { display: block; }
+  aside .panel h2 { font-size: .76rem; }
+  .maphead button { font-size: .8rem; padding: 7px 12px; }
+  #maptip { font-size: .9rem; min-height: 2.6em; }
+  .legend { font-size: .74rem; }
+  .stat-row { font-size: .95rem; margin: 5px 0; }
+  .bar { height: 10px; }
+  .journal { font-size: .95rem; } .journal li { margin-bottom: 10px; }
+  .inv-item { font-size: .98rem; padding: 4px 0; min-height: 46px; }
+  .inv-item .act { font-size: .85rem; padding: 8px 12px; border-radius: 8px; }
+  .inv-item .nm { min-height: 40px; }
+
+  #log { padding: 14px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); font-size: calc(1.02rem * var(--log-scale, 1)); overscroll-behavior: contain; }
+  #log .pre { font-size: .74rem; }
+  .dock { box-shadow: 0 -8px 20px rgba(0,0,0,.18); }
+  #dockToggle { display: block; width: 100%; height: 22px; padding: 0; border: none; border-top: 1px solid var(--line); background: var(--panel); color: var(--ink-faint); font-size: .72rem; letter-spacing: .04em; }
+  body.dock-min .actions, body.dock-min .ideas:not(.choosing) { display: none !important; }
+
+  .ideas { padding: 6px 12px 6px; border-top: none; }
+  .ideas-head { font-size: .78rem; margin-bottom: 5px; }
+  .ideas-head #hideHints { display: none !important; }
+  .sg-list { display: flex; overflow-x: auto; gap: 8px; scroll-snap-type: x proximity; padding-bottom: 4px; scrollbar-width: none; }
+  .sg-list::-webkit-scrollbar { display: none; }
+  .sg { flex: 0 0 min(250px, 74vw); grid-template-columns: 1fr; scroll-snap-align: start; padding: 9px 11px; }
+  .sg kbd, .row kbd { display: none; }
+  .sg .why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sg .why code { display: none; }
+  .ideas.choosing .sg-list { flex-direction: column; overflow-x: visible; overflow-y: auto; max-height: 42dvh; }
+  .ideas.choosing .sg { flex: none; }
+  .ideas.choosing .sg .why { -webkit-line-clamp: 4; }
+
+  .actions { padding: 6px 12px 4px; gap: 10px; flex-wrap: nowrap; align-items: stretch; border-top: 1px solid var(--line); }
+  .compass { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 34px); gap: 3px; flex: none; }
+  .compass button { font-size: .82rem; border-radius: 7px; }
+  .groups { display: grid; grid-auto-flow: column; grid-template-rows: repeat(3, 34px); gap: 3px 6px; overflow-x: auto; align-content: start;
+    scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); padding-right: 24px; }
+  .groups::-webkit-scrollbar { display: none; }
+  .groups .lab { display: none; }
+  .gbtn { padding: 0 12px; font-size: .86rem; white-space: nowrap; }
+
+  #cmdform { padding: 6px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); gap: 8px; }
+  #cmdform > span { display: none; }
+  #cmd { font-size: 16px; padding: 10px 12px; }
+  #sendBtn { display: grid; place-items: center; width: 44px; height: 42px; flex: none; border: none; border-radius: 9px; background: var(--accent); color: var(--accent-ink); padding: 0; }
+
+  .tabs { display: grid; grid-row: 3; grid-column: 1; grid-template-columns: repeat(5, 1fr); background: var(--panel); border-top: 1px solid var(--line);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .tabs button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 54px;
+    border: none; background: none; color: var(--ink-faint); font-size: .68rem; letter-spacing: .02em; padding: 4px 0; }
+  .tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+  .tabs button[aria-selected="true"] { color: var(--accent); }
+  .tabs button[aria-selected="true"]::before { content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 2px; border-radius: 0 0 2px 2px; background: var(--accent); }
+  .tabs .dot { display: none; position: absolute; top: 7px; left: calc(50% + 9px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--panel); }
+  .tabs button.badge .dot { display: block; }
+  .tabs button.alarm .dot { display: block; background: var(--bad); }
+
+  .pop { position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 78dvh; border-radius: 16px 16px 0 0; z-index: 30;
+    padding-bottom: env(safe-area-inset-bottom); border-bottom: none; }
+  .pop-head { padding: 10px 12px; }
+  .pop-head span { font-size: 1rem; }
+  .pop-head button { font-size: 1.6rem; padding: 2px 12px; min-width: 44px; min-height: 40px; }
+  .pop-body { padding: 4px 6px 10px; }
+  .row { grid-template-columns: 1fr auto; padding: 12px 10px; }
+  .row .t { font-size: 1rem; } .row .d { grid-column: 1 / 3; font-size: .84rem; } .row .more { font-size: 1.1rem; }
+  .textparam input { font-size: 16px; padding: 10px; } .textparam button { padding: 10px 16px; }
+  .chips button { font-size: .85rem; padding: 7px 12px; border-radius: 16px; }
+
+  .overlay { padding: 10px; }
+  .card { padding: 18px 16px; max-height: calc(100dvh - 20px); border-radius: 12px; }
+  .card h2 { font-size: 1.4rem; }
+  .card input { font-size: 16px; }
+  .classes { grid-template-columns: 1fr; }
+  .nmrow { flex-wrap: wrap; } .nmrow input { flex-basis: 100%; } .nmrow select, .nmrow button { flex: 1; min-height: 42px; }
+  .card .close { font-size: 1.8rem; padding: 0 6px; }
+  .sv .sb button, .svnew button { padding: 8px 12px; }
+  .svnew input, .sv input { font-size: 16px; }
+  .overlay.atlas { padding: 0; background: #1d150d; backdrop-filter: none; }
+  .atlas-wrap { width: 100%; height: 100%; gap: 0; }
+  .atlas-bar { flex-wrap: wrap; justify-content: center; gap: 6px; padding: max(8px, env(safe-area-inset-top)) 10px 8px; }
+  .atlas-bar .sp { flex-basis: 100%; text-align: center; font-size: .8rem; }
+  .atlas-bar button { padding: 8px 13px; font-size: .9rem; }
+  .atlas-view { width: 100vw; flex: 1; height: auto; border-radius: 0; }
+  #atlasTip { max-width: 70vw; }
 }
 </style>
 <style>
@@ -286,11 +427,15 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
     <button class="hbtn" id="saveBtn" title="Save to your current slot">Save</button>
     <button class="hbtn" id="savesBtn" title="See, load, rename and delete saves">Saves</button>
     <button class="hbtn" id="menuBtn">New / Load</button>
+    <button class="mbtn" id="moreBtn" type="button" aria-label="Menu" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="hud" id="hud" type="button" aria-label="Show your traveller's details"></button>
   </header>
 
   <section class="story">
     <div id="log" aria-live="polite"></div>
     <div class="dock">
+    <button type="button" id="dockToggle" aria-expanded="true">hide actions ▾</button>
     <div class="ideas" id="ideas">
       <div class="ideas-head">
         <span id="ideasTitle"></span><span class="spacer"></span>
@@ -312,13 +457,14 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
     </div>
     <form id="cmdform" autocomplete="off">
       <span>›</span>
-      <input id="cmd" placeholder="Type any command — or press 1–6 for a suggestion" aria-label="Command">
+      <input id="cmd" placeholder="Type any command — or press 1–6 for a suggestion" aria-label="Command" enterkeyhint="send" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="submit" id="sendBtn" aria-label="Send command"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
     </div>
   </section>
 
   <aside>
-    <div class="panel">
+    <div class="panel" id="mapPanel">
       <h2 class="maphead">Map <button type="button" id="atlasBtn" title="Unfold a painted map of everywhere you've explored">Open map</button></h2>
       <div id="mapwrap"><canvas id="miniMap" aria-hidden="true"></canvas><div id="map"></div></div>
       <div id="maptip">Click a tile next to you to walk there.</div>
@@ -330,9 +476,33 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
       </div>
     </div>
     <div class="panel" id="statusPanel"><h2>Traveller</h2><div id="status"></div></div>
-    <div class="panel"><h2>Journal</h2><div id="journal" class="journal"></div></div>
-    <div class="panel"><h2>Pack</h2><div id="inv"></div></div>
+    <div class="panel" id="journalPanel"><h2>Journal</h2><div id="journal" class="journal"></div></div>
+    <div class="panel" id="invPanel"><h2>Pack</h2><div id="inv"></div></div>
   </aside>
+
+  <nav class="tabs" id="tabs" aria-label="Views">
+    <button type="button" data-tab="story" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h10M9 8h5"/></svg>Story<i class="dot"></i></button>
+    <button type="button" data-tab="map" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg>Map<i class="dot"></i></button>
+    <button type="button" data-tab="status" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Traveller<i class="dot"></i></button>
+    <button type="button" data-tab="journal" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></svg>Journal<i class="dot"></i></button>
+    <button type="button" data-tab="inv" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14l-1 11H6zM9 9V7a3 3 0 0 1 6 0v2"/></svg>Pack<i class="dot"></i></button>
+  </nav>
+</div>
+
+<div class="shade" id="shade" hidden></div>
+<div class="sheet" id="moreSheet" hidden role="dialog" aria-label="Menu">
+  <div class="grab"></div>
+  <button type="button" class="mi" id="mSave"><b>Save</b><small id="mSaveNote">to your current slot</small></button>
+  <button type="button" class="mi" id="mSaves"><b>Saves…</b><small>load, rename or delete saved games</small></button>
+  <button type="button" class="mi" id="mNew"><b>New game / load</b><small>start another world or continue one</small></button>
+  <button type="button" class="mi" id="mAtlas"><b>Painted map</b><small>everywhere you've been, to pinch and pan</small></button>
+  <div class="mrow"><span><b>Suggestions</b><small>ideas for what to do next</small></span>
+    <button class="switch" id="mHints" role="switch" aria-checked="true" type="button" aria-label="Suggestions"><span class="track"><span class="knob"></span></span></button></div>
+  <div class="mrow"><span><b>Keep actions open</b><small>or tuck them away to read more of the story</small></span>
+    <button class="switch" id="mDock" role="switch" aria-checked="true" type="button" aria-label="Keep actions open"><span class="track"><span class="knob"></span></span></button></div>
+  <div class="mrow"><span><b>Text size</b><small id="mSizeNote">100%</small></span>
+    <span class="sizer"><button type="button" id="mSmaller" aria-label="Smaller text">A−</button><button type="button" id="mBigger" aria-label="Larger text">A+</button></span></div>
+  <button type="button" class="mi close" id="mClose">Close</button>
 </div>
 
 <div class="overlay" id="start" hidden>
@@ -388,6 +558,15 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 <script>
 const $ = (id) => document.getElementById(id);
 let total = 0, epoch = -1, state = null, busy = false;
+// phones and tablets: a tabbed layout (see the "phones" CSS); touch screens never get the keyboard pushed at them
+const phoneMQ = matchMedia("(max-width: 760px)"), coarse = matchMedia("(pointer: coarse)").matches;
+const phone = () => phoneMQ.matches;
+const touchUI = () => phone() || coarse;
+function focusCmd() { if (!touchUI()) $("cmd").focus({preventScroll: true}); }
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("wp." + k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("wp." + k, v); } catch (e) { /* storage blocked */ } },
+};
 const history = []; let hIdx = -1;
 
 function esc(s) { return s.replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
@@ -418,6 +597,10 @@ function appendLines(lines) {
   const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
   log.querySelectorAll(".new").forEach(e => e.classList.remove("new"));
   for (const l of lines) log.appendChild(renderLine(l));
+  if (lines.length && phone() && typeof tab !== "undefined" && tab !== "story") {
+    log.dataset.unread = "1";
+    document.querySelector('#tabs button[data-tab="story"]').classList.add("badge");
+  }
   while (log.childElementCount > 1500) log.firstElementChild.remove();
   if (startAtTop && lines.length) {
     startAtTop = false;
@@ -447,6 +630,8 @@ function apply(s) {
   if (!s.game) { if ($("savesDlg").hidden) openStart(false); return; }
   const g = s.game;
   $("place").textContent = g.place;
+  const prev = lastGame; lastGame = g;
+  if (phone() && tab !== "story" && prev && ((g.choice && !prev.choice) || (g.combat && !prev.combat) || (g.over && !prev.over))) setTab("story");
   renderIdeas(g);
   renderActions(g);
   renderMap(g);
@@ -454,7 +639,9 @@ function apply(s) {
   renderInv(g);
   renderJournal(g);
   $("hintsBtn").setAttribute("aria-checked", g.hints ? "true" : "false");
-  $("cmd").placeholder = g.hints && g.suggestions.length ? "Type any command — or press 1–" + g.suggestions.length + " for a suggestion"
+  $("mHints").setAttribute("aria-checked", g.hints ? "true" : "false");
+  renderHud(g); markTabs(g, s.epoch);
+  $("cmd").placeholder = touchUI() ? "Type a command…" : g.hints && g.suggestions.length ? "Type any command — or press 1–" + g.suggestions.length + " for a suggestion"
                                                        : "Type any command — or use the actions above";
 }
 
@@ -462,13 +649,14 @@ function renderIdeas(g) {
   const list = $("sgList"); list.innerHTML = "";
   const show = g.suggestions.length > 0 && (g.hints || g.over || g.choice);
   $("ideas").style.display = show ? "" : "none";
+  $("ideas").classList.toggle("choosing", !!(g.choice || g.over));
   $("hideHints").style.display = g.over ? "none" : "";
   if (g.over && g.won) $("ideasTitle").innerHTML = "<strong>You have won.</strong> Start a new world from <em>New / Load</em> whenever you like.";
   else if (g.over) $("ideasTitle").innerHTML = "<strong>Your story has paused.</strong> Load a save, or begin anew.";
-  else if (g.choice) $("ideasTitle").innerHTML = '<span class="choice-note">A choice awaits.</span> Press a number, or click:';
+  else if (g.choice) $("ideasTitle").innerHTML = '<span class="choice-note">A choice awaits.</span> ' + (touchUI() ? "Tap one:" : "Press a number, or click:");
   else if (g.combat) $("ideasTitle").innerHTML = "<strong>You're in a fight.</strong> Options — or type anything:";
-  else if (g.novice) $("ideasTitle").innerHTML = "<strong>New here?</strong> You can type <em>any</em> command — these are just good places to start. Press a number or click.";
-  else $("ideasTitle").innerHTML = "<strong>Ideas</strong> — press 1–" + g.suggestions.length + ", or type anything.";
+  else if (g.novice) $("ideasTitle").innerHTML = touchUI() ? "<strong>New here?</strong> Tap an idea, use the actions, or type anything." : "<strong>New here?</strong> You can type <em>any</em> command — these are just good places to start. Press a number or click.";
+  else $("ideasTitle").innerHTML = touchUI() ? "<strong>Ideas</strong> — swipe for more, or type anything." : "<strong>Ideas</strong> — press 1–" + g.suggestions.length + ", or type anything.";
   g.suggestions.forEach((sg, i) => {
     const b = document.createElement("button");
     b.className = "sg"; b.type = "button";
@@ -512,8 +700,8 @@ function renderActions(g) {
     drawPop();
   }
 }
-function openPop(group) { pop = {stack: [{kind: "group", group}]}; drawPop(); renderActions(state.game); }
-function closePop() { pop = null; $("pop").hidden = true; renderActions(state.game); $("cmd").focus(); }
+function openPop(group) { const was = !!pop; pop = {stack: [{kind: "group", group}]}; drawPop(); renderActions(state.game); if (!was) ovOpen("pop"); shade(); }
+function closePop() { pop = null; $("pop").hidden = true; renderActions(state.game); focusCmd(); ovClosed("pop"); shade(); }
 function popBack() { if (!pop) return; if (pop.stack.length > 1) { pop.stack.pop(); drawPop(); } else closePop(); }
 function fillCmd(action, values) { return action.cmd.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? ""); }
 
@@ -559,7 +747,7 @@ function drawPop() {
       for (const c of prm.choices) { const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.onclick = () => choose(a, {...top.values, [prm.name]: c}); chips.appendChild(b); }
       body.appendChild(chips);
     }
-    setTimeout(() => { const inp = wrap.querySelector("input"); inp.focus(); inp.select(); }, 30);
+    setTimeout(() => { const inp = wrap.querySelector("input"); inp.focus({preventScroll: true}); inp.select(); }, 30);
     return;
   }
   if (!prm.options.length) { const e = document.createElement("div"); e.className = "empty-opt"; e.textContent = "Nothing to choose from right now."; body.appendChild(e); return; }
@@ -575,6 +763,8 @@ const DIRV = {north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0]};
 function renderMap(g) {
   const m = g.map, el = $("map");
   el.style.gridTemplateColumns = `repeat(${m.w}, var(--cell))`;
+  if (phone()) el.style.setProperty("--cell", Math.max(14, Math.min(40, Math.floor((window.innerWidth - 56) / m.w))) + "px");
+  else el.style.removeProperty("--cell");
   el.innerHTML = "";
   const me = g.map.cells[m.pos[1]][m.pos[0]];
   const steps = {};
@@ -590,15 +780,21 @@ function renderMap(g) {
     if (c.q && c.b) tip += " — the relic is here";
     if (c.t) tip += " — journal: " + (Array.isArray(c.t) ? c.t.join("; ") : "a goal from your journal");
     if (c.me) tip = "You are here — " + tip;
-    if (dir && !g.over) { d.classList.add("go"); tip = `Go ${dir}: ${tip}`; d.onclick = () => send(dir); }
-    d.onmouseenter = () => { $("maptip").textContent = tip.charAt(0).toUpperCase() + tip.slice(1); };
+    const say = () => { $("maptip").textContent = tip.charAt(0).toUpperCase() + tip.slice(1); };
+    if (dir && !g.over) { d.classList.add("go"); tip = `Go ${dir}: ${tip}`; d.onclick = () => { say(); send(dir); }; }
+    else d.onclick = say;
+    d.onmouseenter = say;
     el.appendChild(d);
   }));
-  el.onmouseleave = () => { $("maptip").textContent = "Click a tile next to you to walk there."; };
+  const idle = touchUI() ? "Tap a tile next to you to walk there, or any tile to name it." : "Click a tile next to you to walk there.";
+  if (!mapTipped || !touchUI()) $("maptip").textContent = idle;
+  mapTipped = touchUI();
+  el.onmouseleave = () => { $("maptip").textContent = idle; };
   paintMini(g);
   scheduleAtlas();
 }
 
+let mapTipped = false;
 // the panel map: the painted land under the clickable grid, repainted only when what you know changes
 let miniKey = "";
 function paintMini(g) {
@@ -650,10 +846,10 @@ function renderInv(g) {
   for (const it of g.inventory) {
     const row = document.createElement("div"); row.className = "inv-item";
     const nm = document.createElement("button"); nm.className = "nm"; nm.textContent = it.name; nm.title = "Examine";
-    nm.onclick = () => send("examine " + it.name);
+    nm.onclick = () => sendShow("examine " + it.name);
     row.appendChild(nm);
     if (it.equipped) { const t = document.createElement("span"); t.className = "tag"; t.textContent = it.kind === "weapon" ? "wielded" : "worn"; row.appendChild(t); }
-    const act = (label, cmd) => { const b = document.createElement("button"); b.className = "act"; b.textContent = label; b.onclick = () => send(cmd); row.appendChild(b); };
+    const act = (label, cmd) => { const b = document.createElement("button"); b.className = "act"; b.textContent = label; b.onclick = () => sendShow(cmd); row.appendChild(b); };
     if (it.usable) act("use", "use " + it.name);
     if (it.equippable && !it.equipped) act("equip", "equip " + it.name);
     el.appendChild(row);
@@ -721,10 +917,11 @@ function openSaves() {
   const g = state && state.game;
   $("saveName").value = (g && g.save_slot && g.save_slot !== "autosave") ? g.save_slot
                         : (g ? g.player.name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-") : "");
-  $("start").hidden = true; $("savesDlg").hidden = false; drawSaves();
-  setTimeout(() => (g && !g.can_save ? $("saveName") : $("closeSaves")).focus(), 30);
+  if (!$("start").hidden) ovClosed("start");
+  $("start").hidden = true; $("savesDlg").hidden = false; drawSaves(); ovOpen("saves");
+  setTimeout(() => (g && !g.can_save && !touchUI() ? $("saveName") : $("closeSaves")).focus(), 30);
 }
-function closeSaves() { $("savesDlg").hidden = true; if (!(state && state.game)) openStart(false); else $("cmd").focus(); }
+function closeSaves() { ovClosed("saves"); $("savesDlg").hidden = true; if (!(state && state.game)) openStart(false); else focusCmd(); }
 
 async function saveOp(body) {
   $("svErr").textContent = "";
@@ -783,7 +980,7 @@ function drawSaves() {
 function loadSlot(slot) {
   startAtTop = true;
   fetch("api/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({slot, since: total})})
-    .then(r => r.json()).then(s => { if (s.error) { startAtTop = false; $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; $("cmd").focus(); });
+    .then(r => r.json()).then(s => { if (s.error) { startAtTop = false; $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; ovClosed("saves"); ovClosed("start"); focusCmd(); });
 }
 function trySave(name, force) {
   const g = state.game, slot = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "");
@@ -819,11 +1016,11 @@ async function send(cmd) {
   if (!cmd || busy || !state || !state.game) return;
   busy = true;
   history.unshift(cmd); hIdx = -1;
-  try { await post("api/cmd", {cmd}); } finally { busy = false; $("cmd").focus(); }
+  try { await post("api/cmd", {cmd}); } finally { busy = false; focusCmd(); }
 }
 
-function openStart(closable) { $("start").hidden = false; $("closeStart").hidden = !closable; $("err").textContent = ""; setTimeout(() => $("nm").focus(), 50); }
-function closeStart() { $("start").hidden = true; $("cmd").focus({preventScroll: true}); }
+function openStart(closable) { $("start").hidden = false; $("closeStart").hidden = !closable; $("err").textContent = ""; if (closable) ovOpen("start"); if (!touchUI()) setTimeout(() => $("nm").focus(), 50); }
+function closeStart() { $("start").hidden = true; ovClosed("start"); focusCmd(); }
 
 $("newForm").onsubmit = (e) => {
   e.preventDefault();
@@ -920,18 +1117,19 @@ function showAtlas() {                   // put the latest painting on screen if
   if (first) fitView(); else { clampView(); applyView(); }
   atlas.shownKey = atlas.key;
   const d = atlas.data, seen = d.cells.flat().filter(x => x.k === 2).length, all = d.cells.flat().filter(x => x.k).length;
-  $("atlasNote").textContent = `${seen} places walked, ${all - seen} glimpsed. Scroll or pinch to zoom, drag to look around.`;
+  $("atlasNote").textContent = `${seen} ${seen === 1 ? "place" : "places"} walked, ${all - seen} glimpsed. ` +
+    (touchUI() ? "Pinch to zoom, drag to look around, tap a marker to name it." : "Scroll or pinch to zoom, drag to look around.");
 }
 async function openAtlas() {
   if (!state || !state.game) return;
-  $("atlasDlg").hidden = false;
+  $("atlasDlg").hidden = false; ovOpen("atlas");
   atlas.shownKey = null;                 // a fresh open fits the whole sheet
   if (atlas.map && atlas.data && state.game.map && atlas.data.seed !== state.game.map.seed) { atlas.map = null; atlas.key = null; }   // another game's map
   if (atlas.map) showAtlas();
   if (!atlas.map || atlas.busy || atlas.want) $("atlasNote").textContent = atlas.map ? "Adding what you've seen lately…" : "Unfolding the map…";
   scheduleAtlas();
 }
-function closeAtlas() { $("atlasDlg").hidden = true; $("cmd").focus({preventScroll: true}); }
+function closeAtlas() { $("atlasDlg").hidden = true; ovClosed("atlas"); $("atlasTip").hidden = true; focusCmd(); }
 $("atlasBtn").onclick = openAtlas;
 $("atlasClose").onclick = closeAtlas;
 $("atlasDlg").addEventListener("click", (e) => { if (e.target === $("atlasDlg")) closeAtlas(); });
@@ -972,14 +1170,22 @@ window.addEventListener("resize", () => { if (!$("atlasDlg").hidden && atlasData
       clampView(); applyView();
     }
   });
-  const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { v.classList.remove("dragging"); last = null; } else last = [...pts.values()][0]; };
+  let tapAt = null, tipTimer = 0;
+  v.addEventListener("pointerdown", (e) => { tapAt = pts.size === 1 ? [e.clientX, e.clientY] : null; });
+  const up = (e) => {
+    if (tapAt && e.type === "pointerup" && Math.hypot(e.clientX - tapAt[0], e.clientY - tapAt[1]) < 8) {
+      atlasHover(e, true); clearTimeout(tipTimer);
+      if (e.pointerType !== "mouse") tipTimer = setTimeout(() => { $("atlasTip").hidden = true; }, 4000);
+    }
+    tapAt = null;
+    pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { v.classList.remove("dragging"); last = null; } else last = [...pts.values()][0]; };
   v.addEventListener("pointerup", up); v.addEventListener("pointercancel", up);
-  v.addEventListener("pointerleave", () => { $("atlasTip").hidden = true; });
+  v.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") $("atlasTip").hidden = true; });
 }
 // hovering a marker says what it is: which errand, the relic, a village, you
-function atlasHover(e) {
+function atlasHover(e, tapped) {
   const tip = $("atlasTip"), v = $("atlasView"), A = atlasData;
-  if (!A || e.buttons || e.pointerType === "touch") { tip.hidden = true; return; }
+  if (!A || (!tapped && (e.buttons || e.pointerType === "touch"))) { if (!tapped && e.pointerType !== "touch") tip.hidden = true; return; }
   const r = v.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
   const at = window.atlasTileAt(A, (mx - view.x) / view.z, (my - view.y) / view.z);
   const lines = [];
@@ -1008,6 +1214,112 @@ $("atlasSave").onclick = () => {
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
 };
+// ---------------------------------------------------------------- phone layout
+let tab = "story", lastGame = null, tabEntry = false;
+const seen = { epoch: null, journal: "", inv: "" };
+function setTab(t) {
+  tab = t; document.body.dataset.tab = t;
+  if (phone() && t !== "story" && !tabEntry) { tabEntry = true; window.history.pushState({wp: "tab"}, ""); }
+  else if (t === "story" && tabEntry) { tabEntry = false; if (!ovPopping) { ovIgnore++; window.history.back(); } }
+  document.querySelectorAll("#tabs button").forEach(b => {
+    const on = b.dataset.tab === t;
+    b.setAttribute("aria-selected", on ? "true" : "false");
+    if (on) b.classList.remove("badge");
+  });
+  const g = state && state.game;
+  if (g) {
+    if (t === "journal") seen.journal = JSON.stringify(g.journal);
+    if (t === "inv") seen.inv = g.inventory.map(i => i.name).join("|");
+    if (t === "map") renderMap(g);
+  }
+  if (t === "story") { const log = $("log"); requestAnimationFrame(() => { if (log.dataset.unread) { delete log.dataset.unread; log.scrollTop = log.scrollHeight; } }); }
+  else { const a = document.querySelector("aside"); a.scrollTop = 0; }
+}
+function markTabs(g, ep) {
+  const inv = g.inventory.map(i => i.name).join("|"), jr = JSON.stringify(g.journal);
+  if (seen.epoch !== ep) { seen.epoch = ep; seen.journal = jr; seen.inv = inv; }
+  const tb = (t) => document.querySelector(`#tabs button[data-tab="${t}"]`);
+  if (tab === "journal") seen.journal = jr; else if (jr !== seen.journal) tb("journal").classList.add("badge");
+  if (tab === "inv") seen.inv = inv;
+  else if (inv.split("|").some(n => n && !seen.inv.split("|").includes(n))) tb("inv").classList.add("badge");
+  else if (inv === seen.inv) tb("inv").classList.remove("badge");
+  tb("status").classList.toggle("alarm", !!g.combat || g.player.hp < g.player.maxhp * 0.35);
+  if (g.combat) tb("story").classList.toggle("alarm", tab !== "story"); else tb("story").classList.remove("alarm");
+}
+function renderHud(g) {
+  const p = g.player, pct = (a, b) => Math.max(0, Math.min(100, Math.round(100 * a / Math.max(1, b))));
+  const meter = (cls, label, a, b) => `<span class="meter ${cls}"><b>${label}</b> ${a}/${b}<i><u style="width:${pct(a, b)}%"></u></i></span>`;
+  $("hud").innerHTML = meter(p.hp < p.maxhp * 0.35 ? "low" : "", "♥", Math.max(0, p.hp), p.maxhp) +
+    (p.res_name ? meter("res " + esc(p.res_name), esc(p.res_name.charAt(0).toUpperCase() + p.res_name.slice(1)), p.res, p.res_max) : "") +
+    `<span><b>${p.gold}</b>c</span>` +
+    (g.combat ? `<span class="fight">⚔ ${esc(g.combat)}</span>` : `<span class="when">Day ${g.day} · ${esc(g.time)} · ${esc(g.weather)}</span>`);
+}
+function sendShow(cmd) { send(cmd); if (phone()) setTab("story"); }
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { if (pop) closePop(); setTab(b.dataset.tab); });
+$("hud").onclick = () => setTab(tab === "status" ? "story" : "status");
+
+function shade() { $("shade").hidden = !(!$("moreSheet").hidden || (pop && phone())); }
+function openMore() {
+  const g = state && state.game;
+  $("mSave").disabled = !g || !!g.can_save;
+  $("mSaveNote").textContent = !g ? "no game running" : g.can_save ? g.can_save : g.save_slot ? `to '${g.save_slot}'` : "choose a name";
+  $("mAtlas").disabled = !g;
+  $("moreSheet").hidden = false; shade(); ovOpen("more");
+}
+function closeMore() { $("moreSheet").hidden = true; shade(); ovClosed("more"); }
+$("moreBtn").onclick = openMore;
+$("mClose").onclick = closeMore;
+$("shade").onclick = () => { if (!$("moreSheet").hidden) closeMore(); else if (pop) closePop(); };
+$("mSave").onclick = () => { const g = state && state.game; closeMore(); if (g && g.save_slot) send("save"); else openSaves(); };
+$("mSaves").onclick = () => { closeMore(); openSaves(); };
+$("mNew").onclick = () => { closeMore(); openStart(!!(state && state.game)); };
+$("mAtlas").onclick = () => { closeMore(); openAtlas(); };
+$("mHints").onclick = () => state && state.game && setHints(!state.game.hints);
+
+function setDock(open) {
+  document.body.classList.toggle("dock-min", !open);
+  $("dockToggle").textContent = open ? "hide actions ▾" : "show actions ▴";
+  $("dockToggle").setAttribute("aria-expanded", open ? "true" : "false");
+  $("mDock").setAttribute("aria-checked", open ? "true" : "false");
+  store.set("dock", open ? "open" : "min");
+}
+$("dockToggle").onclick = () => setDock(document.body.classList.contains("dock-min"));
+$("mDock").onclick = () => setDock(document.body.classList.contains("dock-min"));
+setDock(store.get("dock", "open") === "open");
+
+const SIZES = [85, 92, 100, 108, 116, 125, 135, 150];
+function setSize(v) {
+  document.documentElement.style.setProperty("--log-scale", v / 100);
+  $("mSizeNote").textContent = v + "%"; store.set("size", v);
+  $("mSmaller").disabled = v <= SIZES[0]; $("mBigger").disabled = v >= SIZES[SIZES.length - 1];
+}
+let textSize = +store.get("size", 100); if (!SIZES.includes(textSize)) textSize = 100;
+setSize(textSize);
+$("mSmaller").onclick = () => setSize(textSize = SIZES[Math.max(0, SIZES.indexOf(textSize) - 1)]);
+$("mBigger").onclick = () => setSize(textSize = SIZES[Math.min(SIZES.length - 1, SIZES.indexOf(textSize) + 1)]);
+
+// On touch screens each open overlay owns a history entry: the phone's Back button closes it
+// rather than leaving the game.
+const ovs = []; let ovIgnore = 0, ovPopping = false;
+const CLOSERS = { pop: () => closePop(), more: () => closeMore(), atlas: () => closeAtlas(), saves: () => closeSaves(), start: () => closeStart() };
+function ovOpen(name) { if (!touchUI() || ovs.includes(name)) return; ovs.push(name); window.history.pushState({wp: name}, ""); }
+function ovClosed(name) {
+  const i = ovs.indexOf(name); if (i < 0) return;
+  ovs.splice(i, 1);
+  if (!ovPopping) { ovIgnore++; window.history.back(); }
+}
+window.addEventListener("popstate", () => {
+  if (ovIgnore) { ovIgnore--; return; }
+  const name = ovs[ovs.length - 1];
+  if (!name) { if (tabEntry) { ovPopping = true; try { setTab("story"); } finally { ovPopping = false; } } return; }
+  if (name === "pop" && pop && pop.stack.length > 1) { pop.stack.pop(); drawPop(); window.history.pushState({wp: "pop"}, ""); return; }   // up one level
+  ovPopping = true;
+  try { CLOSERS[name](); } finally { ovPopping = false; }
+  const i = ovs.indexOf(name); if (i >= 0) ovs.splice(i, 1);
+});
+phoneMQ.addEventListener("change", () => { shade(); if (state && state.game) apply({...state, lines: []}); });
+document.body.dataset.tab = "story";
+
 $("rollName").onclick = async () => {
   try {
     const r = await (await fetch("api/name?gender=" + $("nmList").value)).json();
@@ -1053,7 +1365,7 @@ document.addEventListener("keydown", (e) => {
   if (!$("start").hidden || document.activeElement.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
   const sg = /^[1-9]$/.test(e.key) && state && state.game && (state.game.hints || state.game.over || state.game.choice) && state.game.suggestions[+e.key - 1];
   if (sg) { e.preventDefault(); send(sg.cmd); return; }
-  $("cmd").focus();
+  focusCmd();
 });
 
 fetch("api/state?since=0").then(r => r.json()).then(apply);
