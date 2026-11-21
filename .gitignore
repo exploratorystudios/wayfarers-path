@@ -1,0 +1,9 @@
+# your saved games stay on your machine
+saves/
+__pycache__/
+*.pyc
+*.tmp
+# screenshot/test leftovers
+.shot/
+.shot_*.html
+.claude/
