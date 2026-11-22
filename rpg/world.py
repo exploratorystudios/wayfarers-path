@@ -221,6 +221,7 @@ class Tile:
     items: list = field(default_factory=list)
     visited: bool = False
     danger: int = 1
+    road: str = ""            # which ways a road leaves this tile: letters from 'nsew'
 
 
 def _value_noise(rng, w, h, cell):
@@ -242,12 +243,14 @@ def _value_noise(rng, w, h, cell):
 
 
 def _fbm(rng, w, h):
-    layers = [(_value_noise(rng, w, h, c), wt) for c, wt in ((6, 0.6), (3, 0.3), (2, 0.1))]
+    k = w / 16                      # keep hills and woods the same size whatever the map's size
+    layers = [(_value_noise(rng, w, h, max(2, round(c * k))), wt) for c, wt in ((6, 0.6), (3, 0.3), (2, 0.1))]
     return [[sum(l[y][x] * wt for l, wt in layers) for x in range(w)] for y in range(h)]
 
 
 class World:
-    W = H = 16
+    W = H = 16          # worlds saved before the map grew keep this size
+    SIZE = 24
 
     @property
     def title(self):
@@ -263,6 +266,7 @@ class World:
 
     def __init__(self, seed, player_name=""):
         self.seed = seed
+        self.W = self.H = self.SIZE
         self.player_name = player_name
         self.rng = random.Random(seed)
         r = self.rng
@@ -284,6 +288,7 @@ class World:
         self._regions()
         self._species()
         self._sites()
+        self._roads()
         self._populate()
         del self.namer
 
@@ -420,7 +425,7 @@ class World:
                     name = f"{r.choice(E.SPECIES_PREFIX[biome])} {arch['noun']}"
                 elif style < 0.75:
                     name = f"{r.choice(E.SPECIES_TRAIT)}-{r.choice(E.SPECIES_PART_WORD[key])}ed {arch['noun']}"
-                    name = name.replace("eed ", "ed ").replace("eded", "ed")
+                    name = name.replace("eed ", "ed ").replace("eded", "ed").replace("leged ", "legged ")
                 else:
                     name = f"{r.choice(arch['colours']).split()[0]} {arch['noun']}"
                 if any(s["name"] == name for s in self.species):
@@ -470,23 +475,34 @@ class World:
     def _sites(self):
         r = self.rng
         cx = cy = self.W // 2
+        if self.W > 16:                    # on the larger map home sits off-centre, so one side of the world is far away
+            cx += r.choice([-1, 1]) * (self.W // 6)
+            cy += r.choice([-1, 1]) * (self.H // 6)
         start_cands = sorted((p for p in self.land if self.tiles[p].biome in ("plains", "forest", "hills")),
                              key=lambda p: abs(p[0] - cx) + abs(p[1] - cy) + r.random() * 3)
         self.start = start_cands[0]
         dist = self.distances(self.start)
         for p, d in dist.items():
-            self.tiles[p].danger = 1 + d // 4
-        # quest site: a ruin far away
+            self.tiles[p].danger = 1 + d // max(4, self.W // 4)       # rises one step every quarter of the map's width
+        # quest site: a ruin well away from home, but not always in the furthest corner
         far = sorted(dist, key=lambda p: -dist[p])
-        self.quest_pos = far[r.randrange(min(4, len(far)))]
-        others = self._pick_sites(5, ("plains", "forest", "hills", "marsh"), 4, [self.start, self.quest_pos])
-        if len(others) < 3:
-            others += self._pick_sites(3 - len(others), ("plains", "forest", "hills", "marsh", "peaks"), 3, [self.start, self.quest_pos] + others)
+        reach = dist[far[0]]
+        band = [p for p in far if 0.65 * reach <= dist[p] <= 0.85 * reach] or far[:4]
+        self.quest_pos = r.choice(band)
+        n_vil = max(5, len(self.land) // 45)                          # about one village per 45 squares of land
+        others = self._pick_sites(n_vil, ("plains", "forest", "hills", "marsh"), 5, [self.start, self.quest_pos])
+        if len(others) < n_vil:
+            others += self._pick_sites(n_vil - len(others), ("plains", "forest", "hills", "marsh", "peaks"), 4, [self.start, self.quest_pos] + others)
         villages = [self.start] + others
-        # one market town, a fair walk from home; the rest villages and hamlets
-        town = min(others, key=lambda p: abs(dist.get(p, 99) - 7)) if others else None
-        small = [p for p in others if p != town]
-        scales = {self.start: "village", town: "town"}
+        # market towns, a fair walk from home and from each other; the rest villages and hamlets
+        towns = []
+        for want in (7, 15):
+            cand = [p for p in others if p not in towns and all(abs(p[0] - q[0]) + abs(p[1] - q[1]) >= 6 for q in towns)]
+            if cand:
+                towns.append(min(cand, key=lambda p: abs(dist.get(p, 99) - want)))
+        town = towns[0] if towns else None
+        small = [p for p in others if p not in towns]
+        scales = {self.start: "village", **{t: "town" for t in towns}}
         for i, p in enumerate(small):
             scales[p] = "hamlet" if i % 2 == 0 else "village"
         for p in villages:
@@ -496,13 +512,82 @@ class World:
                           facts=dict(material=r.choice(["gold", "silver", "black iron", "bone", "crystal", "bronze"]),
                                      glow=r.choice(["a faint inner warmth", "a hum you feel in your teeth", "a cold light", "a smell of rain"])))
         self.tiles[self.quest_pos].site = self.make_ruin(quest=True)
-        for p in self._pick_sites(4, ("plains", "forest", "hills", "marsh", "peaks"), 3, villages + [self.quest_pos]):
+        more = len(self.land) // 225 or 1                              # the old map's counts, per its area
+        for p in self._pick_sites(4 * more, ("plains", "forest", "hills", "marsh", "peaks"), 3, villages + [self.quest_pos]):
             self.tiles[p].site = self.make_ruin()
-        for p in self._pick_sites(3, ("plains", "forest", "hills", "peaks"), 3, villages):
+        for p in self._pick_sites(3 * more, ("plains", "forest", "hills", "peaks"), 3, villages):
             self.tiles[p].site = self.make_shrine(self.tiles[p].biome)
-        for p in self._pick_sites(3, ("plains", "forest", "hills", "marsh"), 2, villages):
+        for p in self._pick_sites(3 * more, ("plains", "forest", "hills", "marsh"), 2, villages):
             self.tiles[p].site = dict(kind="camp")
         self.villages = villages
+
+    ROAD_COST = {"plains": 1.0, "forest": 1.6, "hills": 1.8, "marsh": 2.6, "peaks": 4.0}
+    LETTER = {(0, -1): "n", (0, 1): "s", (1, 0): "e", (-1, 0): "w"}
+
+    def _road_path(self, a, b):
+        """Cheapest way from a to b over land, preferring easy ground and roads already made."""
+        import heapq
+        best, prev, pq = {a: 0.0}, {}, [(0.0, a)]
+        while pq:
+            c, p = heapq.heappop(pq)
+            if p == b:
+                break
+            if c > best.get(p, 1e9):
+                continue
+            for _, n in self.neighbours(p):
+                if n not in self.land:
+                    continue
+                t = self.tiles[n]
+                step = 0.35 if t.road else self.ROAD_COST.get(t.biome, 2.0)
+                if t.site and t.site.get("kind") == "ruin" and n != b:
+                    step += 3                      # roads go round ruins, not through them
+                nc = c + step
+                if nc < best.get(n, 1e9):
+                    best[n], prev[n] = nc, p
+                    heapq.heappush(pq, (nc, n))
+        if b not in prev and a != b:
+            return []
+        path = [b]
+        while path[-1] != a:
+            path.append(prev[path[-1]])
+        return path[::-1]
+
+    def _lay_road(self, path):
+        for p, q in zip(path, path[1:]):
+            d = (q[0] - p[0], q[1] - p[1])
+            back = (-d[0], -d[1])
+            tp, tq = self.tiles[p], self.tiles[q]
+            if self.LETTER[d] not in tp.road:
+                tp.road += self.LETTER[d]
+            if self.LETTER[back] not in tq.road:
+                tq.road += self.LETTER[back]
+
+    def _roads(self):
+        """Tracks between the villages: every village joined to the rest, the near ones directly, a loop or two."""
+        vs = list(self.villages)
+        md = lambda p, q: abs(p[0] - q[0]) + abs(p[1] - q[1])
+        pairs = sorted((md(p, q), i, j) for i, p in enumerate(vs) for j, q in enumerate(vs) if i < j)
+        group = list(range(len(vs)))
+        def root(i):
+            while group[i] != i:
+                group[i] = group[group[i]]
+                i = group[i]
+            return i
+        extra = []
+        for d, i, j in pairs:
+            if root(i) != root(j):
+                group[root(i)] = root(j)
+                self._lay_road(self._road_path(vs[i], vs[j]))
+            elif d <= 9:
+                extra.append((d, i, j))
+        for d, i, j in extra[:2]:              # a couple of short cuts, so the network has loops
+            path = self._road_path(vs[i], vs[j])
+            if path and sum(1 for p in path if not self.tiles[p].road) >= 3:
+                self._lay_road(path)
+
+    def road_between(self, p, q):
+        d = (q[0] - p[0], q[1] - p[1])
+        return self.LETTER.get(d, "?") in (getattr(self.tiles[p], "road", "") or "")
 
     def culture_of(self, pos):
         """Which naming tradition a place follows: Northish in the north, Southron in the south, Westron between."""
@@ -683,7 +768,7 @@ class World:
                 continue
             fitting = [s for s in self.species if s["home"] == t.biome] or \
                       [s for s in self.species if t.biome in s["arch"]["biomes"]]
-            if fitting and r.random() < (0.25 + 0.05 * t.danger) and t.danger > 0:
+            if fitting and r.random() < (0.25 + 0.05 * t.danger) * (0.5 if t.road else 1) and t.danger > 0:
                 t.creatures.append(self.make_creature(r.choice(fitting), t.danger))
             if r.random() < 0.12:
                 t.items.append(self.make_item(t.danger))

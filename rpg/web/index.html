@@ -803,8 +803,12 @@ const DIRV = {north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0]};
 function renderMap(g) {
   const m = g.map, el = $("map");
   el.style.gridTemplateColumns = `repeat(${m.w}, var(--cell))`;
-  if (phone()) el.style.setProperty("--cell", Math.max(14, Math.min(40, Math.floor((window.innerWidth - 56) / m.w))) + "px");
-  else el.style.removeProperty("--cell");
+  if (phone()) el.style.setProperty("--cell", Math.max(10, Math.min(40, Math.floor((window.innerWidth - 56) / m.w) - 1)) + "px");
+  else {                                   // fit the panel, however many squares the world has
+    const box = el.closest(".panel"), cs = box && getComputedStyle(box);
+    const avail = box ? box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : 340;
+    el.style.setProperty("--cell", Math.max(9, Math.min(19, Math.floor((avail - 4) / m.w) - 1)) + "px");
+  }
   el.innerHTML = "";
   const me = g.map.cells[m.pos[1]][m.pos[0]];
   const steps = {};
@@ -840,7 +844,7 @@ let miniKey = "";
 function paintMini(g) {
   const m = g.map, el = $("map"), cv = $("miniMap");
   if (!window.drawAtlas || m.seed === undefined) return;
-  const cells = m.cells.map(row => row.map(c => c.b ? { k: c.v ? 2 : 1, b: c.b, s: c.s } : { k: 0 }));
+  const cells = m.cells.map(row => row.map(c => c.b ? { k: c.v ? 2 : 1, b: c.b, s: c.s, rd: c.rd } : { k: 0 }));
   el.classList.add("painted");                         // measure the grid as it will be drawn (no gaps)
   const dpr = window.devicePixelRatio || 1, w = el.offsetWidth, h = el.offsetHeight;
   const key = m.seed + "|" + w + "|" + dpr + "|" + JSON.stringify(cells);
@@ -865,7 +869,7 @@ function renderStatus(g) {
     ${(p.guard || p.ward || p.hidden) ? `<div class="effects">${p.guard ? `<span>Guarding (${p.guard})</span>` : ""}${p.ward ? `<span>Ward ${p.ward}</span>` : ""}${p.hidden ? "<span>Hidden</span>" : ""}</div>` : ""}
     <div class="stat-row"><span>Experience</span><span>${p.xp} / ${p.xp_next}</span></div>
     <div class="bar xp"><div style="width:${Math.round(100 * p.xp / p.xp_next)}%"></div></div>
-    <div class="stat-row"><span>Attack ${p.atk} · Defence ${p.df}</span><b>${p.gold} coins</b></div>
+    <div class="stat-row"><span>Attack ${p.atk} · Defence ${p.df}</span><b>${p.gold} coins · ${p.rations || 0} rations</b></div>
     <div class="stat-row"><span>Day ${g.day}, ${esc(g.time)}</span><span>${esc(g.season)} · ${esc(g.weather)}</span></div>
     ${g.combat ? `<div class="combat">Fighting: ${esc(g.combat)}</div>` : ""}
     <div class="quest-box"><span>Quest</span>${esc(g.quest)}</div>`;
@@ -1323,7 +1327,7 @@ function renderHud(g) {
   const meter = (cls, label, a, b) => `<span class="meter ${cls}"><b>${label}</b> ${a}/${b}<i><u style="width:${pct(a, b)}%"></u></i></span>`;
   $("hud").innerHTML = meter(p.hp < p.maxhp * 0.35 ? "low" : "", "♥", Math.max(0, p.hp), p.maxhp) +
     (p.res_name ? meter("res " + esc(p.res_name), esc(p.res_name.charAt(0).toUpperCase() + p.res_name.slice(1)), p.res, p.res_max) : "") +
-    `<span><b>${p.gold}</b>c</span>` +
+    `<span><b>${p.gold}</b>c</span>` + `<span title="Travel rations"><b>${p.rations || 0}</b>r</span>` +
     (g.combat ? `<span class="fight">⚔ ${esc(g.combat)}</span>` : `<span class="when">Day ${g.day} · ${esc(g.time)} · ${esc(g.weather)}</span>`);
 }
 function sendShow(cmd) { send(cmd); if (phone()) setTab("story"); }

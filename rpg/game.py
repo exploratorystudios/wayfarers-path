@@ -11,6 +11,7 @@ from pathlib import Path
 from .world import World, DIRS
 from .describe import Narrator
 from .textgen import wrap, cap, article, title, plural
+from . import travel as TR
 from . import mind
 from . import classes as K
 from . import story as S
@@ -36,7 +37,7 @@ ALIASES = {"n": "north", "s": "south", "e": "east", "w": "west", "l": "look", "x
            "train": "improve", "grow": "improve", "spend": "improve", "skills": "arts", "spells": "arts", "prayers": "arts",
            "feats": "arts", "tricks": "arts", "abilities": "arts", "traits": "arts",
            "spellcraft": "craft", "weave": "craft", "pray-write": "compose", "drill": "hone", "practise": "hone", "practice": "hone",
-           "unlearn": "forget"}
+           "unlearn": "forget", "journey": "travel", "ft": "travel", "voyage": "travel"}
 LINGER = {"wait", "take", "drop", "use", "equip", "pray", "search", "climb", "drink", "touch", "forage", "read", "listen"}   # commands that give nearby creatures time to act
 STOP = {"the", "a", "an", "at", "to", "with", "on", "up", "my", "some", "of"}
 
@@ -52,6 +53,7 @@ HELP = """Commands:
   attack <creature> / flee
   talk <person> / give <item> to <person> / trade / buy <item> / sell <item>
   pray (at a shrine) / rest / wait / map / status
+  travel [place]        fast travel to anywhere you've been; costs rations ('buy rations' in a village)
   search / climb / drink / touch / read / listen / forage <landmark>   (landmarks keep secrets)
   give <item> to <landmark>  (an offering) / journal (j) / chronicle / 1, 2, 3... to answer a choice
   arts / improve <stat> / read <book or scroll> / craft / compose / hone / forget
@@ -114,6 +116,7 @@ class Game:
         self.narr = Narrator(self.world)
         self.rng = random.Random(self.seed + 1)
         self.player = Player(name or "Wanderer", klass)
+        self.player.rations = TR.START_RATIONS
         self.pos = self.world.start
         self.combat = None
         self.over = False
@@ -317,8 +320,11 @@ class Game:
         self.trail.append(dest)          # the road you have walked, for the map
         if len(self.trail) > 2000:
             self.trail = self.trail[-2000:]
-        rough = w.tiles[dest].biome in ("marsh", "peaks") and self.klass() != "ranger"
-        self.pass_time(self.rng.randint(25, 45) + (20 if rough else 0))
+        if w.road_between(came_from, dest):          # the road is quicker, whatever the country
+            self.pass_time(self.rng.randint(15, 25))
+        else:
+            rough = w.tiles[dest].biome in ("marsh", "peaks") and self.klass() != "ranger"
+            self.pass_time(self.rng.randint(25, 45) + (20 if rough else 0))
         self.regen(1)
         t = w.tiles[dest]
         for c in t.creatures:          # minds update first, so the description shows what they intend
@@ -500,7 +506,7 @@ class Game:
     def cmd_status(self, rest):
         p = self.player
         self.emit(f"{p.name}, level {p.level} ({p.xp}/{p.level * 30} xp). Health {p.hp}/{p.maxhp}. "
-                  f"Attack {p.atk}, defence {p.df}. {p.gold} coins.")
+                  f"Attack {p.atk}, defence {p.df}. {p.gold} coins, {TR.rations(self)} travel rations.")
         self.emit(f"Wielding: {p.weapon.name if p.weapon else 'nothing'}. Wearing: {p.armour.name if p.armour else 'ordinary clothes'}.")
         self.emit(ARTS.describe_stats(self))
         s = K.spec(p)
@@ -582,6 +588,8 @@ class Game:
     def cmd_use(self, rest):
         p = self.player
         it = self.find(rest, [p.inv])
+        if not it and any(x.startswith("ration") for x in rest):
+            return TR.eat(self)
         if not it:
             return self.emit("You don't have that.")
         if ARTS.readable(it):
@@ -773,8 +781,11 @@ class Game:
         for it in m.stock:
             self.out(f"  {article(it.name):45s} {self.buy_price(m, it):4d} coins")
         self.out(f"You have {self.player.gold} coins. ('buy <item>', 'sell <item>', 'examine <item>')")
+        self.out(f"Travel rations are {TR.RATION_PRICE} coins each, for the road ('buy rations'). You carry {TR.rations(self)}.")
 
     def cmd_buy(self, rest):
+        if any(x.startswith("ration") for x in rest):
+            return TR.buy(self, " ".join(rest))
         m = self.merchant()
         if not m:
             return self.emit(self.narr.say("{sys_no_trader}"))
@@ -827,6 +838,9 @@ class Game:
         self.emit(f"{m.name} turns the {it.name} over and pays you {price} coins.")
 
     # ------------------------------------------------------------ rest & shrines
+    def cmd_travel(self, rest):
+        TR.travel(self, " ".join(rest))
+
     def cmd_rest(self, rest):
         if self.combat:
             return self.emit("You can't rest with an enemy at your throat!")

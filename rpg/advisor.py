@@ -199,6 +199,10 @@ def suggest(g, n=6):
         if s_.role != "merchant" and not s_.mem.get("wares_seen"):
             add(46, f"trade {s_.ref()}", f"See {s_.name}'s wares", f"{s_.pronouns()['he'].capitalize()} sells {GOODS.WARES_WORDS.get(s_.job, 'a few things')}.")
             break
+    if village:
+        from . import travel as TR
+        if TR.rations(g) < 3 and p.gold >= 3 * TR.RATION_PRICE + 10:
+            add(52, "buy rations", "Buy travel rations", f"Food for the road, {TR.RATION_PRICE} coins each. With rations you can travel back to anywhere you've been ('travel').")
     m = g.merchant()
     if m and not m.mem.get("wares_seen"):
         add(50, "trade", f"See what {m.called()} sells", f"Merchants buy as well as sell. You have {p.gold} coins.")
@@ -284,6 +288,12 @@ def suggest(g, n=6):
             d = step_dir(g.pos, route[0])
             if relic_held:
                 add(90, d, f"Go {d}, toward home", f"Bring the {w.relic.name} back. {len(route)} steps to go.", route, True)
+                from . import travel as TR
+                home = w.tiles[w.start].site["name"]
+                if len(route) > 5 and not TR.blocked(g):
+                    tpath, mins = TR.route(g, w.start)
+                    if tpath and TR.rations(g) >= TR.need(mins):
+                        add(92, f"travel {home}", f"Travel home to {home}", f"{TR.how_long(mins)} on the road, {TR.need(mins)} rations. Quicker than walking it step by step.")
             else:
                 ready = p.level >= w.tiles[goal].danger + 1
                 if ready:

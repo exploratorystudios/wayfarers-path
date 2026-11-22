@@ -279,8 +279,9 @@ class Narrator:
         if p:
             out.append(" ".join(p))
 
-        # paragraph 3: exits
-        out.append(self.exits(pos))
+        # paragraph 3: the road, if there is one, and exits
+        road = self.road_line(pos)
+        out.append((road + " " if road else "") + self.exits(pos))
 
         # paragraph 4: who and what is here
         p = [self.creature_presence(c) for c in t.creatures]
@@ -295,6 +296,57 @@ class Narrator:
         exits = [d for d, n in w.neighbours(pos) if n in w.land]
         out.append(f"[Exits: {', '.join(exits)}]")
         return out
+
+    ROAD_NP = {"plains": ["a drove road", "a chalk track", "the old road", "a broad track"],
+               "forest": ["a track under the trees", "a forest ride", "a cart-track"],
+               "hills": ["a hill road", "a stony track", "a packhorse way"],
+               "marsh": ["a causeway of logs and turf", "a raised track", "a corduroy road of old logs"],
+               "peaks": ["a pass road", "a narrow road cut into the rock", "a cairned track"]}
+    LETTER_DIR = {"n": "north", "s": "south", "e": "east", "w": "west"}
+    STEP = {"n": (0, -1), "s": (0, 1), "e": (1, 0), "w": (-1, 0)}
+
+    def road_leads(self, pos, letter):
+        """Following the road out of pos by one way: the first village it reaches, and how many steps."""
+        w = self.w
+        dx, dy = self.STEP[letter]
+        first = (pos[0] + dx, pos[1] + dy)
+        seen, dq = {pos, first}, deque([(first, 1)])
+        while dq:
+            p, n = dq.popleft()
+            t = w.tiles[p]
+            if t.site and t.site.get("kind") == "village":
+                return t.site["name"], n
+            for l in t.road:
+                q = (p[0] + self.STEP[l][0], p[1] + self.STEP[l][1])
+                if q not in seen:
+                    seen.add(q)
+                    dq.append((q, n + 1))
+        return None, 0
+
+    def road_line(self, pos):
+        w = self.w
+        t = w.tiles[pos]
+        road = getattr(t, "road", "")
+        if not road:
+            return ""
+        parts = []
+        for l in "nsew":
+            if l in road:
+                name, n = self.road_leads(pos, l)
+                d = self.LETTER_DIR[l]
+                parts.append(f"{d} to {name}" if name and n <= 3 else f"{d} toward {name}" if name else d)
+        joined = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+        if t.site and t.site.get("kind") == "village":
+            return self.pick([f"Roads leave {t.site['name']} {joined}.", f"From here the roads go {joined}.",
+                              f"Tracks lead out of {t.site['name']} {joined}."], "road_village") if len(parts) > 1 else \
+                   self.pick([f"A single road leaves {t.site['name']}, going {joined}.", f"The one road out of here goes {joined}."], "road_village1")
+        np = self.pick(self.ROAD_NP.get(t.biome, ["a track"]), f"road_np:{t.biome}")
+        if len(parts) == 1:
+            return cap(np) + f" ends here; it goes {joined}."
+        if len(parts) > 2:
+            return self.pick([f"Roads meet here: {joined}.", f"This is a crossroads. The ways go {joined}."], "road_cross")
+        return self.pick([f"{cap(np)} runs through here, {joined}.", f"You are on {np}, which goes {joined}.",
+                          f"{cap(np)} passes this way, {joined}."], "road_line")
 
     def header(self, pos):
         t = self.w.tiles[pos]

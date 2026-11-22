@@ -21,7 +21,7 @@ def W(*words):
 
 # ----------------------------------------------------------------- context rules
 SUN = W("sunlight", "sunlit", "sunshine", "sunbeams?", r"sun (glints|glares|beats|blazes|warms|is fierce|comes and goes)",
-        r"shafts of sun", "patch of sun", "dappl\\w+", "your shadow", "shadows (lie|stand|stretch) crisp", "heat (shimmers|haze)",
+        r"shafts of (sun|light)", "slanted columns", "patch of sun", "dappl\\w+", "your shadow", "shadows (lie|stand|stretch) crisp", "heat (shimmers|haze)",
         "cloud-shadows?", "bright air", "blue sky", "hard blue", "into blue", "patches of blue", "larks hang", "rainbow\\w*", "lizards bask", "bakes in the heat")
 NIGHT_SKY = W("stars? (appear|wheel|prick|glitter|shine|burn|crowd)", "starlight", "starlit", "moonlight", "moonlit", "the moon (rises|hangs|sails|is up)",
               "(waxing|waning|full|new|crescent|gibbous) moon")
@@ -38,7 +38,7 @@ LEAFY = W("full leaf", "leaves move", "canopy roars", "heavy with leaves", "gree
 WARM = W("hot", "heat", "warmth", "warm air", "sun-warmed", "bees?", "humming with bees", "pollen", "insects?", "flies (drone|buzz|crawl|rise|hang)", "grasshoppers?",
          "crickets?", "midges", "mosquitoes", "gnats", "ox-eye daisies", "harebells", "clover", "chamomile", "willowherb", "scabious",
          "cow parsley", "buttercups?", "poppies", "swallows (dip|skim|nest|are)", "swifts", "cuckoo", "drowsy", "sleepy heat", "thick with summer")
-NOT_WARM = W("hot springs?", "no warmth", "without warmth", "any warmth", "little warmth", "for warmth", "the fire", "hearth", "fire's heat", "warmth of (the|a) fire")
+NOT_WARM = W("hot springs?", "bee-keep\\w*", "beekeep\\w*", "bee-skeps?", "no warmth", "without warmth", "any warmth", "little warmth", "for warmth", "the fire", "hearth", "fire's heat", "warmth of (the|a) fire")
 SPRING_ONLY = W("blossom\\w*", "catkins?", "lambs?", "new leaves", "first green", "frogspawn")
 AUTUMN_ONLY = W("fallen leaves", "leaf-fall", "turning leaves", "russet leaves", "stubble fields?", "rutting")
 HARVEST = W("harvest(ers|ing)?", "haymaking", "hay-making", "reapers?", "sheaves")

@@ -263,6 +263,24 @@
       });
     }
 
+    // roads you know of: a brown line from tile to tile, slightly wandering
+    ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (let y = 0; y < A.h; y++) for (let x = 0; x < N; x++) {
+      const c = cell(x, y); if (!c.k || !c.rd) continue;
+      for (const [l, dx, dy] of [["e", 1, 0], ["s", 0, 1]]) {
+        if (!c.rd.includes(l)) continue;
+        const o = cell(x + dx, y + dy); if (!o.k) continue;
+        const r = mulberry(seed + x * 389 + y * 7919 + dx * 13);
+        const ax = X0 + (x + 0.5) * T, ay = Y0 + (y + 0.5) * T, bx = X0 + (x + dx + 0.5) * T, by = Y0 + (y + dy + 0.5) * T;
+        const mx = (ax + bx) / 2 + jitter(r, T * 0.12) * dy, my = (ay + by) / 2 + jitter(r, T * 0.12) * dx;
+        const a = Math.min(c.k, o.k) === 2 ? 0.85 : 0.45;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo(mx, my, bx, by);
+        ctx.strokeStyle = `rgba(${PAPER.join(",")},${0.7 * a})`; ctx.lineWidth = (MINI ? 7 : 5.5); ctx.stroke();
+        ctx.strokeStyle = `rgba(122,84,46,${a})`; ctx.lineWidth = (MINI ? 3.6 : 2.6); ctx.stroke();
+      }
+    }
+    ctx.restore();
+
     if (MINI) {                                           // the panel shows sites as small icons, and nothing else
       for (let y = 0; y < A.h; y++) for (let x = 0; x < N; x++) {
         const c = cell(x, y); if (!c.s) continue;

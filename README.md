@@ -366,11 +366,35 @@ Wizards start with a pot of ink and Clerics with candles. Chandlers, pedlars and
 hedge-witches sell more. Crafted arts get a one-word command, live in your save,
 and can be let go with `forget` (a honed technique goes back to plain).
 
+## The size of the world, roads and travel (`rpg/world.py`, `rpg/travel.py`)
+
+A world is a 24 by 24 map with about 500 squares of land. Home sits off-centre, so one
+side of the world is a long way off: danger rises a step every six squares from home,
+and the relic lies 20 to 25 steps away. (Worlds saved before the map grew keep their
+16 by 16 size.)
+
+**Roads.** Tracks join every village to the rest, with a short cut or two so the
+network has loops. A road square says which way the road runs and where it goes
+("A drove road runs through here, north to Kirkby and west toward Oswell"), and a
+village says where its roads lead. Walking along a road takes about half the time
+of open country, and fewer beasts lair beside one. Roads are drawn on both maps.
+
+**Rations and fast travel.** Any village sells travel rations (2 coins each, up to
+10 in your pack; you start with 2). `travel` lists the places you can go back to,
+and `travel <place>` takes you to anywhere you have walked: a village, a ruin, a
+shrine, a camp, or a landmark ("travel standing stone"). The way follows roads where
+it can and country you know where it must. It costs a ration for each half-day of
+walking, and the days really pass (nights are spent camping, and heal a little).
+The road can still surprise you: a night's stop may bring a road encounter, and
+something hunting the country you cross may stop you where it waits. You can't set
+off with something stalking you, and if something waits at the place you named, you
+stop a square short. Rations can be eaten in a pinch (`eat ration`).
+
 ## Villages, traders and goods (`rpg/goods.py`)
 
-Each world has about six settlements: your home village, one **market town** a
-fair walk away (three traders and a few craftsfolk), and a mix of villages and
-**hamlets**. No two people in a settlement share a job.
+Each world has about a dozen settlements: your home village, two **market towns**
+(three traders and a few craftsfolk each), and a mix of villages and **hamlets**.
+No two people in a settlement share a job.
 
 Traders sell what their trade suggests. A smith has blades, mail and whetstones;
 a fletcher fire and bodkin arrows; a hedge-witch or wise-woman herbs, draughts

@@ -112,7 +112,7 @@ class Session:
             player=dict(name=p.name, klass=p.class_name, res_name=(K.spec(p) or {}).get("res"), res=getattr(p, "res", 0),
                         res_max=getattr(p, "res_max", 0), guard=getattr(p, "guard", 0), ward=getattr(p, "ward", 0),
                         hidden=getattr(p, "hidden", 0), hp=max(0, p.hp), maxhp=p.maxhp, level=p.level, xp=p.xp, xp_next=p.level * 30,
-                        atk=p.atk, df=p.df, gold=p.gold,
+                        atk=p.atk, df=p.df, gold=p.gold, rations=getattr(p, "rations", 0),
                         weapon=p.weapon.name if p.weapon else None, armour=p.armour.name if p.armour else None),
             place=g.narr.header(g.pos), day=w.day, time=tod, season=w.season, weather=w.weather,
             quest=quest, inventory=inv, combat=g.combat.name if g.combat else None,
@@ -143,6 +143,8 @@ class Session:
                 cell = dict(b=None)
                 if seen(x, y):
                     cell = dict(b=t.biome, r=w.regions[t.region]["name"], v=t.visited)
+                    if getattr(t, "road", ""):
+                        cell["rd"] = t.road
                     if t.site and (t.visited or getattr(t, "site_seen", False)):
                         cell["s"] = t.site["kind"]
                         if t.site["kind"] == "village":
@@ -185,6 +187,8 @@ def atlas(g):
             c = dict(k=k)
             if k:
                 c.update(b=t.biome, g=t.region)
+                if getattr(t, "road", ""):
+                    c["rd"] = t.road
                 if t.site and (t.visited or getattr(t, "site_seen", False)):
                     c["s"] = t.site["kind"]
                     if t.site["kind"] == "village":

@@ -239,6 +239,15 @@ def catalog(g):
     act("Rest & Time", "rest", "Rest", "Sleep in safety: fully healed." if village else "Rest in the wild: heals a third, but you may be found.",
         enabled=not fighting, reason="Not with an enemy at your throat.")
     act("Rest & Time", "wait", "Wait an hour", "Let time pass.", enabled=not fighting, reason="Not mid-fight.")
+    from . import travel as TR
+    dests = TR.options(g) if not fighting else []
+    why = TR.blocked(g)
+    act("Rest & Time", "travel", "Travel to…", f"Fast travel to somewhere you've been. A ration for each half-day; you carry {TR.rations(g)}.",
+        "travel {where}", [dict(name="where", prompt="Travel where?", options=[_opt(d["label"][:1].upper() + d["label"][1:], d["value"], d["note"]) for d in sorted(dests, key=lambda d: d["mins"])])],
+        enabled=dests and not why, reason=why or "Nowhere you've been is far enough to need it yet.")
+    act("Rest & Time", "rations", "Buy rations", f"Food for the road, {TR.RATION_PRICE} coins each (up to {TR.RATION_MAX}). You carry {TR.rations(g)}.",
+        "buy rations", enabled=village and TR.rations(g) < TR.RATION_MAX and p.gold >= TR.RATION_PRICE,
+        reason="Only in a village." if not village else "Your pack is full of food." if TR.rations(g) >= TR.RATION_MAX else "Not enough coin.")
     shrine = bool(t.site and t.site["kind"] == "shrine")
     act("Rest & Time", "pray", "Pray", "Ask the shrine's spirit for healing (once per shrine).",
         enabled=shrine and not t.site.get("used"), reason="Only at a shrine." if not shrine else "This shrine has already answered you.")

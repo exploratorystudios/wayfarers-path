@@ -190,11 +190,16 @@ def _walk(g, d):
 
 def _deserter_feed(g, d):
     food = next((i for i in g.player.inv if i.kind == "food"), None)
-    if not food:
+    if food:
+        g.player.inv.remove(food)
+        fname = food.name
+    elif getattr(g.player, "rations", 0) > 0:          # a travel ration will do
+        g.player.rations -= 1
+        fname = "travel ration"
+    else:
         g.emit("You have no food to give. He laughs, not unkindly. \"Nor me. Good luck to you.\"")
         return
-    g.player.inv.remove(food)
-    g.emit(f"You give him your {food.name}. He eats it in four bites. \"I won't forget,\" he says, and from the look of him, he means it.")
+    g.emit(f"You give him your {fname}. He eats it in four bites. \"I won't forget,\" he says, and from the look of him, he means it.")
     g.deserter_helped = True
     S.record(g, "You fed a starving deserter on the road.", "deed", story="you fed a starving deserter on the road, and asked nothing", like=1)
     if g.rng.random() < 0.6:
