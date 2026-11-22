@@ -5,6 +5,9 @@ it is fire on the high places: three beacons on three far hills, lit in turn. Ea
 pile of old timber that wants coaxing (burn some of your rations' fat, or spend hours gathering
 fuel and risk what comes), and something has made its lair by at least one of them. With all
 three alight, the sleeper wakes on its own high place; go to it, and then home.
+
+The world starts in winter and stays there (the season never turns) until the sleeper wakes,
+and then it is spring at once.
 """
 from . import mainquest as MQ
 from . import story as S
@@ -29,6 +32,7 @@ class BeaconsQuest(MQ.MainQuest):
     kind = "beacons"
 
     def setup(self, w, r):
+        w.season = "winter"            # the year stuck in its dead season; waking the sleeper brings the spring
         self.sleeper = r.choice(SLEEPER)
         self.wrong = r.choice(WRONG)
         self.ending = r.choice(ENDINGS)
@@ -108,6 +112,9 @@ class BeaconsQuest(MQ.MainQuest):
             return f"someone's lit the old beacon on {narr.w.region_of(self.lit[-1])['name']}. You can see it from the ridge at night"
         return "the year's stuck. Old folk say the beacons want lighting, like in their grandmothers' day"
 
+    def holds_season(self):
+        return not self.done            # the year is stuck until the sleeper wakes
+
     def place_lines(self, narr, pos):
         if pos not in self.beacons:
             return []
@@ -129,8 +136,11 @@ class BeaconsQuest(MQ.MainQuest):
             S.ask(g, "The beacon's timber is old and damp. It will take some coaxing to light.", opts, leave=len(opts) - 1)
         elif g.pos == w.quest_pos and not self.unlit():
             self.done = True
+            w.season = "spring"
             g.emit(f"{cap(self.sleeper)} is awake. You feel it more than see it: a great presence turning over, the way a sleeper turns toward morning. "
-                   f"The wind comes round to the south, warm. (The year is turning. Go home to {home_name(w)}.)")
+                   f"The wind comes round to the south, warm, and the snow starts to drip from every branch. Spring has come, all at once. (The year has turned. Go home to {home_name(w)}.)")
+            from . import living as LV
+            LV.season_check(g, quiet=True)
 
     def on_kill(self, g, c):
         if c.boss and g.pos in self.unlit():

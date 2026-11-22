@@ -182,8 +182,8 @@ sells, a wedding that wants a gift, a blight on the fields, a feud between neigh
 hands (harvest, lambing, haymaking or storm repairs, by season). Each is told with
 several titles, openings, requests and endings. The next one leans away from the
 kinds you've seen lately and toward ones you haven't. They ask for your help, and
-troubles *wait for you*: they never fail or get worse while you're away. When the season turns, every
-village keeps its festival (the Mayday garlanding, midsummer fires, harvest home,
+troubles *wait for you*: they never fail or get worse while you're away. The season turns every 7 days
+(you'll notice the morning it does), and every village keeps its festival (the Mayday garlanding, midsummer fires, harvest home,
 midwinter wassail), and villagers press food on you. Creatures drift back into
 empty country. News travels as rumour.
 
@@ -418,7 +418,8 @@ testing.)
   shrine by night. Renew the pact as it was, or bargain for better.
 - **The beacons** (`mq_beacons.py`): the year has stuck. Light three beacons on three far
   hills (burn two rations' fat to get the old timber going, or spend hours gathering fuel
-  and see what the fire draws), and go to where the sleeper wakes.
+  and see what the fire draws), and go to where the sleeper wakes. It's winter, and stays
+  winter however long you take, until the sleeper wakes and the spring comes in at once.
 - **The feud** (`mq_feud.py`): two villages are heading for war. Hear each side, go to
   where it started and find out what really happened (sometimes it's still there, and
   hungry), then tell them the hard truth or a kinder story.

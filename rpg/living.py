@@ -5,7 +5,7 @@ Each new day:
     wolves at the folds to a wedding that wants a gift (see rpg/troubles.py).
     Troubles wait for you: they never fail or get worse while you're away. Their
     telling changes as days pass, and they stay until someone deals with them.
-  * when the season turns, every village keeps its festival for two days
+  * when the season turns (every 7 days), you notice, and every village keeps its festival for two days
   * creatures drift back into empty wild country
   * news of what has happened travels as rumour
 
@@ -59,10 +59,7 @@ def new_day(g):
     w = g.world
     S.ensure(g)
     S.expire(g)
-    season = getattr(w, "last_season", w.season)
-    if season != w.season:
-        start_festivals(g)
-    w.last_season = w.season
+    season_check(g)
     for v in w.villages:
         site = w.tiles[v].site
         if site.get("trouble") or w.day < 2:
@@ -73,6 +70,31 @@ def new_day(g):
     respawn(g)
     from . import goods as GOODS
     GOODS.restock(g)
+
+
+# ------------------------------------------------------------------ the turning year
+TURN = {
+    "spring": ["Overnight the wind has gone round to the south. The thaw has begun: spring is here.",
+               "The birds are back, singing as if they'd never been away, and the air smells of wet earth. Spring has come.",
+               "Somewhere in the night the cold let go. The streams are loud with meltwater, and it is spring."],
+    "summer": ["The days have grown long and the nights warm, and the hedges are thick with green. It is summer now.",
+               "The air has turned heavy and sweet, and the first hay is down in the meadows. Summer has come in."],
+    "autumn": ["There's a new edge to the air, and the first leaves are turning. Autumn has come.",
+               "The swallows are gone, all at once, and the light has gone low and gold. It is autumn."],
+    "winter": ["There's a white rime on everything, and your breath smokes. Winter has come.",
+               "The last leaves came down in the night's wind, and the puddles have skinned with ice. It is winter now."],
+}
+
+
+def season_check(g, quiet=False):
+    """If the season has turned since we last looked: say so (unless the caller already has), note it, and start the festivals."""
+    w = g.world
+    if getattr(w, "last_season", w.season) != w.season:
+        if not quiet:
+            g.emit(g.rng.choice(TURN[w.season]))
+        S.record(g, f"The season turned: {w.season} came.", "news")
+        start_festivals(g)
+    w.last_season = w.season
 
 
 # ------------------------------------------------------------------ festivals

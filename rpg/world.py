@@ -42,6 +42,7 @@ def guess_gender(name):
 
 NAMES_CULTURES = ["Archaic", "Westron", "Northish", "Southron"]
 SEASONS = ["spring", "summer", "autumn", "winter"]
+SEASON_DAYS = 7          # the season turns every week (short enough that most runs see it happen)
 WEATHER_NEXT = {
     "clear": [("clear", 5), ("cloudy", 3), ("wind", 1), ("fog", 1)],
     "cloudy": [("cloudy", 3), ("clear", 2), ("overcast", 3), ("wind", 1)],
@@ -825,5 +826,8 @@ class World:
                 opts = [("overcast", 1)]
             self.weather = rng.choices([o for o, _ in opts], [w for _, w in opts])[0]
         old_day = 1 + before // (24 * 60)
-        if (self.day - 1) // 12 > (old_day - 1) // 12:
-            self.season = SEASONS[(SEASONS.index(self.season) + 1) % 4]
+        if (self.day - 1) // SEASON_DAYS > (old_day - 1) // SEASON_DAYS and not self.quest.holds_season():
+            self.turn_season()
+
+    def turn_season(self):
+        self.season = SEASONS[(SEASONS.index(self.season) + 1) % 4]

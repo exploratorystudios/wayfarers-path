@@ -197,6 +197,10 @@ class MainQuest:
     def on_talk(self, g, npc):
         pass
 
+    def holds_season(self):
+        """True while this quest keeps the year from turning."""
+        return False
+
     def on_new_day(self, g):
         pass
 
