@@ -972,7 +972,7 @@ def _close(g, plot, chronicle, xp=10, gold=0, like=0, story=None, item_chance=0.
             g.emit(m)
         bits.append(f"{xp} experience")
     if item_chance and g.rng.random() < item_chance:
-        it = g.world.make_item(3, g.rng.choice(["book", "potion", "armour", "weapon", "trinket"]))
+        it = g.world.make_item(3, g.rng.choice(["book", "scroll", "potion", "armour", "weapon", "trinket", "goods"]))
         p.inv.append(it)
         bits.append(article(it.name))
     if like:

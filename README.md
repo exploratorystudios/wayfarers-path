@@ -379,8 +379,12 @@ network has loops. A road square says which way the road runs and where it goes
 village says where its roads lead. Walking along a road takes about half the time
 of open country, and fewer beasts lair beside one. Roads are drawn on both maps.
 
-**Rations and fast travel.** Any village sells travel rations (2 coins each, up to
-10 in your pack; you start with 2). `travel` lists the places you can go back to,
+**Rations and fast travel.** Travel rations cost 5 coins each, up to 10 in your pack
+(you start with 2). Only those with food to spare sell them: travelling merchants (pedlar,
+trader, huckster and the like) and a miller or eel-catcher with a stall. Each has only a
+few, restocked every few days, and your home village always has one such seller. Rations
+also turn up as loot, in caches, strongboxes and abandoned camps.
+`travel` lists the places you can go back to,
 and `travel <place>` takes you to anywhere you have walked: a village, a ruin, a
 shrine, a camp, or a landmark ("travel standing stone"). The way follows roads where
 it can and country you know where it must. It costs a ration for each half-day of
@@ -452,6 +456,10 @@ everything. Craftsfolk keep a small stall once you've been introduced
 `buy` finds the item on any stall you've already looked at. Stalls restock every
 few days, and the season shows: herbs in summer, padded coats and draughts in
 winter.
+
+None of it is only for sale. Anything a stall sells can also be found: a whetstone in a
+hidden cache, a witch-stone in a smuggler's hole, candles and ink in a ruin, a spellbook
+in a strongbox.
 
 Things you can use (`use <item>`):
 

@@ -688,7 +688,14 @@ class World:
     # ------------------------------------------------------------- items
     def make_item(self, danger=1, kind=None, wtype=None, akind=None, school=None):
         r = self.rng
-        kind = kind or r.choices(["weapon", "armour", "herb", "potion", "food", "trinket", "book", "scroll"], [3, 2, 3, 2, 3, 3, 1.2, 1.5])[0]
+        kind = kind or r.choices(["weapon", "armour", "herb", "potion", "food", "trinket", "book", "scroll", "goods", "rations"],
+                                 [3, 2, 3, 2, 3, 3, 1.2, 1.5, 2.5, 1.5])[0]
+        if kind == "rations":
+            from . import travel as TR
+            return TR.ration_item(r)
+        if kind == "goods":                 # tools, draughts, charms and crafting stuff, as on the stalls
+            from . import goods as GOODS
+            return GOODS.make(self, GOODS.loot_pick(r), danger)
         if kind in ("book", "scroll"):
             d = ARTS.make_book(r, danger, school, self.name_pool) if kind == "book" else ARTS.make_scroll(r, danger, school)
             return Item(d["kind"], d["name"], value=d["value"], facts=d["facts"])
@@ -755,6 +762,19 @@ class World:
         return ""
 
     # ------------------------------------------------------------- populate
+    def _home_rations(self, t, p):
+        """Home always has someone who sells food for the road (elsewhere, it depends who lives there)."""
+        from . import travel as TR
+        if any(TR.sells_rations(n) for n in t.npcs):
+            return
+        m = next((n for n in t.npcs if n.role == "merchant"), None)
+        if m is None:
+            m = self.make_npc("merchant", p)
+            t.npcs.append(m)
+        m.job = self.rng.choice(["pedlar", "trader", "huckster"])
+        lo, hi = GOODS.stall_size(m)
+        m.stock = GOODS.stock(self, m.job, self.rng.randint(lo, hi), 2, getattr(self, "season", None))
+
     def _populate(self):
         r = self.rng
         for i, p in enumerate(self.villages):
@@ -768,6 +788,8 @@ class World:
                 t.npcs.append(self.make_npc("merchant", p))
             for j in range(folk):      # towns and hamlets always have at least one craftsperson with a stall
                 t.npcs.append(self.make_npc("folk", p, stall=(j == 0 and scale in ("town", "hamlet"))))
+            if i == 0:
+                self._home_rations(t, p)
         for p in self.land:
             t = self.tiles[p]
             if t.site and t.site["kind"] == "village":
@@ -781,6 +803,8 @@ class World:
             if t.site and t.site["kind"] in ("ruin", "camp"):
                 for _ in range(r.randint(1, 2)):
                     t.items.append(self.make_item(t.danger + 1))
+                if t.site["kind"] == "camp" and r.random() < 0.5:     # whoever camped here left food behind
+                    t.items.append(self.make_item(t.danger, "rations"))
         self.main.populate(self, r)
 
     # ------------------------------------------------------------- time & weather

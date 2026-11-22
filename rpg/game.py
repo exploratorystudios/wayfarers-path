@@ -53,7 +53,7 @@ HELP = """Commands:
   attack <creature> / flee
   talk <person> / give <item> to <person> / trade / buy <item> / sell <item>
   pray (at a shrine) / rest / wait / map / status
-  travel [place]        fast travel to anywhere you've been; costs rations ('buy rations' in a village)
+  travel [place]        fast travel to anywhere you've been; costs rations (buy them from merchants, millers, eel-catchers)
   search / climb / drink / touch / read / listen / forage <landmark>   (landmarks keep secrets)
   give <item> to <landmark>  (an offering) / journal (j) / chronicle / 1, 2, 3... to answer a choice
   arts / improve <stat> / read <book or scroll> / craft / compose / hone / forget
@@ -219,6 +219,10 @@ class Game:
         return best
 
     def handle(self, line):
+        self._handle(line)
+        TR.fold(self)
+
+    def _handle(self, line):
         words = line.lower().replace(",", " ").split()
         if not words:
             return
@@ -477,7 +481,8 @@ class Game:
         elif kind == "NPC":
             self.emit(n.npc_full(obj))
         elif kind == "Item":
-            self.emit(ARTS.describe(self, obj) if ARTS.readable(obj) else GOODS.describe(obj) if GOODS.describable(obj) else n.item_full(obj))
+            self.emit(TR.describe(obj) if obj.kind == "ration" else ARTS.describe(self, obj) if ARTS.readable(obj) else
+                      GOODS.describe(obj) if GOODS.describable(obj) else n.item_full(obj))
         else:
             self.emit(n.feature_full(obj, t.biome))
 
@@ -588,7 +593,7 @@ class Game:
     def cmd_use(self, rest):
         p = self.player
         it = self.find(rest, [p.inv])
-        if not it and any(x.startswith("ration") for x in rest):
+        if (not it or it.kind == "ration") and any(x.startswith("ration") for x in rest):
             return TR.eat(self)
         if not it:
             return self.emit("You don't have that.")
@@ -776,7 +781,10 @@ class Game:
         for it in m.stock:
             self.out(f"  {article(it.name):45s} {self.buy_price(m, it):4d} coins")
         self.out(f"You have {self.player.gold} coins. ('buy <item>', 'sell <item>', 'examine <item>')")
-        self.out(f"Travel rations are {TR.RATION_PRICE} coins each, for the road ('buy rations'). You carry {TR.rations(self)}.")
+        if TR.sells_rations(m):
+            left = TR.supply(m)
+            self.out(f"{m.name} has {left} travel ration{'s' if left != 1 else ''} at {TR.RATION_PRICE} coins each ('buy rations'). You carry {TR.rations(self)}."
+                     if left else f"{m.name} has no travel rations left. You carry {TR.rations(self)}.")
 
     def cmd_buy(self, rest):
         if any(x.startswith("ration") for x in rest):

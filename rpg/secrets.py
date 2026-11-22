@@ -290,7 +290,7 @@ def small_find(g, chance=0.12):
         n = g.rng.randint(1, 4)
         g.player.gold += n
         return f" You turn up {n} coin{'s' if n > 1 else ''}, long lost."
-    it = g.world.make_item(1, g.rng.choice(["herb", "food", "trinket"]))
+    it = g.world.make_item(1, g.rng.choice(["herb", "food", "trinket", "rations", "goods"]))
     g.player.inv.append(it)
     return f" Tucked away, you find {article(it.name)}."
 
@@ -491,7 +491,7 @@ def s_cache(g, f, sec):
     where = LK.CACHE_WHERE.get(tag_of(f), "tucked out of sight")
     extra = ""
     if g.rng.random() < 0.4:
-        it = w.make_item(2, g.rng.choice(["potion", "weapon", "armour", "trinket"]))
+        it = w.make_item(2, g.rng.choice(["potion", "weapon", "armour", "trinket", "goods", "goods", "rations", "book", "scroll"]))
         p.inv.append(it)
         extra = f", and {article(it.name)} wrapped in oiled cloth"
     loot = f"{gold} coins{extra}"
@@ -756,7 +756,7 @@ def _wisp_follow(g, d):
     if g.rng.random() < 0.5:
         gold = g.rng.randint(6, 18)
         p.gold += gold
-        it = w.make_item(3, g.rng.choice(["potion", "trinket", "weapon"]))
+        it = w.make_item(3, g.rng.choice(["potion", "trinket", "weapon", "goods", "scroll"]))
         p.inv.append(it)
         g.emit(f"The light leads you to a hummock where it sinks into the ground and goes out. Digging, you find a drowned man's purse: {gold} coins, and {article(it.name)}.")
     else:
@@ -1058,7 +1058,7 @@ def s_hidden_door(g, f, sec):
     w, p = g.world, g.player
     gold = g.rng.randint(10, 25)
     p.gold += gold
-    it = w.make_item(4, g.rng.choice(["weapon", "armour"]))
+    it = w.make_item(4, g.rng.choice(["weapon", "armour", "goods", "book"]))
     p.inv.append(it)
     g.emit(f"Your fingers find a seam in the {f.noun}. You heave, and a slab grinds aside on a narrow dark space: a forgotten smuggler's hole, or a robber's. Inside: {gold} coins and {article(it.name)}.")
     S.record(g, f"You found a hidden chamber in the {f.noun}.", "find", mark=f"A slab of the {f.noun} stands askew where you opened the hidden chamber.",

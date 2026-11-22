@@ -201,7 +201,7 @@ def suggest(g, n=6):
             break
     if village:
         from . import travel as TR
-        if TR.rations(g) < 3 and p.gold >= 3 * TR.RATION_PRICE + 10:
+        if TR.rations(g) < 3 and p.gold >= 3 * TR.RATION_PRICE + 10 and TR.seller(g):
             add(52, "buy rations", "Buy travel rations", f"Food for the road, {TR.RATION_PRICE} coins each. With rations you can travel back to anywhere you've been ('travel').")
     m = g.merchant()
     if m and not m.mem.get("wares_seen"):
@@ -353,6 +353,15 @@ def suggest(g, n=6):
         d = best_travel.cmd if best_travel else (exits[0] if exits else None)
         if d:
             add(60, d, f"Leave {d}", f"The {guard} is guarding this ground. It warned you; it won't follow.", travel=True)
+
+    # hemmed in: every way on is through something dangerous. Rest if hurt, else take the least bad way out.
+    if not any(x.travel for x in out) and not g.combat:
+        if hp < 0.9:
+            add(30, "rest", "Rest here", "Every way on looks dangerous. Get your strength back first.")
+        exits = [(max((fight_risk(p, c) for c in w.tiles[q].creatures), default=0), d) for d, q in w.neighbours(g.pos) if q in w.land]
+        if exits:
+            risk, d = min(exits)
+            add(20, d, f"Go {d}", "The least dangerous way out of here." if risk else "The way looks clear.", [], True)
 
     # ---------------------------------------------------------------- housekeeping
     if turns - getattr(g, "last_save_turn", 0) > 60:

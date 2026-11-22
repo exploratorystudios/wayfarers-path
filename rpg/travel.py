@@ -1,6 +1,8 @@
 """Rations and fast travel.
 
-Any village sells travel rations (there is always someone with bread and cheese to spare). With
+Travel rations come from those who have food to spare: travelling merchants, and the miller or
+eel-catcher who keeps a stall (each has only so many, and restocks every few days with the rest of
+their goods). They also turn up as loot: in caches, camps and strongboxes. With
 rations in your pack, `travel <place>` takes you to anywhere you have already been: a village, a
 ruin, a shrine, a camp, or any landmark. The way follows roads where it can and known country
 where it must. It costs a ration for each half-day of walking, the days really pass, and the road
@@ -14,7 +16,7 @@ import math
 from . import mind
 from .textgen import cap
 
-RATION_PRICE = 2
+RATION_PRICE = 5
 RATION_MAX = 10
 START_RATIONS = 2
 WALK_DAY = 600          # minutes of walking in a travelling day; the rest is camp and sleep
@@ -22,8 +24,70 @@ PER_RATION = 300        # minutes of walking one ration covers (half a day)
 NIGHT = 14 * 60
 
 
+# who keeps food for the road: merchants who carry food, and the stall-folk who make it
+RATION_TRADES = {"pedlar", "packman", "trader", "huckster", "horse-coper", "miller", "eel-catcher"}
+PACKS = ["oilcloth packet", "bundle", "cloth-wrapped parcel", "knotted bag"]
+
+
 def rations(g):
     return getattr(g.player, "rations", 0)
+
+
+def sells_rations(npc):
+    return npc.job in RATION_TRADES
+
+
+def supply(npc, rng=None):
+    """How many rations this seller has left (set on first asking, and at each restock). The first
+    count comes from the seller's own name, so merely looking (the advisor, the menus) never
+    disturbs the game's dice."""
+    if "rations" not in npc.mem:
+        import random
+        restock(npc, random.Random(f"rations-{npc.name}"))
+    return npc.mem["rations"]
+
+
+def restock(npc, rng):
+    npc.mem["rations"] = rng.randint(4, 8) if npc.role == "merchant" else rng.randint(2, 5)
+
+
+def ration_item(rng, n=None):
+    """Rations found as loot: an Item that folds into your ration count once it's in your pack."""
+    from .world import Item
+    n = n or rng.choice([1, 2, 2, 3])
+    return Item("ration", pack_name(rng.choice(PACKS), n), value=n * RATION_PRICE, facts=dict(n=n))
+
+
+def pack_name(pack, n):
+    return f"{pack} of {n} travel ration{'s' if n != 1 else ''}"
+
+
+def describe(it):
+    n = it.facts.get("n", 1)
+    return (f"{cap(it.name)}: oatcakes, hard cheese and dried meat, still good. Enough for {n} half-day{'s' if n != 1 else ''} on the road "
+            f"when you travel ('travel'). In your pack it goes in with your other rations.  (worth ~{it.value} coins)")
+
+
+def fold(g):
+    """Any ration packets in your pack become part of your ration count, as far as there's room."""
+    p = g.player
+    before = rations(g)
+    for it in [i for i in p.inv if i.kind == "ration"]:
+        room = RATION_MAX - rations(g)
+        n = it.facts.get("n", 1)
+        take = min(room, n)
+        if take <= 0:
+            break
+        add_rations(g, take)
+        if take == n:
+            p.inv.remove(it)
+        else:
+            it.facts["n"] = n - take
+            it.name = pack_name(it.name.split(" of ")[0], n - take)
+            it.value = (n - take) * RATION_PRICE
+    if rations(g) > before:
+        full = any(i.kind == "ration" for i in p.inv)
+        g.emit(f"(The food goes in with your rations: you carry {rations(g)}" + (", as many as you can, and keep the rest aside.)" if full else ".)"))
 
 
 def add_rations(g, n):
@@ -187,7 +251,7 @@ def danger_at(g, p):
 def list_places(g):
     opts = options(g)
     have = rations(g)
-    lines = [f"You carry {have} ration{'s' if have != 1 else ''} (at most {RATION_MAX}). Villages sell them for {RATION_PRICE} coins each ('buy rations')."]
+    lines = [f"You carry {have} ration{'s' if have != 1 else ''} (at most {RATION_MAX}). Merchants, millers and eel-catchers sell them for {RATION_PRICE} coins each ('buy rations'), and you may find some on the road."]
     if not opts:
         lines.append("You haven't been anywhere worth travelling back to yet. Places you walk become places you can return to.")
     else:
@@ -218,7 +282,7 @@ def travel(g, text):
     cost = need(mins)
     if rations(g) < cost:
         return g.emit(f"It's {how_long(mins)} to {d['label']}, and you'd need {cost} ration{'s' if cost > 1 else ''}. "
-                      f"You have {rations(g)}. (Villages sell them: 'buy rations'.)")
+                      f"You have {rations(g)}. (Merchants, millers and eel-catchers sell them: 'buy rations'.)")
     w = g.world
     roads = sum(1 for a, b in zip(path, path[1:]) if w.road_between(a, b))
     by = "by road" if roads >= 0.7 * (len(path) - 1) else "partly by road" if roads else "across country"
@@ -288,11 +352,25 @@ def travel(g, text):
         S.on_arrive(g)
 
 
+def seller(g):
+    """Someone here who'll sell you rations and still has some, or None."""
+    sellers = [n for n in g.sellers() if sells_rations(n)]
+    return next((n for n in sellers if supply(n) > 0), None)
+
+
 def buy(g, text):
-    """'buy rations', 'buy 4 rations': any village will sell you food for the road."""
+    """'buy rations', 'buy 4 rations': from a merchant or a miller or eel-catcher with a stall."""
     t = g.world.tiles[g.pos]
     if not (t.site and t.site["kind"] == "village"):
-        return g.emit("There's no one out here to sell you food for the road. Any village will.")
+        return g.emit("There's no one out here to sell you food for the road. Try a village with a merchant, a miller or an eel-catcher.")
+    m = seller(g)
+    if not m:
+        unmet = [n for n in t.npcs if sells_rations(n) and n not in g.sellers()]
+        if unmet:
+            return g.emit(f"Nobody's offered you food for the road yet. ({unmet[0].name}, the {unmet[0].job}, might, once you've talked.)")
+        if any(sells_rations(n) for n in g.sellers()):
+            return g.emit("Nobody here has any rations left to sell. They'll have more in a few days.")
+        return g.emit(f"No one in {t.site['name']} has food to spare for the road. A merchant, a miller or an eel-catcher would.")
     words = text.split()
     n = next((int(x) for x in words if x.isdigit()), 0)
     room = RATION_MAX - rations(g)
@@ -302,10 +380,11 @@ def buy(g, text):
     afford = g.player.gold // RATION_PRICE
     if afford <= 0:
         return g.emit(f"Rations are {RATION_PRICE} coins each, and you haven't the coin.")
-    n = min(n, afford)
+    n = min(n, afford, supply(m))
     g.player.gold -= n * RATION_PRICE
     add_rations(g, n)
-    who = next((x.name for x in t.npcs if x.role == "merchant"), None) or "Someone"
+    m.mem["rations"] -= n
+    who = m.name
     g.emit(g.narr.pick([f"{who} wraps up {n} rations of bread, hard cheese and dried meat for you. ({n * RATION_PRICE} coins; you carry {rations(g)} rations.)",
                         f"For {n * RATION_PRICE} coins you get {n} travel ration{'s' if n > 1 else ''}, tied in a cloth. (You carry {rations(g)}.)",
                         f"{who} sells you {n} ration{'s' if n > 1 else ''} for the road: oatcakes, cheese and a twist of salt meat. ({n * RATION_PRICE} coins; {rations(g)} in your pack.)"],
@@ -319,4 +398,4 @@ def eat(g):
     g.player.rations -= 1
     heal = min(4, p.maxhp - p.hp)
     p.hp += heal
-    g.emit(f"You eat one of your travel rations. It is filling, and that is all that can be said for it. (+{heal} HP; {rations(g)} left.)")
+    g.emit(f"You eat one of your travel rations. It is filling, and that is all that can be said for it. (" + (f"+{heal} HP; " if heal else "") + f"{rations(g)} left.)")

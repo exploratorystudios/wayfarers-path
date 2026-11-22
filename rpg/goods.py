@@ -100,6 +100,18 @@ SEASON_WEIGHT = {   # what the time of year puts on the stalls
 RESTOCK_DAYS = 3
 
 
+# how often each of the goods turns up as loot (lost, stashed or carried by someone who didn't need it any more)
+LOOT_WEIGHT = {"whetstone": 3, "set of lockpicks": 1.2, "quiver of fire arrows": 1, "quiver of bodkin arrows": 1, "flask of holy water": 1.5,
+               "smoke pot": 1.5, "draught of strength": 1.2, "warding draught": 1.2, "draught of fortune": 1, "draught of clarity": 1.2,
+               "antidote": 1.5, "rowan cross": 1.5, "hare's-foot charm": 1.2, "witch-stone": 0.6,
+               "pot of oak-gall ink": 1.5, "bundle of beeswax candles": 1.5}
+
+
+def loot_pick(r):
+    names = list(GOODS)
+    return r.choices(names, [LOOT_WEIGHT.get(n, 1) for n in names])[0]
+
+
 def recipe(job):
     return TRADES.get(job) or TRADES["pedlar"]
 
@@ -161,6 +173,9 @@ def restock(g):
             if w.day - last < RESTOCK_DAYS:
                 continue
             npc.mem["restocked"] = w.day
+            from . import travel as TR
+            if TR.sells_rations(npc):
+                TR.restock(npc, g.rng)
             lo, hi = stall_size(npc)
             keep = [it for it in npc.stock if g.rng.random() < 0.6]       # some things sell to other folk
             want = g.rng.randint(lo, hi) - len(keep)

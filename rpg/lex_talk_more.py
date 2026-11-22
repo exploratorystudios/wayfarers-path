@@ -14,7 +14,7 @@ EXTEND = {
     ],
     "npc_intro": [
         "\"{name}. {job_self.cap}, for my sins and theirs.\"", "\"They call me {name} round here. {job_self.cap}.\"",
-        "\"{name}'s my name. {job_self.cap}'s my trade.\"", "{he.cap} jerks {his} chin at {his} work. \"{name}. {job_self.cap}.\"",
+        "\"{name}'s my name, and I'm the {job}.\"", "{he.cap} jerks {his} chin at {his} work. \"{name}. {job_self.cap}.\"",
         "\"You can call me {name}. Most do.\"", "\"{name},\" {he} says, as if that settles a great deal.",
         "\"I'm {name}, and that's about all there is to me. {job_self.cap}.\"", "\"{name}. And before you ask - {job_self}.\"",
     ],
