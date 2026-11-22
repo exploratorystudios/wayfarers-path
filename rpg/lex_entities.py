@@ -215,7 +215,9 @@ POTION_COLOUR = ["amber", "cloudy green", "blood-red", "milky blue", "near-black
 POTION_SMELL = ["pine resin", "burnt sugar", "pond water", "cloves", "something rotten", "mint", "copper", "elderflower"]
 FOOD = [("heel of rye bread", 3), ("strip of smoked eel", 4), ("wedge of hard cheese", 4), ("handful of dried apples", 3),
         ("cold mutton pie", 6), ("pot of honey", 5), ("twist of salted pork", 5), ("oatcake", 3)]
-TRINKETS = ["locket", "ring", "brooch", "comb", "figurine", "amulet", "dice set", "hand mirror", "bead necklace", "carved whistle"]
+# no locket, ring, comb or brooch: those are what lost-keepsake quests send you after, and a stray
+# one in your pack looks like the quest item (see plots.ITEM_NAMES)
+TRINKETS = ["pendant", "figurine", "amulet", "dice set", "hand mirror", "bead necklace", "carved whistle", "snuff box", "cloak pin", "belt buckle", "scent bottle"]
 TRINKET_MAT = ["silver", "tarnished silver", "jet", "amber", "bone", "gilt bronze", "carved antler", "blue glass", "pewter"]
 TRINKET_DETAIL = ["containing a lock of red hair", "engraved with a pair of clasped hands", "set with a tiny garnet", "worn smooth by nervous fingers",
                   "shaped like a curled-up hare", "with a name half-rubbed away", "inscribed: 'come home'", "with a crack mended in gold"]
