@@ -105,7 +105,8 @@ def need(g, npc):
                 continue
             pr = who.pronouns()
             ctx = dict(far=who.name, fjob=who.job, fvillage=w.tiles[who.home].site["name"], fhe=pr["he"], fhim=pr["him"], fhis=pr["his"])
-            ctx["manner"] = n.say(LIFE.PERSON.get(who.demeanour, LIFE.PERSON["warm"]), ctx)
+            manners = [LIFE.PERSON.get(who.demeanour, LIFE.PERSON["warm"])] + LIFE.PERSON_MORE.get(who.demeanour, [])
+            ctx["manner"] = n.say(n.pick(manners, f"manner-{who.demeanour}"), ctx)
             line = n.pick(LIFE.NEED_PERSON, "needperson")
         elif kind == "place":
             t = w.tiles[f["pos"]]
@@ -148,7 +149,7 @@ def life(g, npc):
     npc.mem["told"].append(key)
     temper = _temper(npc)
     group = "elder" if npc.role == "elder" else LIFE.GROUP.get(npc.job, "road" if npc.role == "merchant" else "craft")
-    pool = LIFE.JOB_SEASON.get(npc.job, LIFE.WORK[group]).get(w.season) or LIFE.WORK[group][w.season]
+    pool = LIFE.JOB_SEASON.get(npc.job, {}).get(w.season, []) * 2 + LIFE.WORK[group][w.season]    # their own trade first, then its kind
     parts = [n.pick(pool, f"work-{npc.job}-{w.season}")]
     site = w.tiles[npc.home].site or {}
     ctx = dict(village=site.get("name", "the village"), economy=site.get("economy", "farming"), tool="")
@@ -170,6 +171,10 @@ def life(g, npc):
         ctx.update(other=o.name, ojob=o.job, ohe=op["he"], ohim=op["him"], ohis=op["his"])
         middle.append(n.pick(LIFE.NEIGHBOUR + LIFE.NEIGHBOUR_TEMPER.get(temper, []), f"neigh-{temper}"))
     middle.append(n.pick(LIFE.VILLAGE, "lifevillage"))
+    if w.weather in LIFE.WEATHER_NOW:
+        middle.append(n.pick(LIFE.WEATHER_NOW[w.weather], f"lifeweather-{w.weather}"))
+    if w.time_of_day in LIFE.TIME_NOW:
+        middle.append(n.pick(LIFE.TIME_NOW[w.time_of_day], f"lifetime-{w.time_of_day}"))
     if g.rng.random() < 0.75:
         parts.append(g.rng.choice(middle))
     if g.rng.random() < 0.7:

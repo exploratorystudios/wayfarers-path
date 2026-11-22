@@ -32,7 +32,7 @@ WORK = {
                    "Flies. You'd not believe the flies. The beasts stand nose to tail all day, swishing."],
         "autumn": ["We'll bring the beasts down off the tops soon, before the weather turns on us.",
                    "Market's coming. I'll sell what I can't feed through the winter, and hate doing it.",
-                   "The tups are in with the ewes. Next spring's lambs, if all goes well."],
+                   "The tups are in with the ewes. Next year's flock starts now, if all goes well."],
         "winter": ["I've been carrying hay out since before light. They'd eat the hedges if I let them.",
                    "Lost two in the last cold snap. You get used to it. You don't, really.",
                    "Breaking the ice on the troughs, morning and evening. That's the whole of winter, that."],
@@ -101,9 +101,9 @@ WORK = {
 
 # trades with lines of their own
 JOB_SEASON = {
-    "miller": {"spring": ["The millpond's full with the melt. Good water, and nothing to grind till harvest."],
+    "miller": {"spring": ["The millpond's full with the melt. Good water, and nothing to grind for months."],
                "summer": ["The wheel wants new paddles before the harvest comes in. Always something."],
-               "autumn": ["Harvest's in, and every soul for miles wants their grain ground yesterday."],
+               "autumn": ["Harvest's in, and every soul in the valley wants their grain ground yesterday."],
                "winter": ["The race froze last week. A mill with a frozen wheel is just a cold house."]},
     "brewer": {"spring": ["The new ale's nearly ready. I'll want someone to tell me it's good."],
                "summer": ["Hot weather sours the brew if you look at it wrong. I've been sleeping in the cellar."],
@@ -120,7 +120,7 @@ JOB_SEASON = {
     "rat-catcher": {"spring": ["The rats come out of the thatch in spring, hungry and bold."],
                     "summer": ["Rats in the grain stores already. The year's been kind to them."],
                     "autumn": ["Harvest means grain, and grain means rats. Good for trade."],
-                    "winter": ["The rats come indoors for the warmth. So do I."]},
+                    "winter": ["The rats come indoors out of the cold. So do I."]},
 }
 
 # a word about the village or a neighbour
@@ -204,3 +204,262 @@ NEED_PLACE = ["They say you're bound for {place}. That's {dir}. {how} {about}", 
               "If it's {place} you want, it's {dir}. {how} {about}"]
 NEED_BEAST = ["I hear you're after that {beast}. It's been seen out in {region}, {dir}. You'll know it by {mark}.",
               "A {beast}, you say? Something like it was seen in {region}, {dir}. Look for {mark}."]
+
+
+# =============================================================================== more of everything
+# (merged into the tables above, so a long game hears the same thing less often)
+_MORE_WORK = {
+    "land": {
+        "spring": ["Three orphan lambs in my kitchen, and every one of them thinks I'm its mother.",
+                   "The cuckoo's back. My grandmother said you should turn your money over when you hear it. I've none to turn.",
+                   "We drove the beasts up to the high pasture this week. They ran the last mile, they were that glad."],
+        "summer": ["I sleep out with the flock on the tops these nights. The stars are company enough.",
+                   "Hay's the thing now. Every fine day you're not cutting is a day you'll pay for in February.",
+                   "The beasts have found the one gap in the hedge, as they always do, and gone through it."],
+        "autumn": ["I counted them off the fell yesterday. Two short. I'll go up again tomorrow.",
+                   "The acorns are down, and the pigs are out in the wood eating themselves silly.",
+                   "Ploughing for the winter wheat. The gulls follow me up and down all day."],
+        "winter": ["Dug three ewes out of a drift this morning, alive, all three. They looked at me as if it were my fault.",
+                   "The beasts are in the byre and I'm in with them half the night. It's warmer than my own house.",
+                   "Short days. You feed them in the dark, you feed them again in the dark, and in between you mend things."],
+    },
+    "craft": {
+        "spring": ["I've a stack of orders as high as the door, and every one wanted last week.",
+                   "New apprentice started this month. Keen as mustard, and clumsy as a calf."],
+        "summer": ["The light's good and the days are long. I do my finest work in summer.",
+                   "Fair coming up. I'm making a few pieces worth showing, to catch a merchant's eye."],
+        "autumn": ["The carts all want mending before the roads go soft. I've two in the yard now.",
+                   "Laying in stock for the winter: wood, leather, charcoal, whatever I can afford."],
+        "winter": ["Folk come in just to stand by the fire. I let them. I like the talk.",
+                   "Quiet work, winter. I make the things there's no time for in summer."],
+    },
+    "water": {
+        "spring": ["Ice went out last week with a noise like a house falling down. Took the jetty with it.",
+                   "Elvers coming up the river. You can scoop them out by the bucketful, if you're quick."],
+        "summer": ["Swimmers in the river every evening, and every year someone thinks they're cleverer than the current.",
+                   "The water's so clear you can count the stones. Fish see you coming."],
+        "autumn": ["The river's up and brown with leaves. Everything's on the move under it.",
+                   "Storm took a tree into the channel. I've been sawing at it from the boat for two days."],
+        "winter": ["Fog off the water every morning. You could lose a boat in it and never know.",
+                   "Ice on the oars. Ice in my beard. Ice in my soul, my wife says."],
+    },
+    "wood": {
+        "spring": ["Bluebells under the hazel now. Prettiest time of the year, and the worst for work.",
+                   "Barking oak for the tanners. The sap's up and the bark comes off in sheets."],
+        "summer": ["The wood's so thick now you can't see ten paces. Good for the deer. Bad for me.",
+                   "Thunder in the hills all week. I don't like to be in among the tall trees when it comes."],
+        "autumn": ["Leaves everywhere. You can't find a dropped axe for leaves.",
+                   "Charcoal's in demand now. Every smith wants a winter's worth."],
+        "winter": ["Frost cracks the trunks some nights. Sounds like a bowshot in the dark.",
+                   "I can see the shape of the wood again, now the leaves are gone. Old paths, old stumps, old fires."],
+    },
+    "healer": {
+        "spring": ["Every herb wants gathering at once in spring, and every baby wants delivering.",
+                   "Bad time for the old chests. I've been brewing horehound by the cauldron."],
+        "summer": ["Bee stings and burns and cut feet, all summer long. Folk forget themselves in the sun.",
+                   "The meadowsweet's out. I'll dry it for the fevers in the dark months."],
+        "autumn": ["Folk eat what they shouldn't at harvest, and come to me groaning.",
+                   "Mushroom time. Twice a year somebody eats the wrong one, and I get there too late or just in time."],
+        "winter": ["Chilblains, chest-rattles and broken bones from the ice. Winter's a busy season for me.",
+                   "I've a house full of dried herbs and not enough of the right ones. There never are."],
+    },
+    "road": {
+        "spring": ["I've a pack full of needles, ribbons and gossip. The gossip sells best.",
+                   "Lambs on every hill on the way here. Lovely to look at. Slow to drive round."],
+        "summer": ["Long days, long roads. I've slept under hedges for a week and never been happier.",
+                   "Every village has a fair or a wake or a wedding. Good for trade, bad for the head."],
+        "autumn": ["Apples and cider at every door. A pedlar's road is a merry road, in autumn.",
+                   "Weather's turning. I'll winter in one of the towns, I think, and start again in spring."],
+        "winter": ["Folk are glad of news in the dark months. I'm the only thing that's happened to them since the leaves fell.",
+                   "I've worn through one pair of boots since midwinter and started on the next."],
+    },
+    "elder": {
+        "spring": ["Somebody's goat ate somebody else's beans, and now it's my business. Spring.",
+                   "We beat the bounds next week: walk the whole edge of the parish and bump the children on the boundary stones so they'll remember."],
+        "summer": ["The young ones want a dance every night and the old ones want quiet. I can't please both.",
+                   "A good summer. I'm almost afraid to say so."],
+        "autumn": ["The tithe-man comes next month. I'm hiding the good cheese.",
+                   "Harvest supper's coming. Somebody will drink too much and somebody will propose, as every year."],
+        "winter": ["Three old ones are failing this winter. I sit with each of them in turn.",
+                   "We share the fire now, two and three families to a hearth, to save the wood."],
+    },
+}
+for _g, _seasons in _MORE_WORK.items():
+    for _s, _lines in _seasons.items():
+        WORK[_g][_s] = WORK[_g][_s] + _lines
+
+_MORE_JOB = {
+    "smith": {"spring": ["Every plough-share in the valley is in my yard, bent or blunt or both."],
+              "summer": ["Too hot to be at the forge past noon. I shoe horses in the morning and sleep in the afternoon."],
+              "autumn": ["Sickles and scythes in for sharpening, and everyone wants theirs first."],
+              "winter": ["Best place in the village, the forge, come winter. Everyone finds a reason to visit."]},
+    "fletcher": {"spring": ["Goose feathers from the moult. I'll fletch a thousand shafts from these."],
+                 "summer": ["The lord's men want arrows for the summer muster. I've not seen my bed in days."],
+                 "autumn": ["Ash for the shafts, cut now while the sap's down. It'll season over winter."],
+                 "winter": ["Arrows sell in winter. Folk hunt when the larder's low."]},
+    "weaver": {"spring": ["The new wool's coming in from the shearing. Greasy and smelling of sheep, and I love it."],
+               "summer": ["I take the loom out under the eaves on hot days. The whole lane stops to watch."],
+               "autumn": ["Everyone wants a new cloak before the cold, and wants it for nothing."],
+               "winter": ["The clack of the loom goes on into the night, winter. It's company."]},
+    "tanner": {"spring": ["The pits stink worse when it warms. My neighbours remind me, every year."],
+               "summer": ["Flies, and the smell. Even I notice it in summer."],
+               "autumn": ["The autumn killing brings the hides in. Busy time."],
+               "winter": ["Hides freeze stiff in the pits. Slow work, and cold."]},
+    "thatcher": {"spring": ["Every roof that leaked all winter wants me now."],
+                 "summer": ["Up on the ridge all day, with the whole valley below. Best job there is, in summer."],
+                 "autumn": ["New reed's cut. I've a roof a week till the weather stops me."],
+                 "winter": ["Gales stripped two roofs last month. I patch and wait for better weather."]},
+    "potter": {"spring": ["Clay's soft and the kiln's lit again after the winter. Good to have my hands dirty."],
+               "summer": ["The pots dry in a day in this weather. I can barely keep up with them."],
+               "autumn": ["Crocks for the pickling and jars for the honey. Everyone's storing something."],
+               "winter": ["Frost cracks green pots. I keep them by the kiln and pray."]},
+    "cooper": {"spring": ["The brewers want new casks for the spring ale."], "summer": ["Butter churns and milk pails, all summer."],
+               "autumn": ["Barrels for the salting and the cider. I hoop them in my sleep."], "winter": ["Mending the casks that split in the frost."]},
+    "wheelwright": {"spring": ["The spring mud breaks more wheels than the whole winter did."],
+                    "summer": ["Harvest wagons. Every one of them wants new spokes before the corn comes in."],
+                    "autumn": ["The carts are working hard. So am I."], "winter": ["Seasoning the timber for next year's wheels. It's slow work, and it can't be hurried."]},
+    "shepherd": {"spring": ["Lambing. I'll sleep again in May, maybe."], "summer": ["Up on the tops with the flock. Days go by and I don't speak a word."],
+                 "autumn": ["The tups are in. Next year starts now."], "winter": ["Hay up to the fold twice a day. My dog does the hard part."]},
+    "ferryman": {"spring": ["The river's too high to cross some days. Folk shout at me from the far bank as if I'd made the rain."],
+                 "summer": ["Busy season. Everyone wants to be on the other side of the river in summer."],
+                 "autumn": ["Drovers taking their beasts to market. Cattle don't like boats, and they let you know it."],
+                 "winter": ["Ice at the edges. I'll cross for anyone, but I charge more."]},
+    "woodcutter": {"spring": ["Coppicing the hazel. It'll grow back thicker than ever."],
+                   "summer": ["Clearing deadwood before it can catch. Dry summers frighten me."],
+                   "autumn": ["The felling. My shoulders know it's autumn before I do."],
+                   "winter": ["Everyone wants wood and nobody wants to fetch it. Good for me."]},
+    "charcoal-burner": {"spring": ["First burn of the year. The clamp smokes for three days and I watch it for all three."],
+                        "summer": ["I live in the wood half the summer. I smell of smoke, and the village lets me know it."],
+                        "autumn": ["The smiths want charcoal for the winter. I can't make it fast enough."],
+                        "winter": ["Too wet to burn half the time. I cut wood and wait."]},
+    "midwife": {"spring": ["Spring babies. Four this month. Their mothers want sleep and I want it more."],
+                "summer": ["The summer babies are fat and noisy. That's how I like them."],
+                "autumn": ["Three due before the first frost. I've my bag packed by the door."],
+                "winter": ["Babies don't wait for the snow to clear. I've waded to a birth up to my waist."]},
+    "hedge-witch": {"spring": ["The first green things are the strongest. I'm out gathering before the dew's off."],
+                    "summer": ["Midsummer eve's the night for gathering. Some herbs are no use cut any other night."],
+                    "autumn": ["Roots and berries. I've jars of things on every shelf, and a few I've forgotten the names of."],
+                    "winter": ["Folk come to me in winter for the things the herbs can't do. Love, mostly. Or luck."]},
+    "eel-catcher": {"spring": ["The elvers are running. Strange little glass things, thousands of them."],
+                    "summer": ["The eels lie low in the heat. I mend traps and wait."],
+                    "autumn": ["The dark nights of autumn, that's when they run. I'll be on the water till dawn."],
+                    "winter": ["Smoked eel for the winter. My house smells of it. So do I."]},
+    "drover": {"spring": ["Taking the young beasts up to summer pasture. Two weeks on the road, with the dogs."],
+               "summer": ["Fattening on the hills. I go up and count them and come down again."],
+               "autumn": ["Drove to the autumn fair next week. Two hundred head and three dogs, and me."],
+               "winter": ["The drove roads are closed till spring. I mend harness and drink too much."]},
+    "carter": {"spring": ["The roads are soft. I've been stuck to the axles twice this week."],
+               "summer": ["Hay to the farms and stone to the builders. My horse and I don't stop."],
+               "autumn": ["Corn to the mill, every day, till the harvest's in."],
+               "winter": ["Frost makes the roads hard and fast. Good for carting, if your hands don't freeze to the reins."]},
+    "tinker": {"spring": ["Every pot that cracked over the winter wants mending, and I've only two hands."],
+               "summer": ["I sleep under the cart and mend kettles by the roadside. It's a life."],
+               "autumn": ["Folk want their knives sharp for the killing. I've been grinding all week."],
+               "winter": ["Fewer roads open, more pots broken. I go where I can."]},
+    "spice-trader": {"spring": ["Ginger and pepper from the south, if the passes are open. This year they barely were."],
+                     "summer": ["Saffron for the wedding cakes. Every bride wants it, and none of them can afford it."],
+                     "autumn": ["Folk buy spice in autumn for the winter feasts. My busiest season."],
+                     "winter": ["Mulled wine needs cinnamon. I'm the only cinnamon for thirty miles."]},
+    "horse-coper": {"spring": ["Foals everywhere. I'll buy a few now and sell them as yearlings."],
+                    "summer": ["Fair season. Every farmer thinks his nag's a warhorse."],
+                    "autumn": ["Selling off what folk won't winter. I'll have a dozen to feed till spring."],
+                    "winter": ["Nobody buys a horse in winter. I feed them, and talk to them, and wait."]},
+    "chandler": {"spring": ["Fewer candles in spring. Long days. I make soap instead."],
+                 "summer": ["Tallow goes soft in the heat. I make candles at night, when it's cool."],
+                 "autumn": ["The autumn killing means tallow, and tallow means candles."],
+                 "winter": ["Winter's when candles sell. The long nights pay for the year."]},
+    "swineherd": {"spring": ["Piglets. Eleven in one litter. The sow's not speaking to me."],
+                  "summer": ["The pigs root in the wood and I sit under a tree. Don't tell anyone."],
+                  "autumn": ["Pannage. The pigs are fat on acorns and I'm fat on blackberries."],
+                  "winter": ["The killing's done. I miss them. You'd not think it, but I do."]},
+    "goose-girl": {"spring": ["The goslings follow me everywhere. Even to the privy."],
+                   "summer": ["I take the geese down to the common and they take me where they like."],
+                   "autumn": ["Fattening them for the autumn fair. They know, I think. They give me looks."],
+                   "winter": ["Geese hate the cold more than I do, and they say so, loudly."]},
+    "net-mender": {"spring": ["Every net that came through the winter has a hole in it."], "summer": ["I sit on the bank and mend, and the fishermen bring me ale."],
+                   "autumn": ["Storm season. Nets come back in rags."], "winter": ["Mending by the fire. My fingers know the knots in the dark."]},
+}
+_MORE_JOB["goose-boy"] = _MORE_JOB["goose-girl"]
+for _j, _seasons in _MORE_JOB.items():
+    for _s, _lines in _seasons.items():
+        JOB_SEASON.setdefault(_j, {})[_s] = JOB_SEASON.get(_j, {}).get(_s, []) + _lines
+
+NEIGHBOUR += [
+    "{other} the {ojob} is courting, they say. {ohe.cap} goes red as a radish if you mention it.",
+    "{other} the {ojob} can tell you what the weather'll do three days off. Always right, too. It's unsettling.",
+    "{other} the {ojob} keeps a raven that steals spoons. Nobody's brave enough to tell {ohim}.",
+    "{other} the {ojob} has a cousin in every village from here to the hills. Ask {ohim}, if you're lost.",
+    "{other} the {ojob} lent me a hand when my roof came in. I owe {ohim} for that.",
+    "{other} the {ojob} came here as a stranger, years back. Folk still call {ohim} the newcomer.",
+    "{other} the {ojob} tells the best stories at the alehouse, and the least true.",
+    "{other} the {ojob} hasn't been well. You might stop by, if you've a kind word.",
+]
+NEIGHBOUR_TEMPER["suspicious"] += ["{other} the {ojob} had money all of a sudden, last spring. Nobody knows where from."]
+NEIGHBOUR_TEMPER["gruff"] += ["{other} the {ojob} lets {ohis} beasts in my field. I've told {ohim} twice."]
+NEIGHBOUR_TEMPER["shrewd"] += ["{other} the {ojob} is behind on the rent, so you'll get a good price there."]
+NEIGHBOUR_TEMPER["warm"] += ["{other} the {ojob} will feed you if you let {ohim}. Let {ohim}."]
+NEIGHBOUR_TEMPER["cheerful"] += ["{other} the {ojob} sang at the last wedding. The dogs joined in. Best night of the year."]
+NEIGHBOUR_TEMPER["melancholy"] += ["{other} the {ojob} and I were going to be married, once. Long ago now."]
+NEIGHBOUR_TEMPER["dreamy"] += ["{other} the {ojob} says {ohe} saw lights on the hill at midsummer. I believe {ohim}."]
+NEIGHBOUR_TEMPER["nervous"] += ["{other} the {ojob} says there's something in the old well. I don't go near it now."]
+
+VILLAGE += [
+    "{village}'s an old place. Older than the road, the old ones say.",
+    "Nothing much happens in {village}. That's how we like it.",
+    "There's {economy}, and there's the alehouse, and that's {village} for you.",
+    "Folk from {village} don't leave much, and when they do, they come back.",
+    "They laugh at us in the next valley for the {economy}. They buy it all the same.",
+]
+TROUBLE += ["Everyone's on edge, what with {trouble}.", "I'd talk more cheerfully, but there's {trouble}, and it weighs on everyone."]
+FESTIVAL += ["There's dancing on the green tonight, for {festival}. You should come.", "Everyone's half drunk already. It's {festival}, and nobody minds."]
+
+# a word about the weather or the hour, when it's worth one (scoped, so it's always the weather there is)
+WEATHER_NOW = {
+    "rain": ["Rain again. It gets into everything: the bread, the bedding, your bones.", "This rain's set in for the day, I'd say."],
+    "drizzle": ["This drizzle's the worst kind of wet. You don't notice it till you're soaked."],
+    "storm": ["Listen to it. I'd not be out in this for a king's ransom.", "Storm like this, the old folk stay in and the young folk get into trouble."],
+    "fog": ["Can't see the end of the lane in this. Mind how you go.", "Fog like this, you hear the whole village and see none of it."],
+    "wind": ["This wind. It'll have the thatch off somebody's roof by nightfall.", "Wind's been at it since dawn. It makes the dogs mad."],
+    "snow": ["Snow again. The children are delighted. Nobody else is.", "More snow coming, by the smell of it."],
+    "clear": ["Fine day for it, whatever it is.", "Good to see the sky for once."],
+}
+TIME_NOW = {
+    "dawn": ["You're up early. Or late, I suppose."], "dusk": ["Getting dark. You'll want a roof tonight."],
+    "evening": ["Most folk are at their suppers by now."], "night": ["It's late to be calling. Still, you're here."],
+    "deepnight": ["What are you doing abroad at this hour?"],
+}
+
+for _t, _lines in {
+    "nervous": ["Sorry. I talk too much when I'm worried.", "Don't mind me. I'll be all right."],
+    "suspicious": ["Anyway. I've said enough.", "And that's all you'll get out of me."],
+    "gruff": ["Well. Work won't do itself.", "Enough talk."],
+    "warm": ["You'll stay for a bite, won't you?", "It's good to have someone to talk to."],
+    "cheerful": ["Ha! Listen to me.", "Anyway, mustn't grumble. Well, I must, but I mustn't."],
+    "melancholy": ["Still. Nothing lasts.", "I don't know why I'm telling you all this."],
+    "shrewd": ["Remember that, if you're buying.", "Worth knowing, that."],
+    "dreamy": ["Or so it seems to me, anyway.", "Do you ever feel the days are someone else's dream?"],
+}.items():
+    TAIL[_t] += _lines
+
+for _t, _lines in {
+    "nervous": ["You've not given up? On {obj}? Please say you've not."], "suspicious": ["Well? You said you'd see to {obj}."],
+    "gruff": ["{obj.cap}. Anything?"], "warm": ["Sit down, sit down. Is there news of {obj}?"],
+    "cheerful": ["Well? Don't keep me waiting - {obj}?"], "melancholy": ["You came back. Is it about {obj}? Tell me straight."],
+    "shrewd": ["You've the look of someone with news. {obj.cap}?"], "dreamy": ["I left a light out for {obj}. Did you see it?"],
+}.items():
+    CHECKIN[_t] += _lines
+STEP_NUDGE["ask"] += ["Go and see {far}, in {fvillage}. {fhe.cap} knows more than {fhe} lets on."]
+STEP_NUDGE["search"] += ["Look at the {lm} again, if you've been. Things hide in plain sight."]
+STEP_NUDGE["deal"] += ["Don't let {far} rob you. Haggle."]
+STEP_NUDGE["bring"] += ["Remember what {far} wanted. {fhe.cap} won't budge without it."]
+STEP_NUDGE["go"] += ["The way's by {region}. It's not a kind country."]
+STEP_NUDGE["climax"] += ["It's {dir}. I'd go myself, if I could."]
+
+# more ways to say what someone's like
+PERSON_MORE = {
+    "suspicious": ["Won't give you the time of day till {fhe} knows you. Then {fhe}'ll give you the whole day."],
+    "gruff": ["Bark's worse than {fhis} bite, mostly."], "warm": ["One of the good ones. You'll see."],
+    "cheerful": ["You'll hear {fhim} before you see {fhim}."], "melancholy": ["Lost someone, a while back. It took the light out of {fhim}."],
+    "shrewd": ["Never lost a bargain in {fhis} life, to hear {fhim} tell it."], "dreamy": ["Talks to birds. Says they talk back."],
+    "nervous": ["Kind, but frightened of everything. Be gentle."],
+}

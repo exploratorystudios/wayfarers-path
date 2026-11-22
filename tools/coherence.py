@@ -92,6 +92,15 @@ def collect(worlds=30, seed0=7000):
                 yield "npc", c, f"[{npc.role}/{npc.job}] " + n.npc_presence(npc) + " " + n.npc_full(npc)
                 for it in npc.stock:
                     yield "item", c, it.name + ". " + n.item_full(it)
+                # what they talk about, in a few different moments
+                from rpg import talk as TK
+                for _ in range(3):
+                    c2 = ctx_for(rng)
+                    set_ctx(g, *c2)
+                    npc.mem["told"] = [k for k in npc.mem["told"] if not k.startswith("life:")]
+                    line = TK.life(g, npc)
+                    if line:
+                        yield "talk", with_biome(c2, w.tiles[v].biome), line
         for _ in range(15):
             it = w.make_item(rng.randint(1, 4))
             yield "item", c, it.name + ". " + n.item_full(it)
