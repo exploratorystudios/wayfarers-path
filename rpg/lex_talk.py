@@ -46,7 +46,7 @@ JOB_SELF = {
     "ferryman": ["I take folk across", "I keep the ferry"], "gravedigger": ["I dig the graves", "I see folk to the ground"],
     "rat-catcher": ["I catch rats", "rats - I'm the reason you don't see many"],
 }
-GENERIC_SELF = ["I'm the {job} here", "{job} by trade", "I do the {job}'s work round here", "I'm what passes for a {job} in these parts"]
+GENERIC_SELF = ["I'm the {job}", "I do the {job}'s work round here", "I'm what passes for a {job} in these parts"]
 
 RULES = {
     # ---------------------------------------------------------------- first meeting: what they're doing as you come up
@@ -209,5 +209,5 @@ def tool_for(npc):
 
 def self_lines(npc):
     """Ways this person might describe their work."""
-    generic = [s.replace("{job}", npc.job) for s in GENERIC_SELF if not (s == "{job} by trade" and npc.job.endswith("trader"))]
+    generic = [s.replace("{job}", npc.job) for s in GENERIC_SELF]
     return JOB_SELF.get(npc.job, []) + generic

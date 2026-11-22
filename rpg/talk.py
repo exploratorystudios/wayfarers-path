@@ -95,8 +95,9 @@ def _needs(g, npc):
 def need(g, npc):
     from . import story as S
     w, n, told = g.world, g.narr, npc.mem["told"]
+    heard = g.__dict__.setdefault("heard_needs", [])     # what anyone has already told you: once is enough
     for key, kind, f in _needs(g, npc):
-        if key in told:
+        if key in told or key in heard:
             continue
         if kind == "person":
             who = S.find_npc(w, f["name"])
@@ -120,6 +121,7 @@ def need(g, npc):
             ctx = dict(beast=sp["name"], region=w.region_of(f["pos"])["name"], dir=n.dir_phrase(npc.home, f["pos"]), mark=sp.get("mark", "its look"))
             line = n.pick(LIFE.NEED_BEAST, "needbeast")
         told.append(key)
+        heard.append(key)
         return '"' + _say(g, npc, line, ctx) + '"'
     return None
 
