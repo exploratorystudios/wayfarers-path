@@ -689,7 +689,7 @@ class World:
     def make_item(self, danger=1, kind=None, wtype=None, akind=None, school=None):
         r = self.rng
         kind = kind or r.choices(["weapon", "armour", "herb", "potion", "food", "trinket", "book", "scroll", "goods", "rations"],
-                                 [3, 2, 3, 2, 3, 3, 1.2, 1.5, 2.5, 1.5])[0]
+                                 [3, 2, 3, 2, 3, 3, 1.2, 1.5, 2.5, 0.9])[0]
         if kind == "rations":
             from . import travel as TR
             return TR.ration_item(r)
@@ -803,7 +803,7 @@ class World:
             if t.site and t.site["kind"] in ("ruin", "camp"):
                 for _ in range(r.randint(1, 2)):
                     t.items.append(self.make_item(t.danger + 1))
-                if t.site["kind"] == "camp" and r.random() < 0.5:     # whoever camped here left food behind
+                if t.site["kind"] == "camp" and r.random() < 0.4:     # whoever camped here left food behind
                     t.items.append(self.make_item(t.danger, "rations"))
         self.main.populate(self, r)
 

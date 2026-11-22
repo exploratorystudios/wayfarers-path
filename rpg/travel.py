@@ -55,11 +55,14 @@ def ration_item(rng, n=None):
     """Rations found as loot: an Item that folds into your ration count once it's in your pack."""
     from .world import Item
     n = n or rng.choice([1, 2, 2, 3])
-    return Item("ration", pack_name(rng.choice(PACKS), n), value=n * RATION_PRICE, facts=dict(n=n))
+    pack = rng.choice(PACKS)
+    return Item("ration", pack_name(pack, n), value=n * RATION_PRICE, facts=dict(n=n, pack=pack))
 
 
 def pack_name(pack, n):
-    return f"{pack} of {n} travel ration{'s' if n != 1 else ''}"
+    if n == 1:
+        return "travel ration wrapped in a cloth"
+    return f"{pack} of {n} travel rations"
 
 
 def describe(it):
@@ -83,7 +86,7 @@ def fold(g):
             p.inv.remove(it)
         else:
             it.facts["n"] = n - take
-            it.name = pack_name(it.name.split(" of ")[0], n - take)
+            it.name = pack_name(it.facts.get("pack", "bundle"), n - take)
             it.value = (n - take) * RATION_PRICE
     if rations(g) > before:
         full = any(i.kind == "ration" for i in p.inv)
