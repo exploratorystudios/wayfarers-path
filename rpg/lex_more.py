@@ -160,6 +160,8 @@ NEW = {
     "mem_shrine": ["\"So {spirit} answered you? I can see it in your face.\"", "\"You went to the shrine, didn't you? Told you {spirit} was good.\""],
     "mem_deed_kill": ["\"Heard you put down {a_thing} out in {where}. Good riddance.\"", "\"Word came that you killed {a_thing} near {where}. Is it true?\"",
                       "\"They're saying you dealt with {a_thing} in {where}.\""],
+    "mem_deed_story": ["\"Word is {story}.\"", "\"Is it true {story}?\"", "\"Someone told me {story}. That right?\"",
+                       "\"I heard {story}. Folk talk, you know.\""],
     "mem_deed_boss": ["\"They say you slew {thing}! The whole country's talking.\"", "\"Is it true? {thing}, dead by your hand?\""],
     "mem_deed_relic": ["\"You've got it - the {thing}! Gods be good.\"", "{name}'s eyes go to the {thing} you carry and stay there. \"You found it.\""],
     "mem_long_gap": ["\"Where've you been all this time?\"", "\"I'd half thought you dead, it's been that long.\"", "\"Thought we'd seen the last of you.\""],

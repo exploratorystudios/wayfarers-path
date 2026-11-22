@@ -35,6 +35,10 @@ SNOWY = W("snow\\w*", "icicles?", "skin of ice", "frozen", "hoarfrost", "rime\\w
 WINTER_ONLY = W("bare branches", "leafless", "snowdrops?", "holly berries", "hoarfrost")
 LEAFY = W("full leaf", "leaves move", "canopy roars", "heavy with leaves", "green canopy", "foxgloves", "bluebells", "meadowsweet", "lily pads", "water-lilies",
           "dragonflies", "butterflies", "lizards?", "warm stone", "basks?", "basking")
+WARM = W("hot", "heat", "warmth", "warm air", "sun-warmed", "bees?", "humming with bees", "pollen", "insects?", "flies (drone|buzz|crawl|rise|hang)", "grasshoppers?",
+         "crickets?", "midges", "mosquitoes", "gnats", "ox-eye daisies", "harebells", "clover", "chamomile", "willowherb", "scabious",
+         "cow parsley", "buttercups?", "poppies", "swallows (dip|skim|nest|are)", "swifts", "cuckoo", "drowsy", "sleepy heat", "thick with summer")
+NOT_WARM = W("hot springs?", "no warmth", "without warmth", "any warmth", "little warmth", "for warmth", "the fire", "hearth", "fire's heat", "warmth of (the|a) fire")
 SPRING_ONLY = W("blossom\\w*", "catkins?", "lambs?", "new leaves", "first green", "frogspawn")
 AUTUMN_ONLY = W("fallen leaves", "leaf-fall", "turning leaves", "russet leaves", "stubble fields?", "rutting")
 HARVEST = W("harvest(ers|ing)?", "haymaking", "hay-making", "reapers?", "sheaves")
@@ -61,6 +65,7 @@ CONTEXT = [
     ("icicles out of season", W("icicles?"), lambda s, w, t, b: s != "winter"),
     ("winter sights out of winter", WINTER_ONLY, lambda s, w, t, b: s in ("spring", "summer")),
     ("summer leaves in winter", LEAFY, lambda s, w, t, b: s == "winter"),
+    ("summer warmth and insects in winter", WARM, lambda s, w, t, b: s == "winter", NOT_WARM),
     ("spring sights in autumn or winter", SPRING_ONLY, lambda s, w, t, b: s in ("autumn", "winter")),
     ("autumn sights in spring or summer", AUTUMN_ONLY, lambda s, w, t, b: s in ("spring", "summer")),
     ("harvest out of season", HARVEST, lambda s, w, t, b: s in ("winter", "spring")),

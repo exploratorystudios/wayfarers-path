@@ -57,7 +57,7 @@ def can(verb, f):
 # ------------------------------------------------------------------ the deck
 # key: (verbs, where (tags or kinds), weight, condition)
 DECK = {
-    "cache":        ({"search"}, {"tree", "stone", "built", "earth", "log"}, 3, None),
+    "cache":        ({"search"}, {"tree", "stone", "built", "earth", "log"}, 2, None),
     "old_blade":    ({"search"}, {"barrow", "cairn", "hill fort", "bog oak", "peat cutting", "cave mouth", "sunken punt", "old mine"}, 3, None),
     "nest":         ({"climb"}, {"oak", "yew", "willow", "rowan", "hawthorn", "eyrie", "dovecote", "gibbet"}, 2, None),
     "healing":      ({"drink"}, {"water"}, 3, None),
@@ -102,7 +102,7 @@ HINTS = {
     "ghost": ["The air by the {noun} is colder than it should be.", "You think you hear someone weeping near the {noun}."],
     "wisp": ["A pale light bobs low over the ground beyond the {noun}, then winks out.", "A small blue flame drifts near the {noun}, though nothing is burning."],
     "hermit": ["A thread of smoke rises from the {noun}.", "Someone has swept the step of the {noun} recently."],
-    "cursed_stone": ["One stone in the {noun} is carved with a sign that makes your eyes slide away.", "One stone of the {noun} is darker than the rest and feels watched."],
+    "cursed_stone": ["One stone in the {noun} is carved with a sign that makes your eyes slide away.", "Among the stones of the {noun}, one is darker than the rest and feels watched."],
     "magpie": ["A magpie chatters at you from the {noun}, eyeing anything that shines.", "Magpies squabble in the {noun}."],
     "bees": ["Bees drone in and out of a crack in the {noun}.", "There's a smell of honey around the {noun}."],
     "badger": ["Something snuffles in the {noun}.", "Fresh bedding has been dragged into the {noun}."],
@@ -114,7 +114,7 @@ HINTS = {
     "echo": ["You could swear something in the {noun} said your name.", "Sounds come back from the {noun} not quite as they went in."],
     "chalk_walk": ["A path is worn into the turf around the outline of the {noun}, as if people walk it.", "Old ribbons are pegged at the head of the {noun}."],
     "hot_bath": ["The warm water of the {noun} looks very inviting after the road.", "Someone has set a stone seat at the edge of the {noun} for bathing."],
-    "ringing": ["When the wind blows, one of the stones of the {noun} hums like a struck bell.", "One stone of the {noun} is worn smooth on one side by many hands."],
+    "ringing": ["When the wind blows, one of the stones of the {noun} hums like a struck bell.", "Part of the {noun} is worn smooth on one side by many hands."],
     "hidden_door": ["Cold air seeps from a crack in the {noun}.", "One slab in the {noun} doesn't quite match the others."],
 }
 
@@ -486,11 +486,11 @@ PLAIN = {"search": plain_search, "climb": plain_climb, "drink": plain_drink, "to
 # ------------------------------------------------------------------ secrets
 def s_cache(g, f, sec):
     w, p = g.world, g.player
-    gold = g.rng.randint(8, 25)
+    gold = g.rng.randint(3, 10)
     p.gold += gold
     where = LK.CACHE_WHERE.get(tag_of(f), "tucked out of sight")
     extra = ""
-    if g.rng.random() < 0.5:
+    if g.rng.random() < 0.4:
         it = w.make_item(2, g.rng.choice(["potion", "weapon", "armour", "trinket"]))
         p.inv.append(it)
         extra = f", and {article(it.name)} wrapped in oiled cloth"
@@ -507,7 +507,7 @@ def s_old_blade(g, f, sec):
 
 @S.choice_handler("blade_take")
 def _blade_take(g, d):
-    it = g.world.make_item(3, "weapon")
+    it = g.world.make_item(3, "weapon", wtype=g.rng.choice(["sword", "sword", "axe", "dagger"]))
     g.player.inv.append(it)
     g.emit(f"You work the blade free. It is {article(it.name)}, and it fits your hand as if it remembered one.")
     if g.rng.random() < 0.5 and d["noun"] in ("barrow", "burial mound", "cairn", "pile of stones"):
@@ -754,7 +754,7 @@ def s_wisp(g, f, sec):
 def _wisp_follow(g, d):
     w, p = g.world, g.player
     if g.rng.random() < 0.5:
-        gold = g.rng.randint(10, 30)
+        gold = g.rng.randint(6, 18)
         p.gold += gold
         it = w.make_item(3, g.rng.choice(["potion", "trinket", "weapon"]))
         p.inv.append(it)
@@ -1056,7 +1056,7 @@ def s_ringing(g, f, sec):
 
 def s_hidden_door(g, f, sec):
     w, p = g.world, g.player
-    gold = g.rng.randint(15, 40)
+    gold = g.rng.randint(10, 25)
     p.gold += gold
     it = w.make_item(4, g.rng.choice(["weapon", "armour"]))
     p.inv.append(it)

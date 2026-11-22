@@ -70,6 +70,12 @@ MOON = ["The new moon is invisible, and the dark is deep.",
         "A faint sliver of old moon clings to the sky."]
 
 
+COLOUR_KIN = {"red": ("red", "rust", "russet", "copper", "fox", "tawny"), "white": ("white", "pale", "silver", "snow", "cream"),
+              "black": ("black", "dark", "jet", "soot", "sable"), "grey": ("grey", "ash", "silver", "slate", "dun"),
+              "pale": ("pale", "white", "silver", "grey", "ash", "cream", "fawn"), "ash": ("ash", "grey", "pale", "silver"),
+              "blood": ("red", "blood", "rust", "crimson")}
+
+
 @dataclass
 class Feature:
     noun: str
@@ -419,8 +425,13 @@ class World:
                     name = f"{r.choice(arch['colours']).split()[0]} {arch['noun']}"
                 if any(s["name"] == name for s in self.species):
                     continue
+                # a species named for a colour ("pale-pelted", "black bear") must look it
+                said = name.split("-")[0].split()[0]
+                fits = [c for c in arch["colours"] if any(w in c for w in COLOUR_KIN.get(said, ()))]
+                if said in COLOUR_KIN and not fits:
+                    name = name.replace(said, r.choice(["scar", "long", "hook", "iron"]), 1)
                 self.species.append(dict(name=name, key=key, arch=arch, home=biome,
-                                         colour=r.choice(arch["colours"]), mark=r.choice(arch["marks"]),
+                                         colour=r.choice(fits or arch["colours"]), mark=r.choice(arch["marks"]),
                                          size=r.choice(E.SIZES), habits=r.sample(arch["idle"], 2),
                                          aggression=r.choice([0.2, 0.4, 0.6, 0.8])))
 
@@ -603,7 +614,7 @@ class World:
             facts = dict(details=self._details(E.ITEM_DETAIL[wk if wk in E.ITEM_DETAIL else w["cls"]], qword, mat),
                          noun=noun, material=mat)
             facts["hist"] = self._history(qword, mat)
-            return Item("weapon", f"{qword} {mat} {noun}", value=int((6 + dmg * 5) * E.MATERIALS[mat][1] * q[2]),
+            return Item("weapon", f"{qword} {mat} {noun}", value=int((8 + dmg * 6) * E.MATERIALS[mat][1] * q[2]),
                         dmg=dmg, cls=w["cls"], facts=facts)
         if kind == "armour":
             ak = akind or r.choices(list(E.ARMOUR), [4, 2, max(0.3, danger - 1)])[0]
@@ -613,7 +624,7 @@ class World:
             noun = r.choice(a["names"])
             qword = C.SOFT_WORN.get(q[0], q[0]) if noun in C.SOFT_ARMOUR else q[0]
             mat = "leather" if noun in C.SOFT_ARMOUR else "iron"
-            return Item("armour", f"{qword} {noun}", value=int((10 + df * 12) * q[2]), df=df,
+            return Item("armour", f"{qword} {noun}", value=int((14 + df * 15) * q[2]), df=df,
                         facts=dict(detail=self._details(["{armour_detail}"], qword, mat, 1)[0], hist=self._history(qword, mat)))
         if kind == "herb":
             name = (r.choice(E.HERB_PRE) + r.choice(E.HERB_SUF))

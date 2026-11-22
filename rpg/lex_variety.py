@@ -153,7 +153,7 @@ ECONOMY = {
 ECONOMY_SIGNS = {
     "charcoal-burning": ["A haze of blue smoke hangs over the rooftops from the charcoal clamps.", "Sacks of charcoal are stacked by every door, and the people's hands are grey with it."],
     "woodcutting": ["Stacks of split logs line the lanes.", "The sound of axes carries from the edge of the trees.", "A sawpit stands open beside the track, heaped with sawdust."],
-    "bee-keeping": ["Straw skeps line a south-facing wall, humming.", "The air smells of beeswax, and bees drift lazily between the houses."],
+    "bee-keeping": ["Straw skeps line a south-facing wall, well wrapped and tended.", "The air smells of beeswax, and there are straw skeps along every garden wall."],
     "pig-keeping": ["Pigs root in a muddy pen behind the houses.", "A swineherd's horn sounds somewhere among the trees."],
     "bodging": ["Chair-legs, turned on pole-lathes, dry in neat rows under an awning.", "Green wood shavings curl in drifts outside a workshop."],
     "eel-fishing": ["Wicker eel traps are stacked by the doors, and the smell of smoked eel hangs over everything.", "Eels hang in long rows over a smoking fire."],

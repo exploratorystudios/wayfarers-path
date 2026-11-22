@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .world import World, DIRS
 from .describe import Narrator
-from .textgen import wrap, cap, article, title
+from .textgen import wrap, cap, article, title, plural
 from . import mind
 from . import classes as K
 from . import story as S
@@ -378,6 +378,11 @@ class Game:
                 self.enemy_turn(committed=True)
                 return
             self.emit(self.narr.mind_line("follow", c))
+            same = [o for o in self.world.tiles[self.pos].creatures if o is not c and o.species is c.species]
+            if same:
+                names = plural(c.species["name"])
+                self.emit(f"Now there are two {names}: the one that lives here, and the one that followed you." if len(same) == 1
+                          else f"Now there are several {names} here, and one of them followed you.")
 
     def creatures_react(self, arrived=False, updated=False):
         """Creatures on your tile act on their intents. `arrived`: you just walked in."""

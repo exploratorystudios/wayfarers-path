@@ -518,13 +518,15 @@ class Narrator:
         return " ".join(lines)
 
     # ------------------------------------------------------------ creatures
-    def creature_np(self, c, definite=False):
+    def creature_np(self, c, definite=False, twin=False):
         if c.boss:
             return title(c.title) if not definite else title(c.title)
         name_words = set(c.species["name"].replace("-", " ").split())
         adjs = [a for a in (c.trait, c.species["size"], c.species["colour"]) if not set(a.replace("-", " ").split()) & name_words]
         adj = self.pick(adjs or [c.species["size"]], f"cadj{id(c)}")
         np = f"{adj} {c.species['name']}"
+        if definite and twin:                     # two of a kind in one place: say which one
+            return f"the {c.trait} {c.species['name']}"
         return ("the " + c.species["name"]) if definite else article(np)
 
     def creature_presence(self, c):
@@ -540,7 +542,9 @@ class Narrator:
 
     def mind_line(self, key, c, **extra):
         """Narration for a creature's change of mind or intent-driven action."""
-        return self.say("{%s}" % key, dict(the_c=self.creature_np(c, True), a_c=self.creature_np(c), **extra),
+        here = next((t for t in self.w.tiles.values() if c in t.creatures), None)
+        twin = bool(here) and any(o is not c and o.species is c.species for o in here.creatures)
+        return self.say("{%s}" % key, dict(the_c=self.creature_np(c, True, twin), a_c=self.creature_np(c), **extra),
                         [f"tm_{TEMPER.temper(self.w, c)}"] + self.scopes())
 
     def creature_full(self, c):
@@ -551,6 +555,15 @@ class Narrator:
         mood = self.say("{intent_desc}", {}, [mind.intent(c)])
         ctx = dict(n=sp["name"], size="monstrous" if c.boss else sp["size"], cov=a["covering"], col=sp["colour"], mark=sp["mark"],
                    trait=c.trait, habit=sp["habits"])
+        named = set(sp["name"].replace("-", " ").split()) & set(sp["colour"].replace("-", " ").split())
+        if named:                                  # "black bear: black fur" says it twice; let the name carry the colour
+            frames = ["The {n} is {size}. Most striking is {mark}. This one is {trait}.",
+                      "A {trait}, {size} beast with {mark}. It {habit}.",
+                      "You study the {n}: {cov}, {mark}, and a {size} frame. It is {trait}, even for its kind.",
+                      "It is {a_trait} {n}, {size}, with {mark}."]
+            ctx["a_trait"] = article(c.trait)
+            name = (title(c.title) + ". ") if c.boss else ""
+            return name + self.say(self.pick(frames, "cfull2"), ctx) + " " + health + " " + mood
         frames = ["The {n} is {size}, its {cov} {col}. Most striking is {mark}. This one is {trait}.",
                   "A {trait}, {size} beast with {col} {cov}. You note {mark}. It {habit}.",
                   "You study the {n}: {col} {cov}, {mark}, and a {size} frame. It is {trait}, even for its kind.",
@@ -646,6 +659,11 @@ class Narrator:
             if d["kind"] == "boss":
                 n.like(3)
                 return self.say("{mem_deed_boss}", dict(thing=d["thing"]))
+            if d["kind"] == "story":
+                if d.get("story") and dist <= d.get("reach", 6):
+                    n.like(d.get("like", 1))
+                    return self.say("{mem_deed_story}", dict(story=d["story"]))
+                continue
             if dist <= 5:
                 n.like(1)
                 return self.say("{mem_deed_kill}", dict(a_thing=article(d["thing"]), where=d["where"]))
@@ -746,7 +764,7 @@ class Narrator:
             return self.say(self.pick(["It comes in {vessel}. The liquid is {colour} and smells of {smell}.",
                                        "Through {vessel} you see a {colour} liquid. Unstoppered, it smells of {smell}.",
                                        "{vessel.cap}, holding a draught that is {colour}, with a whiff of {smell}."], "potfull"),
-                            dict(f)) + f"  (heals ~{it.heal})"
+                            dict(dict(vessel="a stoppered clay flask", colour="cloudy", smell="herbs and alcohol"), **{k: v for k, v in f.items() if v})) + f"  (heals ~{it.heal})"
         if it.kind == "food":
             return self.pick([f"{cap(article(it.name))}. Your stomach takes an interest.",
                               f"{cap(article(it.name))}, a little travel-worn but edible.",
