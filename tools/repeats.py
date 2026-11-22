@@ -50,7 +50,7 @@ def play(seed, turns, klass):
     names |= {r["name"] for r in w.regions}
     names |= {t.site["name"] for t in w.tiles.values() if t.site and t.site.get("name")}
     names |= {n.name for t in w.tiles.values() for n in t.npcs}
-    names |= {w.relic.name, w.title}
+    names |= {w.relic.name if w.relic else "", w.title}
     return out, names
 
 

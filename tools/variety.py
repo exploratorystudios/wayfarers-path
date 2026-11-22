@@ -100,7 +100,7 @@ def facts(worlds=150):
                 seen["ruin purpose"][t.site["purpose"]] += 1
             if t.site and t.site["kind"] == "shrine":
                 seen["shrine spirit"][t.site["spirit"]] += 1
-        seen["relic"][w.relic.name] += 1
+        seen["relic"][w.relic.name if w.relic else w.quest.kind] += 1
         for r in w.regions:
             seen["region name word"][r["name"].replace("the ", "").split()[0]] += 1
     print(f"\nFact variety across {worlds} worlds (top value's share; lower = less samey):")

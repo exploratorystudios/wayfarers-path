@@ -253,6 +253,11 @@ class World:
     SIZE = 24
 
     @property
+    def quest(self):
+        from . import mainquest as MQ
+        return MQ.of(self)
+
+    @property
     def title(self):
         """The world's own name, from the seed alone (so saves from before it existed have one too)."""
         t = self.__dict__.get("_title")
@@ -508,18 +513,18 @@ class World:
         for p in villages:
             self.tiles[p].site = self.make_village(self.tiles[p].biome, scales[p], p)
             self.tiles[p].danger = 0
-        self.relic = Item("relic", f"{r.choice(E.RELIC_ADJ)} {r.choice(E.RELIC_NOUN)}", value=500,
-                          facts=dict(material=r.choice(["gold", "silver", "black iron", "bone", "crystal", "bronze"]),
-                                     glow=r.choice(["a faint inner warmth", "a hum you feel in your teeth", "a cold light", "a smell of rain"])))
-        self.tiles[self.quest_pos].site = self.make_ruin(quest=True)
         more = len(self.land) // 225 or 1                              # the old map's counts, per its area
-        for p in self._pick_sites(4 * more, ("plains", "forest", "hills", "marsh", "peaks"), 3, villages + [self.quest_pos]):
+        keep = villages + [self.quest_pos]
+        for p in self._pick_sites(4 * more, ("plains", "forest", "hills", "marsh", "peaks"), 3, keep):
             self.tiles[p].site = self.make_ruin()
-        for p in self._pick_sites(3 * more, ("plains", "forest", "hills", "peaks"), 3, villages):
+        for p in self._pick_sites(3 * more, ("plains", "forest", "hills", "peaks"), 3, keep):
             self.tiles[p].site = self.make_shrine(self.tiles[p].biome)
-        for p in self._pick_sites(3 * more, ("plains", "forest", "hills", "marsh"), 2, villages):
+        for p in self._pick_sites(3 * more, ("plains", "forest", "hills", "marsh"), 2, keep):
             self.tiles[p].site = dict(kind="camp")
         self.villages = villages
+        self.relic = None
+        from . import mainquest as MQ
+        self.main = MQ.choose(self)(self, r)            # the elder's quest: it lays out what it needs
 
     ROAD_COST = {"plains": 1.0, "forest": 1.6, "hills": 1.8, "marsh": 2.6, "peaks": 4.0}
     LETTER = {(0, -1): "n", (0, 1): "s", (1, 0): "e", (-1, 0): "w"}
@@ -775,10 +780,7 @@ class World:
             if t.site and t.site["kind"] in ("ruin", "camp"):
                 for _ in range(r.randint(1, 2)):
                     t.items.append(self.make_item(t.danger + 1))
-        q = self.tiles[self.quest_pos]
-        fitting = [s for s in self.species if q.biome in s["arch"]["biomes"]] or self.species
-        q.creatures = [self.make_creature(r.choice(fitting), q.danger + 1, boss=True)]
-        q.items.append(self.relic)
+        self.main.populate(self, r)
 
     # ------------------------------------------------------------- time & weather
     @property

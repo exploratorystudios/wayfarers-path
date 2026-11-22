@@ -345,7 +345,7 @@ def _fire_sit(g, d):
     g.pass_time(60)
     g.player.hp = min(g.player.maxhp, g.player.hp + 6)
     if g.has_quest:
-        tale = f"She tells you of the {w.relic.name}, and the thing that sleeps by it, {n.dir_phrase(g.pos, w.quest_pos)}. \"It hates the morning,\" she says. \"Remember that.\""
+        tale = f"She tells you what she knows. {w.quest.lore(g)}"
     else:
         tale = "She tells you a long story about a king under a hill, and a relic stolen from a village, and an old one still waiting for someone to bring it home."
     g.emit(f"You sit by the fire. It's warm, and her voice is warm. {tale} When you wake it is later, the fire is ash, and she is gone. (+6 HP)")

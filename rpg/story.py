@@ -246,6 +246,7 @@ def find_npc(world, name):
 
 def on_arrive(g):
     """Quest goals that are met by getting somewhere."""
+    g.world.quest.on_arrive(g)
     for q in list(active(g)):
         if q["target"] != g.pos:
             continue
@@ -280,6 +281,8 @@ def bring_match(g, q):
 
 def on_talk(g, npc):
     """Hand in quests to the person who gave them. Returns True if something was handed in."""
+    if g.has_quest:
+        g.world.quest.on_talk(g, npc)
     done = False
     for q in list(active(g)):
         if q["giver"] != npc.name:

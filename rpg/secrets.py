@@ -635,7 +635,7 @@ def _wish(g, d):
         g.emit("The water shivers. You feel a warmth settle in your chest and stay there. (+1 max HP, fully healed.)")
     else:
         if g.has_quest:
-            g.emit(f"In the ripples you see a ruin {g.narr.dir_phrase(g.pos, w.quest_pos)}, and something huge asleep in it.")
+            g.emit(f"In the ripples you see {w.quest.vision(g)}.")
         else:
             v = w.tiles[w.start].site["name"]
             g.emit(f"In the ripples you see {v}, and an old face waiting there for you.")
@@ -660,7 +660,7 @@ def s_vision(g, f, sec):
                         data=dict(noun=tf.noun, search=True))
             return
     if g.has_quest:
-        g.emit(f"You see the {w.relic.name}, lying in the dark in a broken place {n.dir_phrase(g.pos, w.quest_pos)}. Something breathes beside it.")
+        g.emit(f"You see {w.quest.vision(g)}.")
     else:
         g.emit(f"You see an old face in {w.tiles[w.start].site['name']}, waiting at a window for someone who hasn't come yet.")
     S.add_buff(g, "blessed", 12)
@@ -794,7 +794,7 @@ def _hermit(g, d):
         g.emit("The hermit puts two dry fingers on your forehead and mutters. You feel scoured clean. (Fully restored.)")
     elif k == "know":
         if g.has_quest:
-            g.emit(f"\"The {w.relic.name}? Aye. It lies {n.dir_phrase(g.pos, w.quest_pos)}. The thing that guards it is old and slow and does not forgive. Go strong, or don't go.\"")
+            g.emit(w.quest.lore(g))
         else:
             elder = next((n for n in w.tiles[w.start].npcs if n.role == "elder"), None)
             g.emit(f"\"There's an old one in {w.tiles[w.start].site['name']} who's been waiting a long while for someone like you. Go and see {elder.pronouns()['him'] if elder else 'them'}.\"")
@@ -1014,7 +1014,7 @@ def s_echo(g, f, sec):
 def _echo_answer(g, d):
     w, n = g.world, g.narr
     if g.rng.random() < 0.6:
-        g.emit(f"\"Listen,\" says the voice. \"The thing that guards the {w.relic.name} cannot abide fire, nor holy words. Go to it by daylight.\" Then nothing, however long you wait.")
+        g.emit(f"\"Listen,\" says the voice. {w.quest.lore(g)} Then nothing, however long you wait.")
         S.add_buff(g, "warded", 24)
     else:
         S.add_buff(g, "cursed", 6)

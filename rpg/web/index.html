@@ -820,8 +820,8 @@ function renderMap(g) {
     if (glyph) { const g2 = document.createElement("span"); g2.textContent = glyph; if (c.s && !c.q) g2.className = "site"; d.appendChild(g2); }
     if (c.v) d.classList.add("v");
     const dir = steps[x + "," + y];
-    let tip = c.b ? (c.n ? `${c.n}, ${c.r}` : c.r) + (c.b === "lake" ? " (water)" : "") : (c.q ? "Somewhere out here lies the relic." : "Unexplored");
-    if (c.q && c.b) tip += " — the relic is here";
+    let tip = c.b ? (c.n ? `${c.n}, ${c.r}` : c.r) + (c.b === "lake" ? " (water)" : "") : (c.q ? "Somewhere out here: " + (m.quest_tip || "your quest") + "." : "Unexplored");
+    if (c.q && c.b) tip += " — " + (m.quest_tip || "the relic is here");
     if (c.t) tip += " — journal: " + (Array.isArray(c.t) ? c.t.join("; ") : "a goal from your journal");
     if (c.me) tip = "You are here — " + tip;
     const say = () => { $("maptip").textContent = tip.charAt(0).toUpperCase() + tip.slice(1); };
@@ -931,7 +931,7 @@ function ago(t) {
 }
 function saveDetail(s, brief) {
   if (s.broken) return `Can't be loaded: ${s.broken}.`;
-  const st = s.died ? " · dead" : s.won ? " · victorious" : s.relic ? " · carrying the relic" : "";
+  const st = s.died ? " · dead" : s.won ? " · victorious" : s.quest ? " · " + s.quest : s.relic ? " · carrying the relic" : "";
   return (brief ? "" : `Level ${s.level} · `) +
          `${s.hp}/${s.maxhp} HP · day ${s.day} · ${s.place}${st} · saved ${ago(s.saved)}`;
 }
@@ -1135,7 +1135,7 @@ function zoomAt(f, px, py) {              // zoom by f, keeping the point under 
 const atlas = { key: null, want: null, data: null, map: null, road: null, busy: false, worker: null, timer: 0, shownKey: null };
 function atlasKey(d) {
   return JSON.stringify([d.seed, d.cells.map(r => r.map(c => (c.k || 0) + (c.s || "") + (c.f ? c.f.length : ""))),
-                         d.pos, d.goals, d.trail.length, d.relic, d.relic_found, d.regions.length]);
+                         d.pos, d.goals, d.trail.length, d.relic, d.relic_found, d.quest_mark, d.regions.length]);
 }
 try {
   if (typeof OffscreenCanvas !== "undefined" && typeof Worker !== "undefined") {
@@ -1270,7 +1270,7 @@ function atlasHover(e, tapped) {
     const goal = A.goals.find(g => g.x === x && g.y === y);
     if (A.pos[0] === x && A.pos[1] === y) lines.push("<b>You are here</b>");
     if (goal) goal.titles.forEach(t => lines.push("Journal: <b>" + esc(t) + "</b>"));
-    if (A.relic && !A.relic_found && A.relic[0] === x && A.relic[1] === y) lines.push(`The <b>${esc(A.relic_name)}</b> lies hereabouts`);
+    if (A.relic && !A.relic_found && A.relic[0] === x && A.relic[1] === y) lines.push(A.quest_mark ? esc(A.quest_mark.charAt(0).toUpperCase() + A.quest_mark.slice(1)) : `The <b>${esc(A.relic_name)}</b> lies hereabouts`);
     if (lines.length && c.n) lines.push(esc(c.n));
   }
   if (!lines.length) { tip.hidden = true; return; }

@@ -92,7 +92,7 @@ def evidence(c, player, world, in_combat):
         "wander": 0.0 if in_combat else .5 * (1 - t["bold"]) + .2 - .25 * adv,
         "flee": 1.25 * (1 - hp) * (1 - .5 * t["bold"]) + .55 * (1 - adv) + .3 * t["skittish"] - .55,
     }
-    if c.boss:   # the relic's guardian never wanders off or runs
+    if c.boss:   # a quest's guardian never wanders off or runs
         ev.update(wander=0.0, flee=0.0, stalk=0.0)
     return {k: _clamp(v) for k, v in ev.items()}
 

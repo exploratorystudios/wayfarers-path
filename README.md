@@ -390,6 +390,38 @@ something hunting the country you cross may stop you where it waits. You can't s
 off with something stalking you, and if something waits at the place you named, you
 stop a square short. Rations can be eaten in a pinch (`eat ration`).
 
+## The main quest (`rpg/mainquest.py`, `rpg/mq_*.py`)
+
+Each world rolls one kind of main quest from its seed. The elder tells it; the
+journal, the status panel, the map markers, the suggestions, visions, wise strangers
+and village gossip all follow whichever it is. (`RPG_QUEST=beast` forces a kind, for
+testing.)
+
+- **The relic** (`relic_tale.py`): recover what the village lost from a guarded ruin,
+  and carry it home.
+- **The beast** (`mq_beast.py`): something huge is killing. The elder names two people
+  who have met it: one knows how to hurt it, one has seen where it lairs. It raids by
+  night (the news reaches the villages, and the ground where it fed is marked), and
+  near its lair its tracks point the way. Knowing its weakness makes the fight far
+  easier (some weaknesses only hold by day). Bring something of it home as proof.
+- **The blight** (`mq_blight.py`): a rot spreads from one place a little further every
+  day, and the descriptions show it, always thickest toward its heart. Kill what feeds
+  it, bless the ground (pray at any shrine for a blessing, or carry holy water), and go
+  home.
+- **The missing heir** (`mq_heir.py`): the elder's grandchild, ward or apprentice has
+  gone. A trail of four places wanders across the map, and each one tells you the next.
+  At the end they are held by something that must be killed, or living a life of their
+  own, and you choose whether to plead, let them be, or insist.
+
+Quests with a clock (the blight, the heir) say how long you have, and warn you when it
+runs short. Running late doesn't lose the game: the blight reaches home and its people
+flee, or the heir's trail goes cold and you find only a letter, and the ending, when it
+comes, is a sadder one. Each kind has several origins, tellings and endings.
+
+A new kind is a class with `@register` (see the docstring in `mainquest.py` for the
+methods it can fill in); the rest of the game asks the quest rather than assuming a
+relic. Saves from before quest kinds load as relic quests.
+
 ## Villages, traders and goods (`rpg/goods.py`)
 
 Each world has about a dozen settlements: your home village, two **market towns**

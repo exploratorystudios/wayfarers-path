@@ -407,7 +407,7 @@
       ctx.strokeStyle = "rgba(150,30,25,.9)"; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.stroke();
       if (!cell(x, y).k) { ctx.setLineDash([3, 5]); ctx.beginPath(); ctx.arc(cx, cy, T * 0.9, 0, 7); ctx.lineWidth = 1.5; ctx.stroke(); }
       ctx.restore();
-      place(`the ${A.relic_name} lies hereabouts`, [[cx, cy + T * 0.55, 15], [cx, cy - T * 0.55, 15], [cx, cy + T * 0.55, 12]], { italic: true, color: "rgba(140,30,25,.95)" });
+      place(A.quest_mark || `the ${A.relic_name} lies hereabouts`, [[cx, cy + T * 0.55, 15], [cx, cy - T * 0.55, 15], [cx, cy + T * 0.55, 12]], { italic: true, color: "rgba(140,30,25,.95)" });
     }
     A.goals.forEach(({ x, y }) => {
       const cx = X0 + (x + 0.5) * T, cy = Y0 + (y + 0.5) * T;

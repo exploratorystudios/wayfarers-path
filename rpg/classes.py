@@ -304,7 +304,7 @@ def _turn(g, c):
         if g.combat:
             g.enemy_turn()
         return
-    if c.boss:      # the relic's guardian does not leave its post
+    if c.boss:      # a quest's guardian does not leave its post
         g.emit(n.say("{ab_fear_boss}", _ctx(g, c)))
     else:
         mind.commit(c, "flee", turns=3)

@@ -98,12 +98,7 @@ class Session:
         sugs = suggest(g) if getattr(g, "show_hints", True) or g.over else []
         path = next((s.path for s in sugs if s.travel and s.path), [])
         tod = {"deepnight": "deep night"}.get(w.time_of_day, w.time_of_day)
-        if not g.has_quest:
-            quest = "Speak with the village elder."
-        elif w.relic in p.inv:
-            quest = f"Bring the {w.relic.name} home to {w.tiles[w.start].site['name']}."
-        else:
-            quest = f"Recover the {w.relic.name} from {w.region_of(w.quest_pos)['name']}."
+        quest = w.quest.goal(g) if g.has_quest else "Speak with the village elder."
         inv = [dict(name=it.name, kind=it.kind,
                     equipped=(it is p.weapon or it is p.armour),
                     usable=bool(it.heal) or it.kind in ("book", "scroll") or bool(it.facts.get("use")), equippable=it.kind in ("weapon", "armour"))
@@ -132,6 +127,7 @@ class Session:
     def map_state(self, g, path):
         w = g.world
         targets = goal_titles(g)
+        qmarks = set(map(tuple, w.quest.targets(g))) if g.has_quest else set()
         seen = lambda x, y: w.tiles[(x, y)].visited or getattr(w.tiles[(x, y)], "glimpsed", False) or any(
             (x + dx, y + dy) in w.tiles and w.tiles[(x + dx, y + dy)].visited for dx, dy in DIRS.values())
         rows = []
@@ -153,7 +149,7 @@ class Session:
                     cell["p"] = 1
                 if pos in targets:
                     cell["t"] = targets[pos]
-                if g.has_quest and pos == w.quest_pos:
+                if g.has_quest and pos in qmarks:
                     cell["q"] = 1
                 if pos == g.pos:
                     cell["me"] = 1
@@ -161,7 +157,7 @@ class Session:
                     cell["exits"] = [d for d, ok in dirs.items() if ok]
                 row.append(cell)
             rows.append(row)
-        return dict(w=w.W, h=w.H, cells=rows, pos=list(g.pos), seed=g.seed)
+        return dict(w=w.W, h=w.H, cells=rows, pos=list(g.pos), seed=g.seed, quest_tip=w.quest.mark(g) if g.has_quest else "")
 
 
 def goal_titles(g):
@@ -202,8 +198,8 @@ def atlas(g):
     goals = [dict(x=p[0], y=p[1], titles=ts) for p, ts in goal_titles(g).items()]
     trail = [list(p) for p in getattr(g, "trail", [])] or [list(w.start), list(g.pos)]
     return dict(w=w.W, h=w.H, cells=cells, regions=regions, trail=trail, pos=list(g.pos), start=list(w.start),
-                home=w.tiles[w.start].site["name"], relic=list(w.quest_pos) if g.has_quest else None,
-                relic_name=w.relic.name, relic_found=w.relic in g.player.inv, goals=goals, seed=g.seed,
+                home=w.tiles[w.start].site["name"], relic=(list(w.quest.targets(g)[0]) if g.has_quest and w.quest.targets(g) else None),
+                relic_name=w.quest.goal(g), relic_found=False, quest_mark=w.quest.mark(g) if g.has_quest else "", goals=goals, seed=g.seed,
                 name=g.player.name, day=w.day, season=w.season)
 
 

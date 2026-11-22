@@ -285,6 +285,7 @@ class Game:
         while w.last_tick_day < w.day:
             w.last_tick_day += 1
             LV.new_day(self)
+            w.quest.on_new_day(self)
         S.tick_buffs(self)
         self.apply_buffs()
         after = self.world.time_of_day, self.world.weather
@@ -554,8 +555,7 @@ class Game:
             t.items.remove(it)
             self.player.inv.append(it)
             self.emit(self.narr.pick([f"You pick up the {it.name}.", f"You take the {it.name}.", f"The {it.name} goes into your pack."]))
-            if it.kind == "relic":
-                self.emit(f"The {it.name} is yours. Now take it back to {self.world.tiles[self.world.start].site['name']}.")
+            self.world.quest.on_take(self, it)
 
     def cmd_drop(self, rest):
         it = self.find(rest, [self.player.inv])
@@ -637,21 +637,16 @@ class Game:
             m["last_day"] = w.day
             npc.talked += 1
             return
-        remark = n.memory_remark(npc, self.deeds, w.relic in p.inv)
+        remark = n.memory_remark(npc, self.deeds, w.quest.carried(self))
         if remark:
             speak(remark)
         handed = S.on_talk(self, npc)
         LV.festival_gift(self, npc)
-        if npc.role == "elder" and not self.has_quest and w.relic in p.inv:
+        if npc.role == "elder" and npc.home == w.start and w.quest.elder(self, npc):
+            pass
+        elif npc.role == "elder" and npc.home == w.start and not self.has_quest:
             self.has_quest = True
-            self.emit(f"{npc.name} stares at the {w.relic.name} in your hands, and for a moment cannot speak. "
-                      f"\"You found it. You didn't even know what it was, and you found it.\"")
-            self.check_win()
-        elif npc.role == "elder" and not self.has_quest:
-            self.has_quest = True
-            from . import relic_tale
-            self.emit(relic_tale.speech(self, npc))
-            self.emit("(Quest: recover the relic and return here.)")
+            w.quest.offer(self, npc)
         elif npc.role == "merchant" and first:
             from . import lex_talk_more as TALK2
             pr = npc.pronouns()
@@ -707,7 +702,7 @@ class Game:
         it = self.find([x for x in words if x not in npc.keywords], [p.inv])
         if not it:
             return self.emit(self.narr.say("{sys_no_have}"))
-        if it.kind == "relic":
+        if self.world.quest.holds(it):
             return self.emit(f"{npc.name} backs away. \"That's not mine to hold. Take it home, where it belongs.\"")
         if any(q["kind"] == "bring" and q["giver"] == npc.name and (q["item"] == it.name or (q["data"].get("any_kind") == it.kind))
                for q in S.active(self)):
@@ -820,7 +815,7 @@ class Game:
         it = self.find(rest, [p.inv])
         if not it:
             return self.emit(self.narr.say("{sys_no_have}"))
-        if it.kind in ("relic", "token"):
+        if it.kind in ("relic", "token") or self.world.quest.holds(it):
             return self.emit(f"{m.name}'s eyes widen. \"I'd not touch that for all the coin in the world.\"")
         if it.name in S.quest_items(self):
             return self.emit(f"You promised to deliver the {it.name}. It isn't yours to sell.")
@@ -887,8 +882,9 @@ class Game:
         if not (t.site and t.site["kind"] == "shrine"):
             return self.emit(self.narr.say("{sys_pray_none}"))
         s, p = t.site, self.player
+        answer = self.world.quest.on_pray(self, s) if self.has_quest else ""      # the spirit may have something for the quest
         if s["used"]:
-            return self.emit(f"You pray to {s['spirit']}, but feel only a polite silence.")
+            return self.emit(answer or f"You pray to {s['spirit']}, but feel only a polite silence.")
         s["used"] = True
         bonus = 4 if self.klass() == "cleric" else 2     # Blessed
         p.maxhp += bonus
@@ -898,6 +894,8 @@ class Game:
         self.emit(self.narr.pick([f"You kneel before the {s['form']} and pray to {s['spirit']}. Warmth floods through you, and your wounds close.",
                                   f"You leave a small offering and speak to {s['spirit']}. The wind drops; something listens. You rise whole, and stronger.",
                                   f"As you pray, the {s['form']} seems to breathe. Your pain lifts away like mist."]) + f" (Fully healed, +{bonus} max HP)")
+        if answer:
+            self.emit(answer)
 
     # ------------------------------------------------------------ combat
     def cmd_attack(self, rest):
@@ -946,6 +944,7 @@ class Game:
         S.add_mark(self, self.pos, n.pick([f"The body of the {target.species['name']} you killed lies here, and the crows have found it.",
                                            f"Flattened grass and dark stains show where you fought the {target.species['name']}."]), days=2)
         S.on_kill(self, target)
+        self.world.quest.on_kill(self, target)
         for m in p.gain_xp(target.xp):
             self.emit(m)
         rogue = getattr(p, "klass", None) == "rogue"
@@ -1054,22 +1053,8 @@ class Game:
         self.over = self.died = True
 
     def check_win(self):
-        if self.pos == self.world.start and self.world.relic in self.player.inv and not self.has_quest:
-            elder = next((n for n in self.world.tiles[self.pos].npcs if n.role == "elder"), None)
-            if elder:
-                self.emit(f"Heads turn as you walk in. {cap(elder.called())} is staring at what you carry. Perhaps you should talk to {elder.pronouns()['him']}.")
-            return
-        if self.pos == self.world.start and self.world.relic in self.player.inv:
-            v = self.world.tiles[self.pos].site["name"]
-            self.emit("")
-            self.emit(f"You walk into {v} with the {self.world.relic.name} held high. People come out of their houses, one by one, "
-                      f"and then all at once. Someone is weeping; someone else begins to sing. That night the sky over {v} clears, "
-                      f"and for the first time in generations, the {self.world.season} tastes as it should.")
-            self.emit(f"*** You have won, on day {self.world.day}, at level {self.player.level}. ***")
-            for v in self.world.villages:
-                for npc in self.world.tiles[v].npcs:
-                    npc.like(10)
-            self.over = self.won = True
+        if not self.over:
+            self.world.quest.check(self)
 
     def cmd_quit(self, rest):
         if not self.died:
@@ -1179,7 +1164,7 @@ class Game:
         return dict(name=p.name, klass=p.class_name, level=p.level, hp=max(0, p.hp), maxhp=p.maxhp,
                     day=w.day, place=self.narr.header(self.pos), seed=self.seed, world=w.title,
                     started=getattr(self, "started", None),
-                    relic=w.relic in p.inv, won=self.won, died=self.died, turns=getattr(self, "turns", 0))
+                    relic=bool(w.quest.carried(self)), quest=w.quest.status(self), won=self.won, died=self.died, turns=getattr(self, "turns", 0))
 
     @classmethod
     def save_info(cls, path):
@@ -1344,7 +1329,7 @@ class Game:
         if i.get("broken"):
             return f"{i['slot']}: ({i['broken']})"
         when = time.strftime("%d %b %H:%M", time.localtime(i["saved"]))
-        state = " - dead" if i.get("died") else " - won" if i.get("won") else " - carrying the relic" if i.get("relic") else ""
+        state = " - dead" if i.get("died") else " - won" if i.get("won") else f" - {i['quest']}" if i.get("quest") else " - carrying the relic" if i.get("relic") else ""
         return f"{i['slot']}: level {i['level']}, day {i['day']}, {i['place']}{state}  (saved {when})"
 
     def cmd_saves(self, rest):
@@ -1513,8 +1498,7 @@ class Game:
     def cmd_journal(self, rest):
         lines = S.journal_lines(self)
         done = [q for q in self.quests if q["status"] != "active"]
-        main = ("Bring the " + self.world.relic.name + " home." if self.world.relic in self.player.inv else
-                f"Recover the {self.world.relic.name} from {self.world.region_of(self.world.quest_pos)['name']}.") if self.has_quest else "Speak with the village elder."
+        main = self.world.quest.goal(self) if self.has_quest else "Speak with the village elder."
         self.out("Journal")
         self.out(f"- The main road: {main}")
         for l in lines:

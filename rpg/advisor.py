@@ -183,7 +183,7 @@ def suggest(g, n=6):
     # ---------------------------------------------------------------- people
     elder = next((x for x in t.npcs if x.role == "elder"), None)
     if elder and not g.has_quest:
-        if w.relic in p.inv:
+        if w.quest.carried(g):
             add(98, f"talk {elder.ref()}", f"Talk to {elder.called()}", f"{elder.pronouns()['he'].capitalize()}'s staring at what you carry.")
         else:
             add(93, f"talk {elder.ref()}", f"Talk to {elder.called()}", f"{elder.pronouns()['he'].capitalize()} seems to be waiting for someone. This starts the main quest.")
@@ -280,29 +280,36 @@ def suggest(g, n=6):
             add(25, "help", "List every command", "Everything you can type, at a glance.")
 
     # ---------------------------------------------------------------- travel
-    relic_held = w.relic in p.inv
-    if g.has_quest:
-        goal = w.start if relic_held else w.quest_pos
-        route = route_to(goal)
+    qa = w.quest.act(g) if g.has_quest else None
+    if qa:
+        add(95, *qa)
+    st = w.quest.step(g) if g.has_quest else None
+    if st:
+        goal, what, why, ready = st
+        route = route_to(goal) if goal != g.pos else []
+        guarded = any(c.boss for c in w.tiles[goal].creatures)
+        boss = next((c for c in w.tiles[goal].creatures if c.boss), None)
+        if boss and ready and fight_risk(p, boss) >= 0.8:
+            ready = False                         # level alone isn't enough: the odds have to be there
+        if guarded and ready and route and len(route) <= 3 and hp < 0.85 and not g.combat:
+            ready = False                         # never walk up to a boss hurt: rest first
+            add(62, "rest", "Rest before going on", "What waits ahead is the worst thing in this land. Go to it whole.")
         if route:
             d = step_dir(g.pos, route[0])
-            if relic_held:
-                add(90, d, f"Go {d}, toward home", f"Bring the {w.relic.name} back. {len(route)} steps to go.", route, True)
-                from . import travel as TR
-                home = w.tiles[w.start].site["name"]
-                if len(route) > 5 and not TR.blocked(g):
-                    tpath, mins = TR.route(g, w.start)
-                    if tpath and TR.rations(g) >= TR.need(mins):
-                        add(92, f"travel {home}", f"Travel home to {home}", f"{TR.how_long(mins)} on the road, {TR.need(mins)} rations. Quicker than walking it step by step.")
+            homeward = goal == w.start
+            if homeward or ready:
+                add(90 if homeward else 57, d, f"Go {d}, {what}", f"{why} {len(route)} steps to go.", route, True)
             else:
-                ready = p.level >= w.tiles[goal].danger + 1
-                if ready:
-                    add(57, d, f"Go {d}, toward the relic", f"{len(route)} steps to the ruin.", route, True)
-                else:
-                    near = len(route) <= 2
-                    add(4 if near else 14, d, f"Go {d}, toward the relic",
-                        f"{len(route)} steps - but its guardian would likely kill you at level {p.level}." if near else
-                        f"{len(route)} steps. Grow stronger first: its guardian is deadly.", route, True)
+                near = len(route) <= 2
+                add(4 if near else 14, d, f"Go {d}, {what}",
+                    f"{len(route)} steps - but what waits there would likely kill you at level {p.level}." if near else
+                    f"{len(route)} steps. Grow stronger first: what waits there is deadly.", route, True)
+            from . import travel as TR
+            if (homeward or ready) and len(route) > 5 and not TR.blocked(g) and w.tiles[goal].visited:
+                tpath, mins = TR.route(g, goal)
+                if tpath and TR.rations(g) >= TR.need(mins):
+                    name = TR.label(w, goal)
+                    add(92 if homeward else 59, f"travel {name}", f"Travel to {name}", f"{TR.how_long(mins)} on the road, {TR.need(mins)} rations. Quicker than walking it step by step.")
     unexplored = []
     for d, q in w.neighbours(g.pos):
         if q in w.land and not w.tiles[q].visited:

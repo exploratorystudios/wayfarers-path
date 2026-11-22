@@ -276,6 +276,7 @@ class Narrator:
                 p.append(h)
         if t.site:
             p.extend(self.site_lines(t.site, brief))
+        p.extend(w.quest.place_lines(self, pos))         # the main quest can mark the land: blight, tracks...
         if p:
             out.append(" ".join(p))
 
@@ -695,12 +696,12 @@ class Narrator:
     def recognise(self, n):
         return self.say("{recognise_line}", dict(name=n.name, **n.pronouns()), [n.tier])
 
-    def memory_remark(self, n, deeds, player_has_relic):
+    def memory_remark(self, n, deeds, carrying=""):
         """Pick the most important thing this person remembers but hasn't mentioned."""
         w, m = self.w, n.mem
-        if player_has_relic and not any(e["kind"] == "relic_seen" for e in m["events"]):
+        if carrying and not any(e["kind"] == "relic_seen" for e in m["events"]):
             n.remember("relic_seen", said=True)
-            return self.say("{mem_deed_relic}", dict(thing=w.relic.name, name=n.name))
+            return self.say("{mem_deed_relic}", dict(thing=carrying, name=n.name))
         # news of deeds: heard if nearby, or once a day has passed for it to travel
         while m["deeds_heard"] < len(deeds):
             d = deeds[m["deeds_heard"]]
@@ -735,9 +736,9 @@ class Narrator:
     def rumour_options(self, n, here):
         w, r = self.w, self.rng
         opts = []
-        q = w.tiles[w.quest_pos]
-        opts.append(("quest", f"the {w.relic.name} lies in {article(q.site['state'] + ' ' + q.site['purpose'])} {self.dir_phrase(here, w.quest_pos)}, "
-                              f"in {w.region_of(w.quest_pos)['name']}. Something old guards it.", None))
+        qr = w.quest.rumour(self, here)
+        if qr:
+            opts.append(("quest", qr, None))
         for sp in w.species:
             homes = [p for p in w.land if any(c.species is sp for c in w.tiles[p].creatures)]
             if homes:
@@ -763,7 +764,7 @@ class Narrator:
                 "the old roads aren't safe after dark. Never were.",
                 f"this {w.season} feels wrong somehow. The birds know it.",
                 "you should never whistle in a fen. Calls things up.",
-                "my grandmother saw the sky burn green, the year the relic went."]
+                "my grandmother saw the sky burn green, the year the old hall burned."]
         opts.append((f"lore:{w.day}:{n.name}", self.pick(lore), None))
         r.shuffle(opts)
         fresh = [(k, t[0].lower() + t[1:].rstrip("."), None) for k, t in LV.news(w, here)]   # fresh news first
