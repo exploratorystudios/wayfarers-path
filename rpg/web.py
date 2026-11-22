@@ -114,7 +114,7 @@ class Session:
             over=g.over, died=g.died, won=g.won, novice=getattr(g, "turns", 0) < 40,
             hints=getattr(g, "show_hints", True),
             choice=dict(text=g.pending["text"], options=[o["label"] for o in g.pending["options"]]) if getattr(g, "pending", None) else None,
-            journal=S.journal_lines(g) if hasattr(g, "quests") else [], effects=S.effects_line(g) if hasattr(g, "buffs") else "",
+            journal=S.journal(g) if hasattr(g, "quests") else dict(entries=[], done=[]), effects=S.effects_line(g) if hasattr(g, "buffs") else "",
             companions=[c["name"] for c in getattr(g, "companions", [])],
             save_slot=getattr(g, "save_slot", None), save_id=g.save_id(), run_id=getattr(g, "run_id", None),
             world=g.world.title,

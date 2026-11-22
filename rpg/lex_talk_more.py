@@ -4,20 +4,6 @@ Appended to the existing lists (lex_talk, lex_more, lex_entities), never replaci
 """
 
 EXTEND = {
-    "ask_name": [
-        "\"Who's this, then?\" \"{player},\" you tell {him}.", "\"I don't know your face. What do they call you?\" \"{player}.\"",
-        "\"You'll have a name.\" You admit that you do: {player}.", "\"And you are?\" \"{player}.\" {he.cap} turns it over, and nods.",
-        "\"Name?\" {he} asks, not unkindly. \"{player},\" you say.", "\"Whose child are you, then?\" You settle for giving your own name: {player}.",
-        "{he.cap} waits, eyebrows up, until you give your name: {player}.", "\"{player}, is it?\" {he} says, when you tell {him}. \"Well.\"",
-        "\"Go on, then - who are you?\" \"{player}.\"", "You give your name before {he} can ask: {player}.",
-        "\"Should I know you?\" \"Not yet. {player}.\"", "\"New face. Got a name to go with it?\" \"{player}.\"",
-    ],
-    "npc_intro": [
-        "\"{name}. {job_self.cap}, for my sins and theirs.\"", "\"They call me {name} round here. {job_self.cap}.\"",
-        "\"{name}'s my name, and I'm the {job}.\"", "{he.cap} jerks {his} chin at {his} work. \"{name}. {job_self.cap}.\"",
-        "\"You can call me {name}. Most do.\"", "\"{name},\" {he} says, as if that settles a great deal.",
-        "\"I'm {name}, and that's about all there is to me. {job_self.cap}.\"", "\"{name}. And before you ask - {job_self}.\"",
-    ],
     "trade_beat": [
         "{name} nudges the best of the stock towards you.", "{name} names a price before you've asked about anything.",
         "{name} sweeps a hand along the goods like a conjuror.", "{name} lifts the cover off a basket to show you.",

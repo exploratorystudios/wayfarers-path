@@ -64,6 +64,9 @@ class FeudQuest(MQ.MainQuest):
         if self.griev["truth"] == "beast":
             MQ.guardian(w, self.place_pos, r, title=MQ.region_title(w, self.place_pos, r, ["Red", "Gorged", "Old", "Night"], ["Taker", "Reaver", "Prowler", "Thief"]))
 
+    def heading(self, g):
+        return "The feud between {} and {}".format(*self.names(g.world))
+
     # ------------------------------------------------------------ telling
     def place(self, w):
         t = w.tiles[self.place_pos]

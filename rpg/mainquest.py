@@ -197,6 +197,10 @@ class MainQuest:
     def on_talk(self, g, npc):
         pass
 
+    def heading(self, g):
+        """The quest's name in the journal."""
+        return {"blight": "The blight", "beacons": "The beacons"}.get(self.kind, "The elder's errand")
+
     def holds_season(self):
         """True while this quest keeps the year from turning."""
         return False
@@ -245,6 +249,9 @@ class RelicQuest(MainQuest):
         from . import relic_tale
         g.emit(relic_tale.speech(g, npc))
         g.emit("(Quest: recover the relic and return here.)")
+
+    def heading(self, g):
+        return cap(f"the {g.world.relic.name}") if getattr(g.world, "relic", None) else "The lost relic"
 
     def elder(self, g, npc):
         w = g.world

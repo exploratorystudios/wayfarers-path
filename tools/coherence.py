@@ -103,7 +103,7 @@ def collect(worlds=30, seed0=7000):
                 if not plot:
                     continue
                 F = plot["F"]
-                yield "story", c, " ".join(P.fill(rng.choice(x), F) for x in (P.OBJECTS[plot["okey"]]["lines"], P.MOTIVES[plot["motive"]][1]))
+                yield "story", c, P.offer_text(g, plot, npc)
                 for st in plot["steps"]:
                     if st.get("intro"):
                         yield "story", c, P.fill(P.fill(st["intro"], st), F)

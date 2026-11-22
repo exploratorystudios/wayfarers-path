@@ -27,7 +27,7 @@ LINES = {
     "forest": ["The bark here is spotted black, and some of the trees weep a dark sap.", "Fungus the colour of old bruises crowds the roots of every tree.",
                "The undergrowth has gone limp and grey, and smells faintly sweet, like meat left out."],
     "hills": ["The heather is dead in great grey swathes, and the bracken has blackened where it stands.", "The sheep-tracks are empty, and the turf has a grey crust on it."],
-    "marsh": ["The pools have a rainbow skin on them, and the reeds are dying from the tips down.", "The water smells wrong here, sweet and rotten at once."],
+    "marsh": ["The pools have an oily skin on them, and the reeds are dying from the tips down.", "The water smells wrong here, sweet and rotten at once."],
     "peaks": ["Even the lichen on the rocks has gone grey and flaky.", "A grey film coats the stones, and comes away on your fingers like ash."],
 }
 EDGE = ["The rot is thinner here. It grows worse toward the {d}.", "It's worst toward the {d}; you can see the grey deepen that way.",

@@ -9,7 +9,7 @@ spirit's place by night. What you say to the spirit there decides the ending.
 from . import mainquest as MQ
 from . import story as S
 from .mainquest import register, home_name
-from .textgen import cap
+from .textgen import cap, and_list
 
 SPIRIT_PRE = ["the Lady of", "Old Man", "the Grey Watcher of", "the Mother of", "the Horned One of", "the Sleeper under"]
 GIFTS = [
@@ -67,6 +67,9 @@ class PactQuest(MQ.MainQuest):
         MQ.guardian(w, last["pos"], r, title=MQ.region_title(w, last["pos"], r, ["Old", "Grey", "Thorn", "Hollow"], ["Warden", "Keeper", "Watcher"]))
         self.kept = last["key"]
 
+    def heading(self, g):
+        return f"The pact with {self.spirit}"
+
     # ------------------------------------------------------------ telling
     def missing(self):
         return [s for s in self.spots if not s["got"]]
@@ -87,7 +90,7 @@ class PactQuest(MQ.MainQuest):
             return f"The pact is made. Go home to {home_name(w)}."
         left = self.missing()
         if left:
-            return "Gather the gifts for the pact: " + ", ".join(f"the {s['item']}" for s in left) + "."
+            return "Gather the gifts for the pact: " + and_list(f"the {s['item']}" for s in left) + "."
         return f"Bring the three gifts to {self.spirit}'s shrine in {w.region_of(w.quest_pos)['name']}, by night."
 
     def status(self, g):

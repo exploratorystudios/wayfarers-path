@@ -120,6 +120,9 @@ class HeirQuest(MQ.MainQuest):
     def cold(self, w):
         return w.day > self.deadline
 
+    def heading(self, g):
+        return f"The lost heir, {self.name}"
+
     # ------------------------------------------------------------ telling
     def offer(self, g, npc):
         w, n = g.world, g.narr

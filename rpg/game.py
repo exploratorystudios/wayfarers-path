@@ -647,10 +647,12 @@ class Game:
             speak(remark)
         handed = S.on_talk(self, npc)
         LV.festival_gift(self, npc)
+        main_talk = False          # one request per conversation: the main quest is plenty on its own
         if npc.role == "elder" and npc.home == w.start and w.quest.elder(self, npc):
-            pass
+            main_talk = True
         elif npc.role == "elder" and npc.home == w.start and not self.has_quest:
             self.has_quest = True
+            main_talk = True
             w.quest.offer(self, npc)
         elif npc.role == "merchant" and first:
             from . import lex_talk_more as TALK2
@@ -665,8 +667,12 @@ class Game:
                                                  f"\"You'll want {what} on the road. I can help with that.\""]), "trade_beat") + f" (Type 'trade {npc.name}' to see.)")
             m["wares_pointed"] = True
         elif not handed:
-            rum = n.rumour(npc, self.pos)
-            if rum:
+            from . import talk as TK
+            said = TK.topic(self, npc)                 # their errand, yours, fresh news, their own life
+            rum = None if said else n.rumour(npc, self.pos)
+            if said:
+                self.emit(n.attrib(npc, said))
+            elif rum:
                 self.emit(n.attrib(npc, rum, "rumour_beat"))
             elif not remark:
                 self.emit(n.attrib(npc, n.out_of_news(npc, p.name)))
@@ -679,7 +685,7 @@ class Game:
             gift = max((w.make_item(3, kind) for _ in range(5)), key=lambda it: it.value)
             p.inv.append(gift)
             self.emit(n.say("{npc_gives}", dict(name=npc.name, a_thing=article(gift.name))))
-        if not self.pending and not self.over:
+        if not self.pending and not self.over and not main_talk:
             if not LV.offer_trouble(self, npc) and not self.pending:
                 from . import plots
                 plots.offer(self, npc)
@@ -1505,16 +1511,11 @@ class Game:
 
     def cmd_journal(self, rest):
         lines = S.journal_lines(self)
-        done = [q for q in self.quests if q["status"] != "active"]
-        main = self.world.quest.goal(self) if self.has_quest else "Speak with the village elder."
         self.out("Journal")
-        self.out(f"- The main road: {main}")
         for l in lines:
             self.out(l)
-        if not lines:
-            self.out("- Nothing else on your mind. Landmarks, villages and the road are full of chances.")
-        if done:
-            self.out(f"  ({len([q for q in done if q['status'] == 'done'])} done, {len([q for q in done if q['status'] == 'failed'])} failed.)")
+        if len(S.journal(self)["entries"]) == 1:
+            self.out("   (Nothing else on your mind. Landmarks, villages and the road are full of chances.)")
         fx = S.effects_line(self)
         if fx:
             self.out(f"  You are under {fx}.")

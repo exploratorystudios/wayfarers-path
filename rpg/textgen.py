@@ -55,6 +55,14 @@ def plural(phrase):
     return (head + " " + p) if head else p
 
 
+def and_list(items, word="and"):
+    """'A', 'A and B', 'A, B and C'."""
+    items = [str(x) for x in items]
+    if len(items) <= 1:
+        return "".join(items)
+    return ", ".join(items[:-1]) + f" {word} " + items[-1]
+
+
 def cap(s):
     for i, ch in enumerate(s):
         if ch.isalpha():
@@ -203,7 +211,9 @@ def tidy(text):
     text = re.sub(r"\s+([,.;:!?])", r"\1", text)
     text = re.sub(r"([,;:])\s*([,.;:])", r"\2", text)
     text = re.sub(r"\.\s*\.", ".", text)
-    text = re.sub(r"([.!?]\"?)\s+([a-z])", lambda m: m.group(1) + " " + m.group(2).upper(), text)
+    # a new sentence starts after . ! ? - but not after a question or exclamation closed by a quote, where a
+    # speech tag follows: '"Name?" she asks', not '"Name?" She asks'
+    text = re.sub(r"(?:([.!?])|(\.\"))\s+([a-z])", lambda m: (m.group(1) or m.group(2)) + " " + m.group(3).upper(), text)
     text = cap(text)
     if text and text[-1] not in ".!?\"'—:":
         text += "."

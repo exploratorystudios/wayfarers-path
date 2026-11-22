@@ -170,9 +170,30 @@ ASKS = {
     "supplies": ["\"We need {a_need} - {need_why}. Any trader in the bigger places might have one. Would you fetch it?\"",
                  "\"If you come by {a_need}, bring it here. {need_why_cap}.\""],
     "wedding": ["\"My {kin} is getting wed, and we've nothing fine to give. If you come by a trinket - something pretty - would you bring it?\"",
-                "\"A gift for the wedding, that's all I ask. Something nice. A ring, a brooch, a comb. I'll pay you back.\""],
+                "\"A gift for the wedding, that's all I ask. Something nice. A pendant, a cloak pin, a string of beads. I'll pay you back.\""],
     "blight": ["\"The fields are ill-wished. The old cure is a rowan cross, or holy water on the furrows - or a hag-stone, if you can find one. Bring one?\"",
                "\"Bring me something to lift a curse - a rowan cross, holy water, a witch-stone. Anything.\""],
+}
+# before the asking: what the trouble is (so "it" has something to point at), and how it touches them
+SITUATION = {
+    "beast": ["Something's been at the folds, night after night.", "A beast has been taking our sheep. A {what}, from the tracks."],
+    "fever": ["There's a fever in {village}. It started with the children.", "Half of {village} is down with fever."],
+    "lost": ["{who}'s missing.", "We've lost {who}."],
+    "haunting": ["The dead don't lie quiet in {village} any more.", "Something walks the lanes of {village} after dark."],
+    "heirloom": ["Something's been stolen from all of us.", "We've been robbed, the whole village."],
+    "well": ["Our water's gone bad.", "The spring that feeds {village} has turned foul."],
+    "strayed": ["One of mine's got out.", ""], "letter": [""], "supplies": ["We're short of something we can't do without.", ""],
+    "wedding": ["There's a wedding in {village} soon, and a poor one.", ""],
+    "blight": ["There's a blight on {village}'s fields. The crops are rotting where they stand.", "The fields have gone black in the night."],
+}
+STAKE = {
+    "beast": ["Every night we sit up with the dogs, and every morning there's another one gone.", "The children aren't let out past the gate now."],
+    "fever": ["My own little one is coughing now.", "We buried old Ama yesterday."],
+    "lost": ["The nights are cold out there.", "Nobody's slept since."],
+    "haunting": ["Nobody's slept properly in a week.", "The dogs won't go out after dark."],
+    "heirloom": ["Our grandfathers' grandfathers made it.", "It's been ours since before anyone can remember."],
+    "well": ["The beasts won't drink it, and nor will we.", "We're carrying water from the next valley."],
+    "blight": ["If it spreads, we'll go hungry before the year's out.", "My whole strip's gone."],
 }
 LOST_WHY = ["after a strayed goat", "berrying", "to the old ruin on a dare", "to cut withies by the water", "to check the traps", "after a dog that ran off"]
 FOUND_LOST = ["You find {who} at last - cold, hungry, with a twisted ankle, sheltering as best {he} can. {he_cap} nearly weeps at the sight of you.",
@@ -356,9 +377,19 @@ def offer_trouble(g, npc):
         S.ask(g, f"{npc.name} waves you over. \"{cap(_fill(t, '{work_what}'))} - will you lend a hand? Half a day, no more.\"",
               [("Lend a hand (about four hours)", "trouble_labour", dict(village=g.pos, giver=npc.name)), ("Not now", "trouble_no", dict(giver=npc.name))], leave=1)
         return True
-    ask = _fill(t, g.rng.choice(ASKS[k]), g, g.pos)
+    ask = _fill(t, g.narr.pick(ASKS[k], f"troubleask-{k}"), g, g.pos).strip().strip('"')
+    sit = _fill(t, g.narr.pick(SITUATION.get(k, [""]), f"troublesit-{k}"), g, g.pos)
+    stake = _fill(t, g.narr.pick(STAKE[k], f"troublestake-{k}"), g, g.pos) if k in STAKE and g.rng.random() < 0.7 else ""
+    if sit and ask.lower().startswith(("there's a beast", "the fever")):
+        sit = ""                                     # the asking already says it
     from . import lex_talk_more as TALK2
-    S.ask(g, g.narr.pick(TALK2.TROUBLE_LEAD, "troublelead").format(name=npc.name) + f" {ask}",
+    from .plots import ASK_LEAD
+    from . import lex_talk as TALK
+    temper = npc.demeanour if npc.demeanour in ASK_LEAD else "warm"
+    lead = (g.narr.pick(ASK_LEAD[temper], f"asklead-{temper}").format(name=npc.name, his=npc.pronouns()["his"], tool=TALK.tool_for(npc))
+            if g.rng.random() < 0.6 else g.narr.pick(TALK2.TROUBLE_LEAD, "troublelead").format(name=npc.name))
+    speech = " ".join(x for x in (sit, ask, stake) if x)
+    S.ask(g, f"{lead} \"{speech}\"",
           [("Agree to help", "trouble_yes", dict(village=g.pos, giver=npc.name)), ("Not now", "trouble_no", dict(giver=npc.name))], leave=1)
     return True
 
@@ -417,7 +448,7 @@ def _trouble_yes(g, d):
             q["data"]["any_kind"] = t["need_kind"]
         q["data"]["done_text"] = f"{giver.name} takes the {{thing}} with real relief. \"You don't know what this means.\""
     elif k == "wedding":
-        q = S.new_quest(g, "bring", title, f"Bring a trinket - a ring, a brooch, something fine - to {giver.name} in {name}", reward, item=None, **common)
+        q = S.new_quest(g, "bring", title, f"Bring a trinket - a pendant, a cloak pin, something fine - to {giver.name} in {name}", reward, item=None, **common)
         q["data"].update(any_kind="trinket", done_text=f"{giver.name} turns the {{thing}} over in the light. \"Oh, that's lovely. That's just right.\"")
     elif k == "blight":
         q = S.new_quest(g, "bring", title, f"Bring a rowan cross, holy water or a witch-stone to {giver.name} in {name}", reward, item=None, **common)

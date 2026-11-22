@@ -141,6 +141,29 @@ greetings, prices (±20%), and whether they press a gift on you. News of your de
 reaches nearby villagers at once and everyone else a day later, and they'll
 bring it up.
 
+**Everyone has a temperament** (nervous, suspicious, gruff, warm, cheerful, melancholy,
+shrewd or dreamy), and a whole conversation keeps to it: how they look up as you come,
+what they say first, how they ask your name and give theirs, how they ask for help and
+how they thank you. A gruff man never asks "not unkindly".
+
+**What they talk about** (`rpg/talk.py`, `rpg/lex_life.py`), in order of what matters
+to them:
+1. The errand they gave you. They ask after it ("Any sign of the plough-horse?") and
+   nudge you about the step you're on ("Did you speak to Kaisesos in Uniobridge yet?").
+2. Your errands. They tell you what they know of the people, places and beasts you
+   need: who someone is and what they're like, how far a village is and whether a
+   road goes there, where a beast was last seen.
+3. Fresh news from elsewhere.
+4. Their own life, put together from parts the way the descriptions are: their work
+   this season (by trade: lambing, a frozen mill-race, the autumn eel run), then a word
+   about a neighbour, the village's trouble or a festival, and a closing remark in
+   their own temperament.
+5. The old rumours: a beast seen somewhere, a ruin, a shrine.
+
+Each topic is told once (their own life once a day), so going back brings something
+new. One request per conversation: an elder giving you the main quest won't also ask a
+favour in the same breath.
+
 ## Places that do something
 
 **Landmarks in the moment** (`rpg/lex_landmarks.py`). Every landmark has a kind
@@ -170,8 +193,11 @@ Answer with a number (or from the **Respond** menu).
 
 **Quests and the journal** (`rpg/story.py`). Errands come from landmarks,
 encounters and villages: bring something to someone, deliver it somewhere, kill
-something, lead someone home, find a place. `journal` lists them, with directions.
-The map outlines their goals.
+something, lead someone home, find a place. `journal` groups them by story. The
+main quest comes first, then each story you've taken on, with who asked you, their
+words, the steps you've done and the one you're on, with directions. Loose errands
+follow, then what you've finished and how it ended ("You brought young Lisindra home
+to Oryia."). The map outlines their goals.
 
 **A living world** (`rpg/living.py`). Days pass and things happen. Villages develop
 troubles, thirteen kinds of them (`rpg/troubles.py`): a beast at the folds, a fever,
@@ -274,7 +300,12 @@ as a classless Wanderer.
 ## Procedural stories (`rpg/plots.py`)
 
 Besides the village troubles, almost anyone you talk to may ask for help with a
-story the game assembles on the spot from five layers:
+story the game assembles on the spot from five layers. The asking is one speech in
+one voice: what's wrong, why it matters to them, where to start, and a closing in
+their own temperament. Motives are matched to the kind of trouble (grief to a
+keepsake or a grave, justice only to a theft) and to the speaker (only the young
+fear their master, only the old are too old to keep a vow, the village head never
+asks for the village head's leave).
 
 | Layer | Count | Examples |
 |-------|-------|----------|
@@ -582,7 +613,9 @@ load, so wording fixes reach old games too.
 | Landmark secrets and what the verbs do | `rpg/secrets.py` (`DECK`, `HINTS`, one function per secret) |
 | Road encounters                    | `rpg/encounters.py` (`DECK`, a start function and outcomes) |
 | Village troubles                   | `rpg/troubles.py` (`KINDS`, `TITLES`, `ASKS`, variant lists) |
-| Procedural stories                 | `rpg/plots.py` (`MOTIVES`, `OBJECTS`, `OBSTACLES`, `TWISTS`, `ENDINGS`) |
+| Procedural stories                 | `rpg/plots.py` (`MOTIVES`, `OBJECT_TAGS`, `OBJECTS`, `OBSTACLES`, `TWISTS`, `ENDINGS`, `OUTCOME`) |
+| What people talk about             | `rpg/lex_life.py` (`WORK`, `JOB_SEASON`, `NEIGHBOUR`, `TAIL`, `CHECKIN`, `STEP_NUDGE`), `rpg/talk.py` |
+| Names and introductions by temperament | `rpg/lex_talk.py` (`ASK_NAME`, `NPC_INTRO`, `THANKS`) |
 | Festivals                          | `rpg/living.py` (`FESTIVALS`) |
 | How many of each landmark secret a world holds; the dead travellers | `rpg/secrets.py` (`CAP`, `TRAVELLERS`) |
 | Name traditions (retrain after editing the list) | `../fantasy_names.txt`, then `python3 tools/name_analysis.py` |

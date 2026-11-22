@@ -173,6 +173,7 @@ def finish(g, q, text=None, success=True):
     """Pay out a quest's reward (or record its failure)."""
     from . import living
     q["status"] = "done" if success else "failed"
+    q["day_done"] = g.world.day
     if q.get("companion") in g.companions:
         g.companions.remove(q["companion"])
     if text:
@@ -311,21 +312,95 @@ def expire(g):
             finish(g, q, q["data"].get("fail_text"), success=False)
 
 
-def journal_lines(g):
+def where_of(g, q):
+    """Where an errand points, from where you stand: 'a few hours to the east, in the Fen of X', 'here', 'in Aysing'."""
     w, n = g.world, g.narr
-    lines = []
-    for q in active(g):
+    if q["kind"] == "slay" and q["stage"] == "slain" and q.get("giver"):
+        return f"go back to {q['giver']}"
+    if q["target"]:
+        if q["target"] == g.pos:
+            return "here"
+        site = w.tiles[q["target"]].site
+        place = site["name"] if site and site.get("kind") == "village" else w.region_of(q["target"])["name"]
+        return f"{n.dir_phrase(g.pos, q['target'])}, in {place}"
+    home = q.get("giver_home") and w.tiles[q["giver_home"]].site
+    if home and home["name"] not in q["desc"]:
+        return f"in {home['name']}" if q["giver_home"] != g.pos else "here"
+    return ""
+
+
+def _now(g, q, who=""):
+    where = where_of(g, q)
+    if where.startswith("in ") and where[3:] in who:          # "for Derlen, in Ryanbourne" already says it
         where = ""
-        if q["target"]:
-            where = f" ({n.dir_phrase(g.pos, q['target'])}, in {w.region_of(q['target'])['name']})" if q["target"] != g.pos else " (here)"
-        elif q["kind"] == "bring" and q.get("giver_home"):
-            home = w.tiles[q["giver_home"]].site
-            where = f" (in {home['name']})" if home and home["name"] not in q["desc"] else ""
-        if q["kind"] == "slay" and q["stage"] == "slain":
-            where = f" (return to {q['giver']})"
-        due = f" Before day {q['deadline'] + 1}." if q.get("deadline") else ""
-        lines.append(f"- {q['title']}: {q['desc']}{where}.{due}")
-    return lines
+    due = f" Before day {q['deadline'] + 1}." if q.get("deadline") else ""
+    return cap(q["desc"].split(" (")[0]) + (f" ({where})" if where else "") + "." + due
+
+
+def journal(g):
+    """The journal as stories: the main quest, then each story you've taken on (who asked, why, what's done, what's
+    next), then loose errands, then what you've finished. Returns dict(entries=[...], done=[...])."""
+    w = g.world
+    entries, done = [], []
+    if getattr(g, "has_quest", False):
+        mq = w.quest
+        from . import mainquest as MQ
+        elder = MQ.elder_of(w)
+        st = mq.status(g)
+        tg = [t for t in (mq.targets(g) or []) if t in w.tiles]
+        goal = mq.goal(g)
+        if tg and not mq.done:
+            near = min(tg, key=lambda t: abs(t[0] - g.pos[0]) + abs(t[1] - g.pos[1]))
+            if near != g.pos:
+                goal = goal.rstrip(".") + f" (nearest: {g.narr.dir_phrase(g.pos, near)})."
+        entries.append(dict(kind="main", title=mq.heading(g), who=f"for {elder.name}, in {MQ.home_name(w)}" if elder else "",
+                            why=st[:1].upper() + st[1:] + "." if st else "", steps=[("now", goal)]))
+    else:
+        entries.append(dict(kind="main", title="The road", who="", why="", steps=[("now", "Speak with the village elder.")]))
+    plots = {p["id"]: p for p in getattr(g, "plots", [])}
+    quests = getattr(g, "quests", [])
+    for p in plots.values():
+        mine = [q for q in quests if q["data"].get("plot") == p["id"]]
+        if p["status"] == "active":
+            steps = [("done", cap(q["title"])) for q in mine if q["status"] == "done"]
+            who = f"for {p['giver']}, in {p['village']}"
+            steps += [("now", _now(g, q, who)) for q in mine if q["status"] == "active"]
+            entries.append(dict(kind="story", title=p["title"], who=who, why=p.get("pitch", ""), steps=steps))
+        elif p["status"] in ("done", "failed"):
+            done.append(dict(title=p["title"], text=p.get("outcome", ""), day=p.get("day_done", 0)))
+    for q in quests:
+        if q["data"].get("plot"):
+            continue
+        who = f"for {q['giver']}" + (f", in {w.tiles[q['giver_home']].site['name']}" if q.get("giver_home") and w.tiles[q["giver_home"]].site else "") if q.get("giver") else ""
+        if q["status"] == "active":
+            entries.append(dict(kind="errand", title=q["title"], who=who, why="", steps=[("now", _now(g, q, who))]))
+        else:
+            done.append(dict(title=q["title"], text="failed" if q["status"] == "failed" else "", day=q.get("day_done", q.get("day", 0))))
+    done.sort(key=lambda d: -d["day"])
+    return dict(entries=entries, done=done)
+
+
+MARK = {"done": "✓", "now": "→", "later": "·"}
+
+
+def journal_lines(g):
+    """The journal as text, for the terminal."""
+    j = journal(g)
+    out = []
+    for e in j["entries"]:
+        head = ("MAIN · " if e["kind"] == "main" else "") + e["title"] + (f" — {e['who']}" if e["who"] else "")
+        out.append(head)
+        if e["why"]:
+            out.append(f"   {e['why']}")
+        for state, text in e["steps"]:
+            out.append(f"   {MARK[state]} {text}")
+    if j["done"]:
+        out.append("Done")
+        for d in j["done"][:6]:
+            out.append(f"   ✓ {d['title']}" + (f" — {d['text']}" if d["text"] else "") + (f" (day {d['day']})" if d["day"] else ""))
+        if len(j["done"]) > 6:
+            out.append(f"   ...and {len(j['done']) - 6} more.")
+    return out
 
 
 # ------------------------------------------------------------------ buffs (blessings, curses, luck)

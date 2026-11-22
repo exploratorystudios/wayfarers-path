@@ -93,10 +93,10 @@ OBJECTS = {
                                       "\"Somebody's had the {oname} off the well-head. The wise-woman says it must come back before the next moon.\""],
                   title=["The {oname}", "Bring back the {oname}"]),
     # places
-    "shrine": dict(kind="place", lines=["\"The shrine of {spirit} {dir} has been fouled. Nobody's tended it since {when}.\"",
+    "shrine": dict(kind="place", lines=["\"The shrine of {spirit} {dir} was fouled {when}, and nobody's set it right.\"",
                                         "\"Someone must go to the shrine of {spirit}, {dir}, and set it right. The village has felt it.\""],
                    title=["The fouled shrine", "Tend the shrine of {spirit}"]),
-    "grave": dict(kind="place", lines=["\"My {kin} lies buried by the {place}, {dir}. Nobody has tended the grave since {when}.\"",
+    "grave": dict(kind="place", lines=["\"My {kin} lies buried by the {place}, {dir}. Nobody has tended the grave in years.\"",
                                        "\"There's a grave by the {place} {dir} - my {kin}'s. I can't walk that far any more.\""],
                   title=["A grave by the {place}", "{giver}'s {kin}"]),
     # word
@@ -119,45 +119,79 @@ WHEN = ["yesterday", "two days back", "before dawn", "at the last full moon", "t
 KIN = ["mother", "father", "first husband", "first wife", "brother", "sister", "son", "daughter", "old master", "grandmother"]
 
 # ======================================================================= MOTIVES
-# kinds: which object kinds it can drive; lines: why, in the asker's voice
-MOTIVES = {
-    "loss":      ("person animal item", ["\"I can't sleep for thinking about it.\"", "\"Everything feels wrong without {obj}.\""]),
-    "grief":     ("item place word", ["\"It's all I have left of them.\"", "\"Since the burying, it's the only thing that matters.\""]),
-    "love":      ("person item word", ["\"I'd go myself if I could. I love {ohim}, God help me.\"" , "\"Some things you do for love. This is one.\""]),
-    "debt":      ("item animal word", ["\"I owe more than I can pay. Without it, I'm finished.\"", "\"There's money owing, and this is the only way I pay it back.\""]),
-    "fear":      ("creature person place", ["\"We're frightened. There, I've said it.\"", "\"The children won't sleep. Neither will I.\""]),
-    "duty":      ("creature place item word", ["\"It's my duty, and I can't do it. So I'm asking you.\"", "\"Someone has to. It ought to be me.\""]),
-    "pride":     ("item creature animal", ["\"The whole village is laughing at me.\"", "\"I won't be made a fool of.\""]),
-    "guilt":     ("person place item", ["\"It's my fault. I should have stopped it.\"", "\"I said something I can't take back.\""]),
-    "rivalry":   ("item animal creature", ["\"If the folk at {fvillage} hear of this, I'll never live it down.\"", "\"{other} would love to see me fail.\""]),
-    "curiosity": ("word place item", ["\"I just have to know.\"", "\"It's been nagging at me for weeks.\""]),
-    "revenge":   ("creature item", ["\"It took my best dog. I want it dead.\"", "\"Somebody's going to pay for this.\""]),
-    "promise":   ("person place word item", ["\"I promised. I keep my promises.\"", "\"I swore on my mother's grave I'd see it done.\""]),
-    "hunger":    ("animal creature item", ["\"Without it, we'll go hungry this winter.\"", "\"It's that or an empty pot.\""]),
-    "illness":   ("item person word", ["\"My {kin} is sick, and getting worse.\"", "\"There's a fever in the house. We need it now.\""]),
-    "inheritance": ("item word", ["\"It's mine by right. The old man promised it to me.\"", "\"Without it, my cousins will have the lot.\""]),
-    "honour":    ("creature item place", ["\"The family's name hangs on it.\"", "\"Our honour. It's not much, but it's ours.\""]),
-    "jealousy":  ("person word", ["\"I need to know who {ohe} is with.\"", "\"They're all talking. I need to know the truth.\""]),
-    "homesick":  ("word item", ["\"I've been gone from home too long. I just want news.\"", "\"It's a bit of home. That's all.\""]),
-    "superstition": ("item place creature", ["\"It's bad luck, it's terrible luck, and it's getting worse.\"", "\"The wise-woman says the village is cursed until it's done.\""]),
-    "faith":     ("place item", ["\"The spirits are angry. Someone must make it right.\"", "\"It's holy. It shouldn't be left like that.\""]),
-    "ambition":  ("item word animal", ["\"With it, I could make something of myself.\"", "\"This is my chance. I'll not get another.\""]),
-    "shame":     ("person item", ["\"I can't show my face until it's put right.\"", "\"Nobody must know it was me.\""]),
-    "mercy":     ("person animal creature", ["\"It's suffering out there. Somebody has to do something.\"", "\"Nobody deserves to be left like that.\""]),
-    "justice":   ("item creature word", ["\"It isn't right, and someone has to say so.\"", "\"What was taken should be given back. That's all.\""]),
-    "loneliness": ("person animal word", ["\"The house is so quiet now.\"", "\"I've no one else.\""]),
-    "nostalgia": ("place item", ["\"I used to go there as a girl. I want it the way it was.\"", "\"It was my father's. Things were better then.\""]),
-    "protection": ("creature person place", ["\"I've got little ones. I won't have them in danger.\"", "\"Someone has to keep this village safe.\""]),
-    "wager":     ("creature item animal", ["\"I made a bet. A stupid one. I need to win it.\"", "\"There's money riding on it - mine.\""]),
-    "apprenticeship": ("item person", ["\"My master will turn me out if I don't make this right.\"", "\"I'm only learning. I can't afford a mistake like this.\""]),
-    "betrothal": ("item person word", ["\"I'm to be married at the next moon. Everything must be ready.\"", "\"The wedding can't go ahead without it.\""]),
-    "quarrel":   ("item word animal", ["\"{other} says it's my fault. I'll prove it isn't.\"", "\"It started a quarrel that's split the village.\""]),
-    "omen":      ("creature place item", ["\"I dreamed of it three nights running. It means something.\"", "\"A hare crossed my path backwards. I know what that means.\""]),
-    "vow":       ("place creature", ["\"I made a vow at the shrine. I'm too old now to keep it.\"", "\"I swore an oath when I was young and foolish. It still binds.\""]),
-    "rescue":    ("person animal", ["\"Every hour counts.\"", "\"If the cold doesn't get them, the beasts will.\""]),
-    "reputation": ("item creature", ["\"Folk won't buy from me while this hangs over me.\"", "\"My good name's worth more than coin.\""]),
-    "kinship":   ("person word place", ["\"Blood is blood.\"", "\"Family looks after family. That's all there is to it.\""]),
+# Why they want it, in their own voice. fits: the object TAGS this motive makes sense for (any one will do).
+# Each line may narrow that with its own tags ("" = any the motive fits), and `who` limits the speaker:
+# young / old / notold (by age), notelder (not the village head), seller (keeps a stall or trades).
+OBJECT_TAGS = {
+    "child": "person missing kin young", "elder": "person missing kin old", "sweetheart": "person missing love quarrel",
+    "apprentice": "person missing trade young", "runaway": "person missing quarrel kin young", "stranger": "person sick stranger",
+    "flock": "animal stray livestock", "dog": "animal stray pet", "horse": "animal stray livestock trade", "hawk": "animal stray pet",
+    "beast": "creature danger predator", "dead": "creature danger undead", "lurker": "creature danger haunt", "terror": "creature danger predator",
+    "heirloom": "item stolen heirloom", "tool": "item lost trade", "remedy": "item cure", "letter": "item lost stolen",
+    "keepsake": "item lost memento", "charter": "item stolen common", "charm": "item stolen luck",
+    "shrine": "place holy", "grave": "place grave kin", "news": "word",
 }
+M = lambda fits, lines, who="": dict(fits=set(fits.split()), lines=[l if isinstance(l, tuple) else ("", l) for l in lines], who=who)
+MOTIVES = {
+    "loss":      M("missing stray lost stolen memento heirloom", ["I can't sleep for thinking about it.", "Everything feels wrong without {obj}."]),
+    "grief":     M("memento heirloom grave", [("memento heirloom", "It's all I have left of them."), ("grave", "Since the burying, it's the only thing that matters.")]),
+    "love":      M("love memento kin", [("love kin", "I'd go myself if I could. I love {ohim}, God help me."), "Some things you do for love. This is one."]),
+    "debt":      M("trade livestock common", ["I owe more than I can pay. Without it, I'm finished.", "There's money owing, and this is the only way I pay it back."]),
+    "fear":      M("danger undead holy", ["We're frightened. There, I've said it.", "The children won't sleep. Neither will I."]),
+    "duty":      M("danger holy grave common word", ["It's my duty, and I can't do it. So I'm asking you.", "Someone has to. It ought to be me."]),
+    "pride":     M("stolen trade stray", ["The whole village is laughing at me.", "I won't be made a fool of."]),
+    "guilt":     M("missing stray lost quarrel", [("missing stray lost", "It's my fault. I should have stopped it."), ("quarrel", "I said something I can't take back.")]),
+    "rivalry":   M("stolen trade livestock", ["If the folk at {fvillage} hear of this, I'll never live it down.", "{other} would love to see me fail."]),
+    "curiosity": M("word holy", ["I just have to know.", "It's been nagging at me for weeks."]),
+    "revenge":   M("predator stolen", [("predator", "It took my best dog. I want it dead."), "Somebody's going to pay for this."]),
+    "promise":   M("missing grave word holy memento", ["I promised. I keep my promises.", "I swore on my mother's grave I'd see it done."]),
+    "hunger":    M("livestock predator", [("livestock", "Without {obj}, we'll go hungry before the year's out."), ("predator", "Every beast it takes is meat off our table."),
+                                         "It's that or an empty pot."]),
+    "illness":   M("cure", ["My {kin} is sick, and getting worse.", "There's a fever in the house. We need it now."]),
+    "inheritance": M("heirloom", ["It's mine by right. The old man promised it to me.", "Without it, my cousins will have the lot."]),
+    "honour":    M("heirloom predator grave", ["The family's name hangs on it.", "Our honour. It's not much, but it's ours."]),
+    "jealousy":  M("love word", [("love", "I need to know who {ohe} is with."), ("word", "They're all talking. I need to know the truth.")]),
+    "homesick":  M("word memento", [("word", "I've been gone from home too long. I just want news."), ("memento", "It's a bit of home. That's all.")]),
+    "superstition": M("luck holy undead", ["It's bad luck, it's terrible luck, and it's getting worse.", "The wise-woman says the village is cursed until it's done."]),
+    "faith":     M("holy luck", ["The spirits are angry. Someone must make it right.", "It's holy. It shouldn't be left like that."]),
+    "ambition":  M("trade", ["With it, I could make something of myself.", "This is my chance. I'll not get another."], who="notold"),
+    "shame":     M("lost stolen quarrel", ["I can't show my face until it's put right.", "Nobody must know it was me."]),
+    "mercy":     M("sick stray", ["It's suffering out there. Somebody has to do something.", "Nobody deserves to be left like that."]),
+    "justice":   M("stolen", ["It isn't right, and someone has to say so.", "What was taken should be given back. That's all."]),
+    "loneliness": M("kin pet love", ["The house is so quiet now.", "I've no one else."]),
+    "nostalgia": M("grave holy heirloom memento", [("grave holy", "I used to go there as a child. I want it the way it was."), ("heirloom memento", "It was my father's. Things were better then.")]),
+    "protection": M("danger", ["I've got little ones. I won't have them in danger.", "Someone has to keep this village safe."]),
+    "wager":     M("predator stray", ["I made a bet. A stupid one. I need to win it.", "There's money riding on it - mine."], who="notelder"),
+    "apprenticeship": M("lost trade", ["My master will turn me out if I don't make this right.", "I'm only learning. I can't afford a mistake like this."], who="young notelder"),
+    "betrothal": M("memento heirloom love word", ["I'm to be married at the next moon. Everything must be ready.", "The wedding can't go ahead without it."], who="notold notelder"),
+    "quarrel":   M("lost stray stolen", ["{other} says it's my fault. I'll prove it isn't.", "It started a quarrel that's split the village."]),
+    "omen":      M("danger holy luck undead", ["I dreamed of it three nights running. It means something.", "A hare crossed my path backwards. I know what that means."]),
+    "vow":       M("holy grave", [("holy grave", "I made a vow at the shrine. I'm too old now to keep it."), "I swore an oath when I was young and foolish. It still binds."], who="old"),
+    "rescue":    M("missing stray sick", ["Every hour counts.", "If the cold doesn't get them, the beasts will."]),
+    "reputation": M("stolen trade", ["Folk won't buy from me while this hangs over me.", "My good name's worth more than coin."], who="seller"),
+    "kinship":   M("kin word grave", ["Blood is blood.", "Family looks after family. That's all there is to it."]),
+}
+
+
+def speaker_ok(who, npc):
+    """Can this person say a line meant for `who`?"""
+    from . import goods as GOODS
+    band = npc.look.get("age_band", "mid")
+    tests = {"young": band == "young", "old": band == "old", "notold": band != "old", "notelder": npc.role != "elder",
+             "seller": npc.role == "merchant" or GOODS.sells(npc)}
+    return all(tests.get(w, True) for w in who.split())
+
+
+def motives_for(okey, npc):
+    tags = set(OBJECT_TAGS.get(okey, "").split())
+    return [k for k, m in MOTIVES.items() if m["fits"] & tags and speaker_ok(m["who"], npc)]
+
+
+def motive_lines(mkey, okey):
+    """The lines of this motive that fit this object."""
+    tags = set(OBJECT_TAGS.get(okey, "").split())
+    return [t for need, t in MOTIVES[mkey]["lines"] if not need or set(need.split()) & tags] or [t for _, t in MOTIVES[mkey]["lines"]]
+
 
 # ======================================================================= OBSTACLES
 # mechanic, object kinds it fits ("any" for all), intro (what you learn), journal title, plus parameters
@@ -165,19 +199,19 @@ OBSTACLES = {
     # search: hidden at a landmark, perhaps only at a certain time
     "tracks":      ("search", "person animal creature", "\"There'll be tracks by the {lm}, {lmdir}. Start there.\"", "Look for tracks at the {lm}", dict(cond=None)),
     "dropped":     ("search", "person animal item", "\"A shepherd saw something dropped by the {lm}, {lmdir}.\"", "Search the {lm}", dict(cond=None)),
-    "moonlit":     ("search", "any", "\"There's a mark on the {lm}, {lmdir}, that only shows by moonlight. Or so the old tales say.\"", "Search the {lm} by night", dict(cond="dark")),
-    "fogbound":    ("search", "person item place", "\"The way only shows in fog - look at the {lm}, {lmdir}, when the mist is down.\"", "Search the {lm} in fog or rain", dict(cond="fog_or_rain")),
-    "dawnsign":    ("search", "any", "\"At dawn, the first light falls on something at the {lm}, {lmdir}. Be there for it.\"", "Search the {lm} at dawn", dict(cond="dawn")),
-    "duskcall":    ("search", "animal person", "\"Go to the {lm}, {lmdir}, at dusk. That's when things come out.\"", "Search the {lm} at dusk", dict(cond="dusk")),
-    "cache":       ("search", "item word", "\"Thieves stash things at the {lm}, {lmdir}, before moving them on.\"", "Search the thieves' stash at the {lm}", dict(cond=None)),
-    "scrawl":      ("search", "any", "\"Somebody scratched a sign on the {lm}, {lmdir}. I couldn't read it. Maybe you can.\"", "Read the sign at the {lm}", dict(cond=None)),
+    "moonlit":     ("search", "any", "\"There's a mark on the {lm}, {lmdir}, that only shows by moonlight, and it points the way to {obj}. Or so the old tales say.\"", "Search the {lm} by night", dict(cond="dark")),
+    "fogbound":    ("search", "person item place", "\"The old ones say the way to {obj} only shows in fog. Look at the {lm}, {lmdir}, when the mist is down.\"", "Search the {lm} in fog or rain", dict(cond="fog_or_rain")),
+    "dawnsign":    ("search", "any", "\"Folk say the first light of dawn falls on the {lm}, {lmdir}, and shows the way to {obj}. Be there for it.\"", "Search the {lm} at dawn", dict(cond="dawn")),
+    "duskcall":    ("search", "animal person", "\"Go to the {lm}, {lmdir}, at dusk. That's when things come out, and {obj} with them, maybe.\"", "Search the {lm} at dusk", dict(cond="dusk")),
+    "cache":       ("search", "item word", "\"Thieves stash things at the {lm}, {lmdir}, before moving them on. Look there first.\"", "Search the thieves' stash at the {lm}", dict(cond=None)),
+    "scrawl":      ("search", "any", "\"Somebody's scratched a sign on the {lm}, {lmdir}, and I'd swear it's about {obj}. I couldn't read it. Maybe you can.\"", "Read the sign at the {lm}", dict(cond=None)),
     # slay: something guards the way
     "guarded":     ("slay", "person animal item place", "\"Something lairs on the way {gdir} - a {guard}. You'll not get past it.\"", "Deal with the {guard} on the way", {}),
     "brood":       ("slay", "creature", "\"It isn't alone. There's a {guard} with it, {gdir} - kill that first, or it'll come at your back.\"", "Kill the {guard} first", {}),
     "ambush":      ("slay", "item word person", "\"Whoever took it left a {guard} to watch the road {gdir}.\"", "The {guard} on the road", {}),
     "warden":      ("slay", "place", "\"A {guard} has taken the way {gdir}. Nothing goes by it.\"", "Clear the way of the {guard}", {}),
     # ask: someone elsewhere knows
-    "witness":     ("ask", "any", "\"{far} in {fvillage} saw it happen. Ask {fhim}.\"", "Ask {far} in {fvillage}", {}),
+    "witness":     ("ask", "person animal item", "\"{far} in {fvillage} was there when it happened. Ask {fhim}.\"", "Ask {far} in {fvillage}", {}),
     "gossip":      ("ask", "any", "\"{far}, over in {fvillage}, hears everything. If anyone knows, it's {fhim}.\"", "Hear what {far} knows", {}),
     "kinfolk":     ("ask", "person word", "\"{ohe_cap} has kin in {fvillage} - {far}. {ohe_cap} may have gone there first.\"", "Ask {far}, in {fvillage}", {}),
     "trader":      ("ask", "item animal", "\"A trader called {far} in {fvillage} buys things without asking questions. Ask what came through.\"", "Question {far} in {fvillage}", {}),
@@ -194,7 +228,7 @@ OBSTACLES = {
     # bring: someone wants something first
     "smithwork":   ("bring", "item place creature", "\"{far} in {fvillage} could help, but {fhe} wants a whetstone first - {fhis} last one cracked.\"", "Bring {far} a whetstone", dict(item="whetstone")),
     "wiseprice":   ("bring", "any", "\"{far} in {fvillage} will tell you, for a healing herb. {fhe_cap}'s always short.\"", "Bring {far} a healing herb", dict(any_kind="herb")),
-    "bribe":       ("bring", "any", "\"{far} in {fvillage} might talk, for something pretty. A ring, a brooch.\"", "Bring {far} a trinket", dict(any_kind="trinket")),
+    "bribe":       ("bring", "any", "\"{far} in {fvillage} might talk, for something pretty. A pendant, a cloak pin.\"", "Bring {far} a trinket", dict(any_kind="trinket")),
     "candlecost":  ("bring", "place word", "\"{far} in {fvillage} keeps a vigil. Bring candles, and {fhe}'ll help.\"", "Bring {far} beeswax candles", dict(item="bundle of beeswax candles")),
     "holywater":   ("bring", "creature place", "\"{far} in {fvillage} says you'll want holy water for it, and {fhe}'ll bless the way if you bring some.\"", "Bring {far} holy water", dict(item="flask of holy water")),
     "rope":        ("bring", "person animal", "\"{far} in {fvillage} can help, but {fhe}'ll need a draught - {fhe}'s been ill.\"", "Bring {far} a healing draught", dict(any_kind="potion")),
@@ -203,7 +237,7 @@ OBSTACLES = {
     # deliver: something must be taken somewhere first
     "offering":    ("deliver", "place creature", "\"Leave an offering at the shrine of {spirit} first, {sdir}, or the spirits won't help.\"", "Leave an offering at the shrine of {spirit}", {}),
     "message":     ("deliver", "person word", "\"Take this token to {fvillage} first, so they'll know you come from me.\"", "Carry {giver}'s token to {fvillage}", {}),
-    "permission":  ("deliver", "item place", "\"You'll need the elder's leave. Take this to {fvillage} and show it.\"", "Show {giver}'s token at {fvillage}", {}),
+    "permission":  ("deliver", "item place", "\"The way runs through {fvillage}'s land, and they don't like strangers on it. Take this token and show it there, so they'll know you come from me.\"", "Show {giver}'s token at {fvillage}", {}),
     # go: just get there - a long walk, a dangerous place
     "longroad":    ("go", "any", "\"The quickest way is through {region}. Go carefully.\"", "Cross {region}", {}),
     "ruinroad":    ("go", "any", "\"The trail runs past the old {ruin} - pass it, and go on from there.\"", "Pass the old {ruin}", {}),
@@ -283,11 +317,12 @@ def _pron(g_):
 
 
 def fill(text, F):
+    from .textgen import fix_articles
     out = text
     for k, v in F.items():
         if isinstance(v, str):
             out = out.replace("{" + k + "}", v)
-    return out
+    return fix_articles(out) if "{" not in out else out      # "a adder's-tongue fern" -> "an adder's-tongue fern", once all is filled
 
 
 def _weight_recent(g, kind, pool):
@@ -439,7 +474,7 @@ def make(g, npc):
     fp = farn.pronouns() if farn else _pron("female")
     F.update(fhe=fp["he"], fhim=fp["him"], fhis=fp["his"], fhe_cap=cap(fp["he"]))
     # motive
-    mkey = _choose(g, "motive", [k for k, (ks, _) in MOTIVES.items() if kind in ks.split()])
+    mkey = _choose(g, "motive", motives_for(okey, npc) or ["duty"])
     plot["motive"] = mkey
     # obstacles: one to three, each fitting the object, none repeated
     n_obs = g.rng.choices([1, 2, 3], [4, 4, 2])[0]
@@ -564,15 +599,52 @@ def offer(g, npc):
     plot = make(g, npc)
     if not plot:
         return False
-    F = plot["F"]
-    why = fill(g.rng.choice(MOTIVES[plot["motive"]][1]), F)
-    what = fill(g.rng.choice(OBJECTS[plot["okey"]]["lines"]), F)
-    first = plot["steps"][0]
-    hint = fill(fill(first["intro"], first), F) if not first.get("climax") and first.get("intro") else ""
     g._plot_offer = plot
-    S.ask(g, f"{g.narr.attrib(npc, what) if what.startswith(chr(34)) else what} {why} {hint}".strip(),
+    S.ask(g, offer_text(g, plot, npc),
           [("Say you'll help", "plot_yes", dict(id=plot["id"])), ("Not now", "plot_no", dict(id=plot["id"]))], leave=1)
     return True
+
+
+# how each temperament leads into asking, and how it closes the asking
+ASK_LEAD = {
+    "nervous": ["{name} wrings {his} hands.", "{name} glances round, then speaks low and fast.", "{name} hesitates, then blurts it out."],
+    "suspicious": ["{name} looks you over once more before deciding.", "{name} lowers {his} voice, though there's no one near."],
+    "gruff": ["{name} sets down {tool} with a thump.", "{name} doesn't waste words."], "warm": ["{name} touches your arm.", "{name}'s smile fades."],
+    "cheerful": ["The grin slips from {name}'s face for a moment.", "{name} tries to make light of it, and can't quite."],
+    "melancholy": ["{name} sighs.", "{name} looks away down the lane."], "shrewd": ["{name} leans closer.", "{name} weighs you up, then seems to decide."],
+    "dreamy": ["{name}'s gaze drifts, then comes back to you.", "{name} speaks as if half to someone else."],
+}
+ASK_CLOSE = {
+    "nervous": ["Please.", "I wouldn't ask if there were anyone else.", "Will you? Please?"],
+    "suspicious": ["I can't pay much. But I'd owe you.", "I don't ask for help often."],
+    "gruff": ["Well? Will you or won't you?", "That's all. Will you go?"], "warm": ["Will you help?", "I'd be grateful past saying."],
+    "cheerful": ["What do you say?", "Go on - you look like you could use an adventure."],
+    "melancholy": ["I don't suppose you would...", "But why would you."], "shrewd": ["There'd be something in it for you.", "Well? Interested?"],
+    "dreamy": ["I think you were meant to come.", "The wind said someone would help."],
+}
+
+
+def _unquote(line):
+    line = line.strip()
+    return line[1:-1] if len(line) > 1 and line[0] == line[-1] == '"' else line
+
+
+def offer_text(g, plot, npc):
+    """The asking, as one speech in one voice: what's wrong, why it matters to them, where to start, and a
+    closing in their own temperament."""
+    from . import lex_talk as TALK
+    F, n = plot["F"], g.narr
+    what = fill(n.pick(OBJECTS[plot["okey"]]["lines"], f"plotobj-{plot['okey']}"), F)
+    why = fill(n.pick(motive_lines(plot["motive"], plot["okey"]), f"plotwhy-{plot['motive']}"), F)
+    first = plot["steps"][0]
+    hint = fill(fill(first["intro"], first), F) if not first.get("climax") and first.get("intro") else ""
+    temper = npc.demeanour if npc.demeanour in ASK_CLOSE else "warm"
+    close = n.pick(ASK_CLOSE[temper], f"askclose-{temper}")
+    plot["pitch"] = f"\"{_unquote(what)} {_unquote(why)}\""            # for the journal, in their own words
+    speech = " ".join(x for x in (_unquote(what), _unquote(why), _unquote(hint), close) if x)
+    pr = npc.pronouns()
+    lead = n.pick(ASK_LEAD[temper], f"asklead-{temper}").format(name=npc.name, his=pr["his"], tool=TALK.tool_for(npc))
+    return f"{lead} \"{speech}\""
 
 
 @S.choice_handler("plot_yes")
@@ -590,8 +662,10 @@ def _plot_yes(g, d):
     if c is not None:
         g.world.tiles[plot["target"]].creatures.append(c)
         plot["creature"] = c
-    from . import lex_talk_more as TALK2
-    g.emit(g.narr.pick(TALK2.PLOT_THANKS, "plotthanks").format(giver=plot["giver"], giver_eyes="their eyes") + f" (Journal: {plot['title']}.)")
+    from . import lex_talk as TALK
+    temper = giver.demeanour if giver else "warm"
+    he = giver.pronouns()["he"] if giver else "they"
+    g.emit(g.narr.pick(TALK.toned(TALK.THANKS, temper), f"plotthanks-{temper}").format(giver=plot["giver"], he=he) + f" (Journal: {plot['title']}.)")
     S.record(g, f"{plot['giver']} of {plot['village']} asked for your help: {plot['title'].lower()}.", "quest", pos=plot["home"])
     _start_step(g, plot, 0)
 
@@ -943,6 +1017,28 @@ ENDING_TEXT = {
 }
 
 
+# what you did, for the chronicle, the journal and gossip (said of you: "You brought ... home")
+OUTCOME = {
+    "return": {"person": "You brought {obj} home to {giver}.", "animal": "You brought {obj} back to {giver}.",
+               "creature": "You dealt with {obj} for {giver}.", "item": "You found {obj} and gave it back to {giver}.",
+               "place": "You set {obj} right, for {giver}.", "word": "You brought {giver} word from {far}."},
+    "kill": "You killed {obj}, as {giver} asked.", "persuade": "You talked {obj} into coming home.",
+    "tell_truth": "You told {giver} the truth, hard as it was.", "comfort_lie": "You told {giver} a kind lie, and let it stand.",
+    "expose": "You told {village} what really happened.", "bargain": "You drove a hard bargain with {giver} over {obj}.",
+    "spare": "You let {obj} live, and told {giver} it had fled.", "let_go": "You let {obj} go their own way, and took word back to {giver}.",
+    "report": "You told {giver} who the thief was.", "keep_secret": "You brought {obj} back, and kept what else you found to yourself.",
+    "share": "You shared what you found with {giver}.", "forgive": "You let the thief go, and brought {obj} back to {giver}.",
+    "bury": "You buried the dead you found, and told {giver}.",
+}
+
+
+def outcome(plot):
+    o = OUTCOME.get(plot.get("ending", "return"), OUTCOME["return"])
+    if isinstance(o, dict):
+        o = o.get(plot["kind"], o["item"])
+    return fill(o, dict(plot["F"], village=plot["village"]))
+
+
 def _complete(g, plot):
     """The story's end: rewards, liking, and what the village remembers."""
     F, e = plot["F"], plot.get("ending", "return")
@@ -956,13 +1052,14 @@ def _complete(g, plot):
         for n in g.world.tiles[plot["home"]].npcs:
             if n.name != plot["giver"]:
                 n.like(2)
-    _close(g, plot, f"You helped {plot['giver']} of {plot['village']}: {plot['title'].lower()}.", xp=xp, gold=gold, like=like,
-           story=f"you helped {plot['giver']} when {plot['title'].lower()}", item_chance=0.25)
+    done = outcome(plot)
+    _close(g, plot, done, xp=xp, gold=gold, like=like, story="you" + done[3:].rstrip("."), item_chance=0.25)
 
 
 def _close(g, plot, chronicle, xp=10, gold=0, like=0, story=None, item_chance=0.0):
     p = g.player
     plot["status"] = "done"
+    plot["outcome"], plot["day_done"] = chronicle, g.world.day
     bits = []
     if gold:
         p.gold += gold

@@ -88,6 +88,9 @@ class BeastQuest(MQ.MainQuest):
             folk = [n for n in w.tiles[v].npcs if n.role != "elder"] or w.tiles[v].npcs
             setattr(self, attr, r.choice(folk).name if folk else None)
 
+    def heading(self, g):
+        return cap(self.title)
+
     # ------------------------------------------------------------ telling
     def where(self, w, here):
         q = w.tiles[w.quest_pos]

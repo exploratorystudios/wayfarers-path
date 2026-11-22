@@ -183,6 +183,16 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 .journal { font-size: .82rem; line-height: 1.4; color: var(--ink-soft); }
 .journal li { margin: 0 0 6px; } .journal ul { margin: 0; padding-left: 16px; }
 .journal .fx { font-size: .74rem; color: var(--ink-faint); margin-top: 6px; }
+.journal .jstory { margin: 0 0 12px; }
+.journal .jstory h3 { font-size: .86rem; margin: 0; color: var(--ink); font-weight: 650; }
+.journal .jstory.main h3::before { content: "Main · "; color: var(--accent); }
+.journal .who { font-size: .74rem; color: var(--ink-faint); }
+.journal .why { font-style: italic; margin: 3px 0; }
+.journal .step { padding-left: 16px; text-indent: -16px; margin: 2px 0; }
+.journal .step b { display: inline-block; width: 16px; text-indent: 0; font-weight: 400; }
+.journal .step.done { color: var(--ink-faint); } .journal .step.now { color: var(--ink); }
+.journal .step.now b { color: var(--accent); }
+.journal .done-h { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin: 14px 0 4px; }
 .choice-note { font-size: .8rem; color: var(--accent); font-weight: 600; }
 .cell > span { position: absolute; inset: 0; display: grid; place-items: center; }
 .cell.path::after, .cell.me::before { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
@@ -876,11 +886,17 @@ function renderStatus(g) {
 }
 
 function renderJournal(g) {
-  const items = g.journal || [];
+  const j = g.journal || { entries: [], done: [] };
+  const entries = Array.isArray(j) ? [] : (j.entries || []), done = Array.isArray(j) ? [] : (j.done || []);
+  const mark = { done: "✓", now: "→", later: "·" };
   const fx = g.effects ? `<div class="fx">Under ${esc(g.effects)}.</div>` : "";
   const comp = (g.companions || []).length ? `<div class="fx">With you: ${esc(g.companions.join(", "))}.</div>` : "";
-  $("journal").innerHTML = (items.length ? "<ul>" + items.map(l => `<li>${esc(l.replace(/^- /, ""))}</li>`).join("") + "</ul>"
-    : '<div class="empty">No errands yet. Search landmarks, talk to people, take the road.</div>') + fx + comp;
+  const story = e => `<div class="jstory ${e.kind}"><h3>${esc(e.title)}</h3>` + (e.who ? `<div class="who">${esc(e.who)}</div>` : "") +
+    (e.why ? `<div class="why">${esc(e.why)}</div>` : "") +
+    e.steps.map(([s, t]) => `<div class="step ${s}"><b>${mark[s] || "·"}</b>${esc(t)}</div>`).join("") + "</div>";
+  const fin = done.length ? `<div class="done-h">Done</div>` + done.slice(0, 8).map(d =>
+    `<div class="step done"><b>✓</b>${esc(d.title)}${d.text ? " — " + esc(d.text) : ""}${d.day ? ` <span class="who">(day ${d.day})</span>` : ""}</div>`).join("") : "";
+  $("journal").innerHTML = entries.map(story).join("") + (entries.length <= 1 ? '<div class="empty">No other errands yet. Search landmarks, talk to people, take the road.</div>' : "") + fin + fx + comp;
 }
 
 function renderInv(g) {

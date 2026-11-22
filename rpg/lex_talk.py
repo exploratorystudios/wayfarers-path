@@ -85,27 +85,6 @@ RULES = {
     "dreamy:greet": ["\"Did you see the clouds this morning? Like whales.\"", "\"Oh - hello. I was somewhere else.\"", "\"The wind told me someone would come.\"",
                      "\"Do you ever hear the stones hum? No? Just me, then.\"", "\"You've come from far off. I can see it on you.\"", "\"Hello. Were you in my dream? No, never mind.\""],
 
-    # ---------------------------------------------------------------- the exchange of names
-    "ask_name": ["\"And who might you be?\" You tell {him} your name.",
-                 "\"Haven't seen you before. Name?\" \"{player},\" you say. {he.cap} nods slowly.",
-                 "\"And you'd be?\" \"{player},\" you answer.",
-                 "\"Got a name, traveller?\" You give it: {player}.",
-                 "{he.cap} squints at you. \"Who are you, then?\" \"{player}.\"",
-                 "\"And you are?\" You tell {him}: {player}.",
-                 "You give your name before {he} can ask. \"{player}.\" {he.cap} tries it out under {his} breath.",
-                 "\"You have a name, I suppose?\" \"{player}.\" \"Hm. It suits you.\"",
-                 "{he.cap} waits, eyebrows raised, until you offer your name: {player}.",
-                 "\"{player},\" you say, when the silence has gone on long enough.",
-                 "\"I'm {player},\" you say, and hold out a hand. After a moment {he} takes it.",
-                 "\"And what do I call you?\" \"{player} will do.\""],
-
-    # ---------------------------------------------------------------- how they introduce themselves
-    "npc_intro": ["\"I'm {name}. {job_self.cap}.\"", "\"Name's {name}. {job_self.cap}.\"", "\"{name},\" {he} offers, tapping {his} chest. \"{job_self.cap}.\"",
-                  "\"Folk call me {name}.\"", "{he.cap} wipes {his} hands. \"{name}. {job_self.cap}.\"", "\"I'm {name}. Pleased, I'm sure.\"",
-                  "\"{name}.\" A pause. \"{job_self.cap}, if you're wondering.\"", "\"Well, I'm {name}, and {job_self}.\"",
-                  "{he.cap} jerks a thumb at {his} own chest. \"{name}.\"", "\"They call me {name} round here. {job_self.cap}.\"",
-                  "\"{name},\" {he} says. \"{job_self.cap}.\"", "\"{name}. The {job} here, for my sins.\""],
-
     # ---------------------------------------------------------------- beats before a line, later on, by how they feel about you
     "cold:talk_beat": ["{name} doesn't look up.", "{name} folds {his} arms.", "{name} gives you a flat look.", "{name} sniffs.",
                        "{name} keeps working.", "{name} answers without warmth."],
@@ -124,6 +103,102 @@ RULES = {
 }
 
 
+# ---------------------------------------------------------------- the exchange of names, and how they introduce themselves
+# Every line is tagged with the temperaments it suits ("*" for any), so a gruff man doesn't ask "not unkindly" and a
+# nervous girl doesn't speak "as if that settles a great deal". See toned_rules().
+TEMPERS = ["nervous", "suspicious", "gruff", "warm", "cheerful", "melancholy", "shrewd", "dreamy"]
+ASK_NAME = [
+    ("*", "\"And who might you be?\" You tell {him} your name."),
+    ("*", "\"Haven't seen you before. Name?\" \"{player},\" you say. {he.cap} nods slowly."),
+    ("*", "\"And you'd be?\" \"{player},\" you answer."),
+    ("warm cheerful shrewd dreamy", "\"Got a name, traveller?\" You give it: {player}."),
+    ("suspicious gruff shrewd", "{he.cap} squints at you. \"Who are you, then?\" \"{player}.\""),
+    ("*", "\"And you are?\" You tell {him}: {player}."),
+    ("nervous dreamy warm melancholy", "You give your name before {he} can ask. \"{player}.\" {he.cap} tries it out under {his} breath."),
+    ("gruff shrewd suspicious", "\"You have a name, I suppose?\" \"{player}.\" \"Hm. It suits you.\""),
+    ("gruff suspicious shrewd", "{he.cap} waits, eyebrows raised, until you offer your name: {player}."),
+    ("gruff suspicious melancholy dreamy nervous", "\"{player},\" you say, when the silence has gone on long enough."),
+    ("suspicious nervous melancholy", "\"I'm {player},\" you say, and hold out a hand. After a moment {he} takes it."),
+    ("warm cheerful dreamy", "\"I'm {player},\" you say, and hold out a hand. {he.cap} shakes it warmly."),
+    ("warm cheerful shrewd dreamy", "\"And what do I call you?\" \"{player} will do.\""),
+    ("*", "\"Who's this, then?\" \"{player},\" you tell {him}."),
+    ("suspicious shrewd gruff", "\"I don't know your face. What do they call you?\" \"{player}.\""),
+    ("gruff shrewd cheerful", "\"You'll have a name.\" You admit that you do: {player}."),
+    ("*", "\"And you are?\" \"{player}.\" {he.cap} turns it over, and nods."),
+    ("warm melancholy dreamy shrewd", "\"Name?\" {he} asks, not unkindly. \"{player},\" you say."),
+    ("warm cheerful melancholy", "\"Whose child are you, then?\" You settle for giving your own name: {player}."),
+    ("shrewd gruff suspicious cheerful", "\"{player}, is it?\" {he} says, when you tell {him}. \"Well.\""),
+    ("cheerful gruff shrewd", "\"Go on, then - who are you?\" \"{player}.\""),
+    ("*", "You give your name before {he} can ask: {player}."),
+    ("suspicious shrewd gruff", "\"Should I know you?\" \"Not yet. {player}.\""),
+    ("cheerful shrewd", "\"New face. Got a name to go with it?\" \"{player}.\""),
+    ("nervous", "\"S-sorry, who -?\" \"{player},\" you say gently. {he.cap} manages a nod."),
+    ("nervous", "{he.cap} doesn't ask, so you tell {him}: {player}. {he.cap} looks relieved to have it settled."),
+    ("dreamy", "\"You'll have a name. Everyone does. Even the wind.\" \"{player}.\" \"Ah. That's a good one.\""),
+    ("warm", "\"Now, who do I have the pleasure of?\" \"{player}.\" \"Well met, {player}.\""),
+    ("melancholy", "\"I'd ask your name, but folk come and go.\" You give it anyway: {player}."),
+]
+NPC_INTRO = [
+    ("*", "\"I'm {name}. {job_self.cap}.\""),
+    ("gruff shrewd cheerful suspicious", "\"Name's {name}. {job_self.cap}.\""),
+    ("cheerful warm dreamy", "\"{name},\" {he} offers, tapping {his} chest. \"{job_self.cap}.\""),
+    ("*", "\"Folk call me {name}.\""),
+    ("*", "{he.cap} wipes {his} hands. \"{name}. {job_self.cap}.\""),
+    ("warm cheerful shrewd", "\"I'm {name}. Pleased, I'm sure.\""),
+    ("gruff suspicious melancholy nervous", "\"{name}.\" A pause. \"{job_self.cap}, if you're wondering.\""),
+    ("warm cheerful dreamy", "\"Well, I'm {name}, and {job_self}.\""),
+    ("gruff", "{he.cap} jerks a thumb at {his} own chest. \"{name}.\""),
+    ("*", "\"They call me {name} round here. {job_self.cap}.\""),
+    ("*", "\"{name},\" {he} says. \"{job_self.cap}.\""),
+    ("melancholy gruff cheerful", "\"{name}. The {job} here, for my sins.\""),
+    ("melancholy gruff cheerful", "\"{name}. {job_self.cap}, for my sins and theirs.\""),
+    ("*", "\"{name}'s my name, and I'm the {job}.\""),
+    ("gruff", "{he.cap} jerks {his} chin at {his} work. \"{name}. {job_self.cap}.\""),
+    ("shrewd cheerful dreamy", "\"You can call me {name}. Most do.\""),
+    ("shrewd dreamy", "\"{name},\" {he} says, as if that settles a great deal."),
+    ("melancholy nervous", "\"I'm {name}, and that's about all there is to me. {job_self.cap}.\""),
+    ("gruff shrewd suspicious", "\"{name}. And before you ask - {job_self}.\""),
+    ("nervous", "\"I'm - {name}. {job_self.cap}.\" {he.cap} says it as if confessing."),
+    ("warm", "\"And I'm {name}. {job_self.cap}. Anything you need, you ask.\""),
+    ("suspicious", "\"{name}.\" {he.cap} gives nothing else away for a moment. \"{job_self.cap}.\""),
+    ("dreamy", "\"{name}. {job_self.cap}, when I remember to be.\""),
+]
+# how they take it when you say you'll help
+THANKS = [
+    ("warm melancholy nervous", "{giver} grips your hand. \"Thank you.\""),
+    ("*", "{giver} lets out a breath. \"I'll not forget this.\""),
+    ("warm melancholy dreamy nervous", "\"Bless you,\" says {giver}."),
+    ("melancholy nervous warm", "{giver} nods, and nods again, as if not trusting words."),
+    ("nervous melancholy", "\"You will? Truly?\" {giver} looks close to tears."),
+    ("warm cheerful", "{giver} squeezes your arm. \"I knew you had the look of someone who'd help.\""),
+    ("*", "\"Then there's hope yet,\" says {giver}."),
+    ("melancholy warm", "{giver} is quiet a moment. \"Thank you. Thank you.\""),
+    ("gruff", "{giver} grunts. \"Good. Don't make me regret it.\""),
+    ("gruff", "\"About time someone did,\" says {giver}, which seems to be thanks."),
+    ("suspicious", "\"We'll see,\" says {giver}. A pause. \"But thank you.\""),
+    ("suspicious", "{giver} looks at you a long moment, then nods once. \"All right.\""),
+    ("shrewd", "\"Good. I rather thought you would,\" says {giver}."),
+    ("shrewd", "{giver} smiles. \"Then we understand each other.\""),
+    ("cheerful", "\"Ha! I knew it!\" {giver} claps you on the shoulder."),
+    ("cheerful", "{giver} beams. \"That's the best news I've had all week.\""),
+    ("dreamy", "{giver} smiles, as though {he} had known all along you would."),
+]
+
+
+def toned(lines, temper):
+    return [t for tags, t in lines if tags == "*" or temper in tags.split()]
+
+
+def toned_rules():
+    """Grammar rules for the name exchange and introductions, one set per temperament (the scoped lookup
+    picks 'gruff:ask_name' for a gruff speaker), plus the full set unscoped for anyone else."""
+    out = {"ask_name": [t for _, t in ASK_NAME], "npc_intro": [t for _, t in NPC_INTRO]}
+    for d in TEMPERS:
+        out[f"{d}:ask_name"] = toned(ASK_NAME, d)
+        out[f"{d}:npc_intro"] = toned(NPC_INTRO, d)
+    return out
+
+
 def tool_for(npc):
     """What their hands are busy with, as a phrase: 'her hammer', 'a twist of paper'."""
     t = TOOL.get(npc.job) or ROLE_TOOL.get(npc.role, "a basket")
@@ -134,4 +209,5 @@ def tool_for(npc):
 
 def self_lines(npc):
     """Ways this person might describe their work."""
-    return JOB_SELF.get(npc.job, []) + [s.replace("{job}", npc.job) for s in GENERIC_SELF]
+    generic = [s.replace("{job}", npc.job) for s in GENERIC_SELF if not (s == "{job} by trade" and npc.job.endswith("trader"))]
+    return JOB_SELF.get(npc.job, []) + generic

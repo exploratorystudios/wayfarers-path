@@ -9,7 +9,7 @@ weaker; with all three, the captain may yield without a fight. Then home.
 from . import mainquest as MQ
 from . import story as S
 from .mainquest import register, home_name
-from .textgen import cap
+from .textgen import cap, and_list
 
 TITLES = ["the Red Captain", "the Toll-lord", "Captain Ashes", "the Widow's Son", "the Grey Captain", "Black Hollin"]
 DEEDS = ["They took the miller's whole harvest at the ford, and the miller's son for a hostage.",
@@ -54,6 +54,9 @@ class BanditQuest(MQ.MainQuest):
         c.title = f"{self.captain}'s war-{c.species['arch']['noun']}"
         q.creatures = [c]
 
+    def heading(self, g):
+        return cap(self.captain)
+
     # ------------------------------------------------------------ telling
     def won(self):
         return [a for a in self.allies if a["won"]]
@@ -67,9 +70,9 @@ class BanditQuest(MQ.MainQuest):
 
     def offer(self, g, npc):
         w, n = g.world, g.narr
-        g.emit(f"{npc.name} spits. \"{cap(self.captain)}. Holds {self.fort(w)}, {n.dir_phrase(g.pos, w.quest_pos)}, with a crew of cut-throats and a beast on a chain. "
+        g.emit(f"{npc.name} spits. \"{cap(self.captain)}. Holds {self.fort(w)}, {n.dir_phrase(g.pos, w.quest_pos)}, and has made a fort of it, with a crew of cut-throats and a beast on a chain. "
                f"{self.deed}\"")
-        g.emit("\"No village can stand alone. Together, maybe. Go to " + ", ".join(self.name(w, a) for a in self.allies) +
+        g.emit("\"No village can stand alone. Together, maybe. Go to " + and_list(self.name(w, a) for a in self.allies) +
                " and ask them to stand with us. Then go to the fort. If they see enough of us at the gate, they might not even fight.\"")
         g.emit("(Quest: win over three villages, then break the captain's hold on the roads.)")
 
@@ -80,7 +83,7 @@ class BanditQuest(MQ.MainQuest):
         left = [a for a in self.allies if not a["won"]]
         tail = f"Go to the captain's fort, {self.fort(w)}" + (f" ({len(self.won())} of 3 villages with you)." if self.won() else ".")
         if left:
-            return "Win over " + ", ".join(self.name(w, a) for a in left) + f" - or go straight to {self.fort(w)}."
+            return "Win over " + and_list(self.name(w, a) for a in left) + f", or go straight to {self.fort(w)}."
         return tail
 
     def status(self, g):

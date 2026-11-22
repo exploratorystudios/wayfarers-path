@@ -13,7 +13,7 @@ from . import mainquest as MQ
 from . import story as S
 from . import travel as TR
 from .mainquest import register, home_name
-from .textgen import cap
+from .textgen import cap, and_list
 
 SLEEPER = ["the Old Man of the Hill", "the Turner of the Year", "the Grey Sleeper", "the Lantern-bearer", "the Woman Under the Snow"]
 WRONG = ["The {season} has gone on for three seasons' length. The stores are nearly gone.", "The birds left and haven't come back. The days don't lengthen.",
@@ -72,7 +72,7 @@ class BeaconsQuest(MQ.MainQuest):
         if self.done:
             return f"The year is turning. Go home to {home_name(w)}."
         if self.unlit():
-            return f"Light the beacons ({len(self.lit)} of 3 lit): " + ", ".join(w.region_of(p)["name"] for p in self.unlit()) + "."
+            return f"Light the beacons ({len(self.lit)} of 3 lit): " + and_list(w.region_of(p)["name"] for p in self.unlit()) + "."
         return f"Go to {self.sleeper}'s high place in {w.region_of(w.quest_pos)['name']}."
 
     def status(self, g):

@@ -72,6 +72,7 @@ class Narrator:
         TEMPER.install(self.g)           # creature temperaments, per species per world
         self.g.extend(TALK2.EXTEND)       # more conversation and village lines
         self.g.extend(COMPOSE.EXTEND)     # openings from parts; weather, mood and talk lines
+        self.g.add(TALK.toned_rules())    # names and introductions, each in the speaker's own temperament
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -671,7 +672,7 @@ class Narrator:
         return self.say("{%s}" % beat, self.talk_ctx(n), scope) + " " + line
 
     def introduce(self, n):
-        return self.say("{npc_intro}", self.talk_ctx(n, first=True))
+        return self.say("{npc_intro}", self.talk_ctx(n, first=True), [n.demeanour])
 
     def greet(self, n, player):
         """First meeting: what they're doing as you come up, a greeting in their temperament,
@@ -679,7 +680,7 @@ class Narrator:
         m, day = n.mem, self.w.day
         if m["met"] == 0:
             ctx = self.talk_ctx(n, first=True, player=player)
-            return " ".join([self.say("{meet_beat}", ctx, [n.demeanour]), self.say("{greet}", ctx, [n.demeanour]), self.say("{ask_name}", ctx)])
+            return " ".join([self.say("{meet_beat}", ctx, [n.demeanour]), self.say("{greet}", ctx, [n.demeanour]), self.say("{ask_name}", ctx, [n.demeanour])])
         addr = player if m["knows_name"] else self.pick(["stranger", "traveller", "friend"])
         gap = day - m["last_day"]
         if gap >= 3:
@@ -687,7 +688,7 @@ class Narrator:
         elif gap == 0:
             gap_line = self.pick(["Back so soon?", "Twice in one day!", "Forgotten something?"])
         else:
-            gap_line = self.pick([f"It's been {gap} day{'s' if gap > 1 else ''}.", "Keeping well?", "Still in one piece, I see."])
+            gap_line = self.pick([f"It's been {'a day' if gap == 1 else f'{gap} days'}.", "Keeping well?", "Still in one piece, I see."])
         line = self.say("{return_greet}", dict(addr=addr, name=n.name, gap=["again", "once more", "back again"], gap_line=gap_line, **n.pronouns()), [n.tier])
         if gap >= 3 and gap_line not in line:
             line += " " + gap_line
