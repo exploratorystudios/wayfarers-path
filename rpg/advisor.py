@@ -291,6 +291,8 @@ def suggest(g, n=6):
         boss = next((c for c in w.tiles[goal].creatures if c.boss), None)
         if boss and ready and fight_risk(p, boss) >= 0.8:
             ready = False                         # level alone isn't enough: the odds have to be there
+        if boss and goal == g.pos and not g.combat and fight_risk(p, boss) < 0.8 and hp >= 0.8:
+            add(70, f"attack {boss.species['arch']['noun']}", f"Fight {boss.name}", "It stands between you and what you came for.")
         if guarded and ready and route and len(route) <= 3 and hp < 0.85 and not g.combat:
             ready = False                         # never walk up to a boss hurt: rest first
             add(62, "rest", "Rest before going on", "What waits ahead is the worst thing in this land. Go to it whole.")

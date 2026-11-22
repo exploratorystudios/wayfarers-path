@@ -40,7 +40,7 @@ def kinds():
 
 
 def _load():
-    from . import mq_beast, mq_blight, mq_heir     # noqa: F401  (registering)
+    from . import mq_beast, mq_blight, mq_heir, mq_pact, mq_beacons, mq_feud, mq_bandit     # noqa: F401  (registering)
 
 
 def choose(world):
@@ -77,6 +77,42 @@ def win(g, text):
         for npc in g.world.tiles[v].npcs:
             npc.like(10)
     g.over = g.won = True
+
+
+def landmark_spots(w, kinds=None, tags=None, lo=0, hi=999, avoid=(), gap=5):
+    """Squares (pos, feature) with a landmark of these archetypes or tags, at these walking distances from home."""
+    from .secrets import tag_of
+    dist = w.distances(w.start)
+    out = []
+    for p in w.land:
+        t = w.tiles[p]
+        if t.site or not (lo <= dist.get(p, -1) <= hi):
+            continue
+        if any(abs(p[0] - q[0]) + abs(p[1] - q[1]) < gap for q in avoid):
+            continue
+        for f in t.features:
+            if (kinds and f.archetype in kinds) or (tags and tag_of(f) in tags):
+                out.append((p, f))
+                break
+    return out
+
+
+def guardian(w, pos, r, title=None, bump=1, boss=True, undead=None):
+    """A creature that keeps a quest's place: the quest's boss, or (boss=False) something merely dangerous."""
+    t = w.tiles[pos]
+    pool = [s for s in w.species if (undead is None or bool(s["arch"].get("undead")) == undead)
+            and t.biome in s["arch"]["biomes"]] or [s for s in w.species if undead is None or bool(s["arch"].get("undead")) == undead] or w.species
+    c = w.make_creature(r.choice(pool), max(1, t.danger) + bump, boss=boss)
+    if boss and title:
+        c.title = title
+    if not boss:
+        c.aggressive = True
+    t.creatures = [x for x in t.creatures if not x.boss] + [c]
+    return c
+
+
+def region_title(w, pos, r, adj, noun):
+    return f"the {r.choice(adj)} {r.choice(noun)} of {w.region_of(pos)['name']}"
 
 
 class MainQuest:

@@ -236,7 +236,7 @@ SITE_RULES = {
     "village_mood_mournful": ["A black ribbon hangs on several doors.", "The few people about walk with their heads down.", "There is grief here, thick as smoke."],
     "night_village": ["Lamplight glows behind a few shutters.", "Most of the windows are dark.", "A dog barks somewhere, then thinks better of it."],
     # ruin
-    "ruin_line": ["The {state} shell of {a_purpose} rises here, built of {stone}.",
+    "ruin_line": ["The shell of {a_purpose} rises here, {state}, built of {stone}.",
                   "Here stand the remains of {a_purpose} - {stone}, {state}, {overgrown}.",
                   "{a_purpose.cap} once stood here. Now it is {state}, its {stone} {overgrown}.",
                   "You come upon a ruin: {a_purpose}, {state} and {overgrown}."],

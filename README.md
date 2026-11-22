@@ -412,6 +412,20 @@ testing.)
   gone. A trail of four places wanders across the map, and each one tells you the next.
   At the end they are held by something that must be killed, or living a life of their
   own, and you choose whether to plead, let them be, or insist.
+- **The broken pact** (`mq_pact.py`): an old oath with the spirit of a high place has
+  lapsed. Gather three gifts the songs name (water from a spring, a stone from a circle or
+  cairn, a sprig of a great tree; one of them guarded), and bring them to the spirit's
+  shrine by night. Renew the pact as it was, or bargain for better.
+- **The beacons** (`mq_beacons.py`): the year has stuck. Light three beacons on three far
+  hills (burn two rations' fat to get the old timber going, or spend hours gathering fuel
+  and see what the fire draws), and go to where the sleeper wakes.
+- **The feud** (`mq_feud.py`): two villages are heading for war. Hear each side, go to
+  where it started and find out what really happened (sometimes it's still there, and
+  hungry), then tell them the hard truth or a kinder story.
+- **The bandit lord** (`mq_bandit.py`): a robber captain holds a fort on the roads. Win
+  over three villages (one wants coin for spears, one wants proof you can fight, one just
+  wants asking). The more who come with you, the weaker the captain's chained beast; with
+  all three at the gate, the captain yields without a fight.
 
 Quests with a clock (the blight, the heir) say how long you have, and warn you when it
 runs short. Running late doesn't lose the game: the blight reaches home and its people
