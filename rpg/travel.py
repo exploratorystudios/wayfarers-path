@@ -15,6 +15,7 @@ import math
 
 from . import mind
 from .textgen import cap
+from . import ui
 
 RATION_PRICE = 5
 RATION_MAX = 10
@@ -68,7 +69,7 @@ def pack_name(pack, n):
 def describe(it):
     n = it.facts.get("n", 1)
     return (f"{cap(it.name)}: oatcakes, hard cheese and dried meat, still good. Enough for {n} half-day{'s' if n != 1 else ''} on the road "
-            f"when you travel ('travel'). In your pack it goes in with your other rations.  (worth ~{it.value} coins)")
+            f"when you travel ({ui.ref('travel')}). In your pack it goes in with your other rations.  (worth ~{it.value} coins)")
 
 
 def fold(g):
@@ -254,13 +255,14 @@ def danger_at(g, p):
 def list_places(g):
     opts = options(g)
     have = rations(g)
-    lines = [f"You carry {have} ration{'s' if have != 1 else ''} (at most {RATION_MAX}). Merchants, millers and eel-catchers sell them for {RATION_PRICE} coins each ('buy rations'), and you may find some on the road."]
+    lines = [f"You carry {have} ration{'s' if have != 1 else ''} (at most {RATION_MAX}). Merchants, millers and eel-catchers sell them for {RATION_PRICE} coins each ({ui.ref('buy rations')}), and you may find some on the road."]
     if not opts:
         lines.append("You haven't been anywhere worth travelling back to yet. Places you walk become places you can return to.")
     else:
         lines.append("Places you can travel back to:")
         lines += [f"  {cap(o['label'])} - {o['note']}" for o in sorted(opts, key=lambda o: o["mins"])]
-        lines.append("Or name any landmark you've seen, such as 'travel standing stone'.")
+        if not ui.web:
+            lines.append("Or name any landmark you've seen, such as 'travel standing stone'.")
     g.out("\n".join(lines))
 
 
@@ -272,7 +274,7 @@ def travel(g, text):
         return g.emit(why)
     d = resolve(g, text)
     if not d:
-        return g.emit(f"You don't know of anywhere called '{text.strip()}' that you've been. (Type 'travel' to see where you can go.)")
+        return g.emit(f"You don't know of anywhere called '{text.strip()}' that you've been. ({ui.how('travel')} to see where you can go.)")
     path, mins = route(g, d["pos"])
     if not path:
         return g.emit(f"You can't see how to get to {d['label']} from here by any way you know.")
@@ -285,7 +287,7 @@ def travel(g, text):
     cost = need(mins)
     if rations(g) < cost:
         return g.emit(f"It's {how_long(mins)} to {d['label']}, and you'd need {cost} ration{'s' if cost > 1 else ''}. "
-                      f"You have {rations(g)}. (Merchants, millers and eel-catchers sell them: 'buy rations'.)")
+                      f"You have {rations(g)}. (Merchants, millers and eel-catchers sell them: {ui.ref('buy rations')}.)")
     w = g.world
     roads = sum(1 for a, b in zip(path, path[1:]) if w.road_between(a, b))
     by = "by road" if roads >= 0.7 * (len(path) - 1) else "partly by road" if roads else "across country"

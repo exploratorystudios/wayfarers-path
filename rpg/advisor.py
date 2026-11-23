@@ -8,6 +8,7 @@ from .world import DIRS
 from . import mind
 from . import classes as K
 from . import goods as GOODS
+from . import ui
 
 
 @dataclass
@@ -202,7 +203,7 @@ def suggest(g, n=6):
     if village:
         from . import travel as TR
         if TR.rations(g) < 3 and p.gold >= 3 * TR.RATION_PRICE + 10 and TR.seller(g):
-            add(52, "buy rations", "Buy travel rations", f"Food for the road, {TR.RATION_PRICE} coins each. With rations you can travel back to anywhere you've been ('travel').")
+            add(52, "buy rations", "Buy travel rations", f"Food for the road, {TR.RATION_PRICE} coins each. With rations you can travel back to anywhere you've been ({ui.ref('travel')}).")
     m = g.merchant()
     if m and not m.mem.get("wares_seen"):
         add(50, "trade", f"See what {m.called()} sells", f"Merchants buy as well as sell. You have {p.gold} coins.")
@@ -276,7 +277,7 @@ def suggest(g, n=6):
             if (g.pos, f.noun) not in examined:
                 add(28, f"examine {f.noun}", f"Examine the {f.noun}", "Every close look is written afresh.")
                 break
-        if turns < 3:
+        if turns < 3 and not ui.web:
             add(25, "help", "List every command", "Everything you can type, at a glance.")
 
     # ---------------------------------------------------------------- travel
@@ -499,7 +500,7 @@ def _study(g, add):
     from . import crafts as CR
     for k, opts in CR.honeable(p):
         add(43, f"hone {k} {opts[0][1].split()[0].lower()}", f"Hone your {K.ABILITIES[k]['label']}",
-            f"You've practised it enough: it could become {opts[0][1]} or {opts[1][1]}. ('hone' to compare.)")
+            f"You've practised it enough: it could become {opts[0][1]} or {opts[1][1]}. ({ui.ref('hone')} to compare.)")
         break
     for school in ("arcane", "divine"):
         wv = CR.WEAVES[school]

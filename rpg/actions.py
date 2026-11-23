@@ -14,6 +14,7 @@ from . import arts as ARTS
 from . import goods as GOODS_
 from .advisor import fight_risk
 from .world import DIRS
+from . import ui
 
 GROUPS = ["Look", "Explore", "Items", "People", "Fight", "Craft", "Rest & Time", "Info", "Game"]
 
@@ -267,7 +268,8 @@ def catalog(g):
         "Spend a point on might, grace, wits or spirit. Each level brings one.", "improve {stat}",
         [dict(name="stat", prompt="Grow in what?", options=growth)], enabled=p.points > 0, reason="Each new level brings a point to spend.")
     act("Info", "map", "Text map", "Print the map into the story log.")
-    act("Info", "help", "All commands", "Every typed command, at a glance.")
+    if not ui.web:      # the web page has no command box, so no list of typed commands
+        act("Info", "help", "All commands", "Every typed command, at a glance.")
 
     # ------------------------------------------------------------ game
     mine = getattr(g, "run_id", None)

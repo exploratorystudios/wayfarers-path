@@ -6,7 +6,7 @@ Binds to 127.0.0.1 only. Endpoints:
   GET  /api/name          a freshly generated name (?gender=female|male|any&culture=...)
   POST /api/new           {"name": str, "seed": int|null}
   POST /api/load          {"slot": str}
-  POST /api/cmd           {"cmd": str}
+  POST /api/cmd           {"cmd": str, "label": str}   (label, optional: the action's name, shown in the log)
   POST /api/settings      {"hints": bool}   (no log output)
   POST /api/saves         {"op": "save"|"delete"|"rename", "slot": str, "to": str}
 """
@@ -20,6 +20,7 @@ from .advisor import suggest
 from . import classes as K
 from . import story as S
 from .game import Game
+from . import ui
 from .world import DIRS
 
 STATIC = Path(__file__).resolve().parent / "web"
@@ -34,6 +35,7 @@ DEAD_OK = {"load", "restore", "saves", "help", "h", "?"}
 
 class Session:
     def __init__(self):
+        ui.web = True        # hints in the text name the action menus, not typed commands
         self.game = None
         self.log = []
         self.offset = 0      # lines trimmed from the front of the log
@@ -72,12 +74,13 @@ class Session:
         g.emit(f"You return to the world of seed {g.seed}, on day {g.world.day}.")
         g.show_location()
 
-    def command(self, cmd):
+    def command(self, cmd, label=""):
         g = self.game
         cmd = cmd.strip()[:200]
         if not cmd:
             return
-        self.out("> " + cmd)
+        label = " ".join(str(label or "").split())[:120]     # the page sends the action's name, shown instead of the command
+        self.out("> " + (label or cmd))
         verb = cmd.split()[0].lower()
         if g.died and verb not in DEAD_OK:
             self.out("You are dead. Load a save, or start a new game.")
@@ -282,7 +285,7 @@ def dispatch(method, path, query="", data=None):
             elif path == "/api/cmd":
                 if SESSION.game is None:
                     return {"error": "no game running"}, 400
-                SESSION.command(str(data.get("cmd") or ""))
+                SESSION.command(str(data.get("cmd") or ""), str(data.get("label") or ""))
             else:
                 return {"error": "not found"}, 404
         except FileNotFoundError:

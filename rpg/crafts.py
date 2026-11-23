@@ -13,6 +13,18 @@ Every crafted art is ordinary data for arts.run(), registered under a short
 command word and kept on the player (p.crafted), so it survives saving.
 """
 from .textgen import cap
+from . import ui
+
+
+def _typed(cmd):
+    """ ('hone bash ringing') after an option in the terminal; nothing on the web, where it's a menu choice."""
+    return "" if ui.web else f" ('{cmd}')"
+
+
+def _named(key):
+    """The command for a newly made art, in the terminal; on the web it simply appears in its menu."""
+    return "" if ui.web else f" Command: '{key}'."
+
 
 # ------------------------------------------------------------------ spellcraft and composing
 WEAVES = {
@@ -301,7 +313,7 @@ def weave(g, school, rest):
     register(p)
     g.emit(g.narr.pick([f"You spend {w['hours']} hours by candlelight, writing, crossing out and trying again. At last it holds: {spec['label']}.",
                         f"It takes {w['hours']} hours and {'every drop of the ink' if 'ink' in mat.name else 'the candles burned down to stubs'}. But it's yours now: {spec['label']}."])
-           + f" ({spec['desc']} Costs {spec['cost']} {K.res_name(p)}. Command: '{key}'.)")
+           + f" ({spec['desc']} Costs {spec['cost']} {K.res_name(p)}.{_named(key)})")
 
 
 # ------------------------------------------------------------------ technique honing
@@ -442,12 +454,12 @@ def hone(g, rest):
         prog = [f"{K.ABILITIES[k]['label']} {min(p.practice.get(k, 0), PRACTICE)}/{PRACTICE}" for k in p.known if k in HONES and k not in dict(ready)]
         bits = []
         if ready:
-            bits.append("Ready to hone: " + "; ".join(f"{K.ABILITIES[k]['label']} -> " + " or ".join(f"{o[1]} ('hone {k} {o[1].split()[0].lower()}')" for o in opts) for k, opts in ready))
+            bits.append("Ready to hone: " + "; ".join(f"{K.ABILITIES[k]['label']} -> " + " or ".join(f"{o[1]}{_typed(f'hone {k} ' + o[1].split()[0].lower())}" for o in opts) for k, opts in ready))
         if prog:
             bits.append("Still practising: " + ", ".join(prog) + ". Use them in earnest and they'll come.")
         cs = combos(p)
         if cs:
-            bits.append("You could join: " + "; ".join(f"{K.ABILITIES[a]['label']} into {K.ABILITIES[b]['label']} ('hone {a} with {b}')" for a, b in cs[:6]))
+            bits.append("You could join: " + "; ".join(f"{K.ABILITIES[a]['label']} into {K.ABILITIES[b]['label']}{_typed(f'hone {a} with {b}')}" for a, b in cs[:6]))
         if not bits:
             return g.emit("You have no techniques to hone. Knights, rangers and rogues hone what they practise; so can anyone who learns their ways.")
         return g.emit(" ".join(bits))
@@ -458,7 +470,7 @@ def hone(g, rest):
         a = next((k for k in p.known if k == "".join(words[:cut]) or K.ABILITIES[k]["label"].lower() == " ".join(words[:cut])), None)
         b = next((k for k in p.known if k == "".join(words[cut + 1:]) or K.ABILITIES[k]["label"].lower() == " ".join(words[cut + 1:])), None)
         if not a or not b:
-            return g.emit("You'd need to know both techniques. ('hone' lists what you could join.)")
+            return g.emit(f"You'd need to know both techniques. ({ui.ref('hone')} lists what you could join.)")
         if (a, b) not in combos(p) and (b, a) not in combos(p):
             sa, sb = ARTS.school_of(a)[0], ARTS.school_of(b)[0]
             if sa != sb:
@@ -477,16 +489,16 @@ def hone(g, rest):
         register(p)
         return g.emit(g.narr.pick([f"Three hours of drilling until your arms shake, and the two moves become one: {spec['label']}.",
                                    f"You work the join over and over until it stops being two things. {spec['label']}."])
-                      + f" ({spec['desc']} Costs {spec['cost']} {K.res_name(p)}. Command: '{key}'.)")
+                      + f" ({spec['desc']} Costs {spec['cost']} {K.res_name(p)}.{_named(key)})")
     src = next((k for k in p.known if k == words[0] or K.ABILITIES[k]["label"].lower().startswith(words[0])), None)
     if not src or src not in HONES:
-        return g.emit("That isn't a technique you can hone. ('hone' lists what you can.)")
+        return g.emit(f"That isn't a technique you can hone. ({ui.ref('hone')} lists what you can.)")
     if p.practice.get(src, 0) < PRACTICE:
         return g.emit(f"You need more practice with {K.ABILITIES[src]['label']} first ({p.practice.get(src, 0)}/{PRACTICE}). Use it in earnest.")
     opts = HONES[src]
     choice = next((o for o in opts if len(words) > 1 and (o[0] == words[1] or o[1].lower().split()[0].startswith(words[1]))), None)
     if not choice:
-        return g.emit(f"Hone {K.ABILITIES[src]['label']} into what? " + " or ".join(f"{o[1]} - {o[2]} ('hone {src} {o[1].split()[0].lower()}')" for o in opts))
+        return g.emit(f"Hone {K.ABILITIES[src]['label']} into what? " + " or ".join(f"{o[1]} - {o[2]}{_typed(f'hone {src} ' + o[1].split()[0].lower())}" for o in opts))
     key, spec = make_hone(p, src, choice)
     with g.hush():
         g.pass_time(120)
@@ -495,7 +507,7 @@ def hone(g, rest):
     register(p)
     g.emit(g.narr.pick([f"You spend two hours working {K.ABILITIES[src]['label'].lower()} over and over, until it turns into something better: {spec['label']}.",
                         f"Two hours of drill, and {K.ABILITIES[src]['label'].lower()} is not what it was. It's {spec['label']} now."])
-           + f" ({spec['desc']} Command: '{key}'.)")
+           + f" ({spec['desc']}{_named(key)})")
 
 
 def forget(g, rest):

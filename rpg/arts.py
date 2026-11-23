@@ -21,6 +21,7 @@ run by `run()`, so new ones need no new code.
 """
 from . import mind
 from .textgen import cap, article
+from . import ui
 
 STATS = ("might", "grace", "wits", "spirit")
 CLASS_STATS = {
@@ -470,7 +471,8 @@ def on_level(p, level):
     """Called on each new level: a point to spend, and every third level your calling shapes you."""
     ensure(p)
     p.points += 1
-    out = [f"(You have a point to spend on growing: 'improve' might, grace, wits or spirit.)"]
+    out = [f"(You have a point to spend on growing: {ui.ref('improve')} might, grace, wits or spirit.)" if not ui.web else
+           f"(You have a point to spend on growing might, grace, wits or spirit: {ui.ref('improve')}.)"]
     k = GROWTH_STAT.get(p.klass)
     if k and level % 3 == 0 and p.stats[k] < STAT_MAX:
         p.stats[k] += 1
@@ -661,7 +663,7 @@ def describe(g, it):
     if key in p.known:
         state = "You know it already."
     elif ok:
-        state = "You could learn it, given a few quiet hours. ('read' it to study.)"
+        state = "You could learn it, given a few quiet hours. (" + (f"{ui.ref('read')} to study it" if ui.web else "'read' it to study") + ".)"
     elif why == "not yet":
         state = f"You can follow the words, but not yet the {sc['art']}: it wants someone {need_word(f['school'], school_of(key)[1])}."
     else:

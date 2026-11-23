@@ -15,6 +15,7 @@
 Everything here is plain data on the Game/World/Tile, so it pickles with saves.
 """
 from .textgen import article, cap
+from . import ui
 
 INFO_VERBS = {"look", "l", "examine", "x", "inspect", "check", "status", "stats", "inventory", "i", "inv", "journal", "quests",
               "chronicle", "history", "help", "h", "?", "map", "m", "saves", "save", "load", "hints", "read", "listen"}
@@ -113,7 +114,7 @@ def ask(g, text, options, leave=None, source=""):
     g.emit(text)
     for i, o in enumerate(g.pending["options"], 1):
         g.out(f"  {i}. {o['label']}")
-    g.out("(Type a number to choose.)")
+    g.out("(Choose one below.)" if ui.web else "(Type a number to choose.)")
 
 
 def resolve(g, index):

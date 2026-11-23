@@ -22,6 +22,7 @@ from . import arts as ARTS
 from . import goods as GOODS
 from . import crafts as CR
 from . import lex_compose as COMPOSE
+from . import ui
 
 ALIASES = {"n": "north", "s": "south", "e": "east", "w": "west", "l": "look", "x": "examine",
            "i": "inventory", "inv": "inventory", "get": "take", "grab": "take",
@@ -276,7 +277,8 @@ class Game:
             return
         fn = getattr(self, "cmd_" + verb, None)
         if fn is None:
-            self.emit(self.narr.say("{sys_unknown}"))
+            msg = self.narr.say("{sys_unknown}")
+            self.emit(msg.replace(" (Type 'help' for commands.).", "").replace(" (Type 'help' for commands.)", "") if ui.web else msg)
             return
         fn(rest)
         if verb in LINGER and not self.combat and not self.over:
@@ -682,13 +684,13 @@ class Game:
             from . import lex_talk_more as TALK2
             pr = npc.pronouns()
             self.emit(n.pick(TALK2.WARES, "wares").format(name=npc.name, he=pr["he"], his=pr["his"], him=pr.get("him", "them")) +
-                      " (Type 'trade' to see what's for sale.)")
+                      f" ({ui.how('trade')} to see what's for sale.)")
             m["wares_pointed"] = True
         elif first and GOODS.sells(npc):
             what = GOODS.WARES_WORDS.get(npc.job, "a few things")
             self.emit(n.attrib(npc, n.pick([f"\"If you need {what}, I've some to spare. For coin, mind.\"",
                                                  f"\"I sell {what}, if you've the coin.\"",
-                                                 f"\"You'll want {what} on the road. I can help with that.\""]), "trade_beat") + f" (Type 'trade {npc.name}' to see.)")
+                                                 f"\"You'll want {what} on the road. I can help with that.\""]), "trade_beat") + f" ({ui.how(f'trade {npc.name}', 'trade')} to see.)")
             m["wares_pointed"] = True
         elif not handed:
             from . import talk as TK
@@ -813,7 +815,7 @@ class Game:
         self.out(f"You have {self.player.gold} coins. ('buy <item>', 'sell <item>', 'examine <item>')")
         if TR.sells_rations(m):
             left = TR.supply(m)
-            self.out(f"{m.name} has {left} travel ration{'s' if left != 1 else ''} at {TR.RATION_PRICE} coins each ('buy rations'). You carry {TR.rations(self)}."
+            self.out(f"{m.name} has {left} travel ration{'s' if left != 1 else ''} at {TR.RATION_PRICE} coins each ({ui.ref('buy rations')}). You carry {TR.rations(self)}."
                      if left else f"{m.name} has no travel rations left. You carry {TR.rations(self)}.")
 
     def cmd_buy(self, rest):
@@ -823,7 +825,7 @@ class Game:
         if not m:
             return self.emit(self.narr.say("{sys_no_trader}"))
         if not m.mem.get("wares_seen"):
-            return self.emit(f"You haven't looked over {m.called()}'s wares yet. (Type 'trade' to see what's for sale.)")
+            return self.emit(f"You haven't looked over {m.called()}'s wares yet. ({ui.how('trade')} to see what's for sale.)")
         it = self.find(rest, [m.stock])
         if not it:
             other = next((s for s in self.sellers() if s is not m and s.mem.get("wares_seen") and self.find(rest, [s.stock])), None)
@@ -848,7 +850,7 @@ class Game:
         if not m:
             return self.emit(self.narr.say("{sys_no_trader}"))
         if not m.mem.get("wares_seen"):
-            return self.emit(f"You haven't dealt with {m.called()} yet. (Type 'trade' to step over to {m.pronouns()['his']} stall.)")
+            return self.emit(f"You haven't dealt with {m.called()} yet. ({ui.how('trade')} to step over to {m.pronouns()['his']} stall.)")
         p = self.player
         it = self.find(rest, [p.inv])
         if not it:
@@ -1360,7 +1362,7 @@ class Game:
     def cmd_hints(self, rest):
         on = (rest[0] in ("on", "yes")) if rest else not getattr(self, "show_hints", True)
         self.show_hints = on
-        self.emit(f"Suggestions {'on' if on else 'off'}. (Type 'hints' to toggle.)")
+        self.emit(f"Suggestions {'on' if on else 'off'}." + ("" if ui.web else " (Type 'hints' to toggle.)"))
 
     @staticmethod
     def describe_save(i):
@@ -1373,7 +1375,7 @@ class Game:
     def cmd_saves(self, rest):
         runs = self.list_runs()
         if not runs:
-            return self.out("No saves yet. Type 'save [name]' to make one.")
+            return self.out(f"No saves yet. {ui.how('save [name]', 'save')} to make one.")
         mine = getattr(self, "run_id", None)
         runs.sort(key=lambda r: r["run"] != mine)                 # this character first
         self.out("Saves, by character:")
@@ -1388,10 +1390,10 @@ class Game:
 
     def cmd_delete(self, rest):
         if not rest:
-            return self.emit("Delete which save? (Type 'saves' to list them.)")
+            return self.emit(f"Delete which save? ({ui.how('saves')} to list them.)")
         path = self.find_save(rest[0], getattr(self, "run_id", None))
         if path is None:
-            return self.emit(f"No save called '{self.safe_slot(rest[0])}'. (Type 'saves' to list them.)")
+            return self.emit(f"No save called '{self.safe_slot(rest[0])}'. ({ui.how('saves')} to list them.)")
         ref = rest[0] if "/" in rest[0] else path.stem if path.parent.name == getattr(self, "run_id", None) else self.save_ref(path)
         if rest[1:2] != ["yes"]:
             return self.emit(f"Deleting '{ref}' can't be undone. Type 'delete {ref} yes' to confirm.")
@@ -1419,7 +1421,7 @@ class Game:
         try:
             g = Game.load(slot, self.out, getattr(self, "run_id", None))
         except FileNotFoundError:
-            self.emit(f"No save called '{slot}'. (Type 'saves' to list them.)")
+            self.emit(f"No save called '{slot}'. ({ui.how('saves')} to list them.)")
             return False
         except Exception as e:
             self.emit(f"Couldn't load '{slot}': {e}")
@@ -1479,7 +1481,7 @@ class Game:
         if not ARTS.literate(p, "arcane") and ARTS.literate(p, "divine"):
             return CR.weave(self, "divine", rest)
         if not ARTS.literate(p, "arcane"):
-            return self.emit("Spellcraft needs Arcane Letters." + (" You could 'hone' your techniques instead." if any(k in CR.HONES for k in p.known) else ""))
+            return self.emit("Spellcraft needs Arcane Letters." + (f" You could hone your techniques instead ({ui.ref('hone')})." if any(k in CR.HONES for k in p.known) else ""))
         CR.weave(self, "arcane", rest)
 
     def cmd_compose(self, rest):

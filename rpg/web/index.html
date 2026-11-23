@@ -55,7 +55,8 @@ header .place { color: var(--ink-soft); font-family: var(--serif); font-style: i
 #log .h { font-size: 1.25rem; font-weight: 600; color: var(--accent); margin-top: 1.1em; margin-bottom: .1em; letter-spacing: .01em; }
 #log .status { font-family: var(--sans); font-size: .78rem; color: var(--ink-faint); margin-bottom: .9em; }
 #log .exits { font-family: var(--sans); font-size: .8rem; color: var(--ink-faint); }
-#log .echo { font-family: var(--mono); font-size: .88rem; color: var(--accent); margin-top: 1em; }
+#log .echo { font-family: var(--sans); font-size: .82rem; font-weight: 600; letter-spacing: .02em; color: var(--accent); margin-top: 1.1em; }
+#log .echo::before { content: "› "; }
 #log .banner { font-family: var(--sans); font-weight: 700; color: var(--accent); }
 #log .note { font-family: var(--sans); font-size: .88rem; color: var(--ink-soft); }
 #log .pre { font-family: var(--mono); font-size: .86rem; white-space: pre; margin: 0; line-height: 1.45; color: var(--ink-soft); overflow-x: auto; }
@@ -134,8 +135,6 @@ body.move-min .movebtn { display: flex; }
 .chips button { font: .76rem var(--mono); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-soft); }
 .empty-opt { padding: 8px 10px 12px; color: var(--ink-faint); font-style: italic; font-size: .85rem; }
 
-#cmdform { display: flex; align-items: center; gap: 8px; padding: 10px 18px 14px; background: var(--panel); }
-#cmdform span { color: var(--accent); font-family: var(--mono); font-size: 1.1rem; }
 #cmd { flex: 1; font: 1rem var(--mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
 #cmd:focus { outline: none; border-color: var(--accent); }
 
@@ -315,12 +314,12 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
   #log { padding: 16px; overflow: visible; }
   .dock { position: sticky; bottom: 0; z-index: 4; box-shadow: 0 -8px 20px rgba(0,0,0,.18); }
   .ideas { max-height: 34vh; overflow-y: auto; }
-  .ideas, #cmdform, .actions { padding-left: 16px; padding-right: 16px; }
+  .ideas, .actions { padding-left: 16px; padding-right: 16px; }
   .pop { left: 8px; width: calc(100% - 16px); max-height: 55vh; }
 }
 
 /* ---------------------------------------------------------------- phones */
-.mbtn, .hud, .tabs, #sendBtn, #dockToggle { display: none; }
+.mbtn, .hud, .tabs, #dockToggle { display: none; }
 .shade { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 25; }
 .shade[hidden], .sheet[hidden] { display: none; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 85dvh; overflow-y: auto; background: var(--panel);
@@ -396,7 +395,6 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
   .sg { flex: 0 0 min(250px, 74vw); grid-template-columns: 1fr; scroll-snap-align: start; padding: 9px 11px; }
   .sg kbd, .row kbd { display: none; }
   .sg .why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .sg .why code { display: none; }
   .ideas.choosing .sg-list { flex-direction: column; overflow-x: visible; overflow-y: auto; max-height: 42dvh; }
   .ideas.choosing .sg { flex: none; }
   .ideas.choosing .sg .why { -webkit-line-clamp: 4; }
@@ -413,10 +411,6 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
   .movebtn { width: 60px; min-height: 0; align-self: stretch; }
   .compass .c-mid { font-size: 1rem; }
 
-  #cmdform { padding: 6px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); gap: 8px; }
-  #cmdform > span { display: none; }
-  #cmd { font-size: 16px; padding: 10px 12px; }
-  #sendBtn { display: grid; place-items: center; width: 44px; height: 42px; flex: none; border: none; border-radius: 9px; background: var(--accent); color: var(--accent-ink); padding: 0; }
 
   .tabs { display: grid; grid-row: 3; grid-column: 1; grid-template-columns: repeat(5, 1fr); background: var(--panel); border-top: 1px solid var(--line);
     padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
@@ -505,11 +499,6 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
         <div class="pop-body" id="popBody"></div>
       </div>
     </div>
-    <form id="cmdform" autocomplete="off">
-      <span>›</span>
-      <input id="cmd" placeholder="Type any command — or press 1–6 for a suggestion" aria-label="Command" enterkeyhint="send" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button type="submit" id="sendBtn" aria-label="Send command"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    </form>
     </div>
   </section>
 
@@ -612,12 +601,10 @@ let total = 0, epoch = -1, state = null, busy = false;
 const phoneMQ = matchMedia("(max-width: 760px)"), coarse = matchMedia("(pointer: coarse)").matches;
 const phone = () => phoneMQ.matches;
 const touchUI = () => phone() || coarse;
-function focusCmd() { if (!touchUI()) $("cmd").focus({preventScroll: true}); }
 const store = {
   get(k, d) { try { const v = localStorage.getItem("wp." + k); return v === null ? d : v; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem("wp." + k, v); } catch (e) { /* storage blocked */ } },
 };
-const history = []; let hIdx = -1;
 
 function esc(s) { return s.replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
 
@@ -632,7 +619,7 @@ function renderLine(line) {
   if (line.startsWith("── ")) { p.classList.add("h"); p.textContent = line.replace(/^── | ──$/g, ""); }
   else if (line.startsWith("[Day ")) { p.classList.add("status"); p.textContent = line.slice(1, -1); }
   else if (line.startsWith("[Exits")) { p.classList.add("exits"); p.textContent = line.slice(1, -1); }
-  else if (line.startsWith("> ")) { p.classList.add("echo"); p.textContent = line; }
+  else if (line.startsWith("> ")) { p.classList.add("echo"); p.textContent = line.slice(2); }
   else if (line.startsWith("***") || line.startsWith("** ")) { p.classList.add("banner"); p.textContent = line.replace(/\*/g, "").trim(); }
   else if (line.startsWith("(")) { p.classList.add("note"); p.innerHTML = deco(line); }
   else if (/^ {2}|^@ you|^[ ♣.~n^≈@VR+c]+$/.test(line)) { p.classList.add("pre"); p.textContent = line; }
@@ -691,8 +678,17 @@ function apply(s) {
   $("hintsBtn").setAttribute("aria-checked", g.hints ? "true" : "false");
   $("mHints").setAttribute("aria-checked", g.hints ? "true" : "false");
   renderHud(g); markTabs(g, s.epoch);
-  $("cmd").placeholder = touchUI() ? "Type a command…" : g.hints && g.suggestions.length ? "Type any command — or press 1–" + g.suggestions.length + " for a suggestion"
-                                                       : "Type any command — or use the actions above";
+  syncHints(g);
+}
+
+// Suggestions on/off is the player's choice, kept in this browser: the game only holds it until a reload
+// or a load brings back whatever the save had, so it's put back whenever the two differ.
+let hintsSyncing = false;
+function syncHints(g) {
+  const want = store.get("hints", null);
+  if (want === null || hintsSyncing || g.hints === (want === "on")) return;
+  hintsSyncing = true;
+  post("api/settings", {hints: want === "on"}).finally(() => { hintsSyncing = false; });
 }
 
 function renderIdeas(g) {
@@ -704,14 +700,15 @@ function renderIdeas(g) {
   if (g.over && g.won) $("ideasTitle").innerHTML = "<strong>You have won.</strong> Start a new world from <em>New / Load</em> whenever you like.";
   else if (g.over) $("ideasTitle").innerHTML = "<strong>Your story has paused.</strong> Load a save, or begin anew.";
   else if (g.choice) $("ideasTitle").innerHTML = '<span class="choice-note">A choice awaits.</span> ' + (touchUI() ? "Tap one:" : "Press a number, or click:");
-  else if (g.combat) $("ideasTitle").innerHTML = "<strong>You're in a fight.</strong> Options — or type anything:";
-  else if (g.novice) $("ideasTitle").innerHTML = touchUI() ? "<strong>New here?</strong> Tap an idea, use the actions, or type anything." : "<strong>New here?</strong> You can type <em>any</em> command — these are just good places to start. Press a number or click.";
-  else $("ideasTitle").innerHTML = touchUI() ? "<strong>Ideas</strong> — swipe for more, or type anything." : "<strong>Ideas</strong> — press 1–" + g.suggestions.length + ", or type anything.";
+  else if (g.combat) $("ideasTitle").innerHTML = "<strong>You're in a fight.</strong> " + (touchUI() ? "Your options:" : "Press a number, or click:");
+  else if (g.novice) $("ideasTitle").innerHTML = touchUI() ? "<strong>New here?</strong> Tap an idea to start. Everything else you can do is in the actions below."
+                                                           : "<strong>New here?</strong> These are good places to start: press a number or click. Everything else you can do is in the actions below.";
+  else $("ideasTitle").innerHTML = touchUI() ? "<strong>Ideas</strong> — swipe for more." : "<strong>Ideas</strong> — press 1–" + g.suggestions.length + ", or click.";
   g.suggestions.forEach((sg, i) => {
     const b = document.createElement("button");
     b.className = "sg"; b.type = "button";
-    b.innerHTML = `<kbd>${i + 1}</kbd><span class="lbl">${esc(sg.label)}</span><span class="why">${esc(sg.why)} <code>${esc(sg.cmd)}</code></span>`;
-    b.onclick = () => send(sg.cmd);
+    b.innerHTML = `<kbd>${i + 1}</kbd><span class="lbl">${esc(sg.label)}</span><span class="why">${esc(sg.why)}</span>`;
+    b.onclick = () => send(sg.cmd, sg.label);
     list.appendChild(b);
   });
 }
@@ -755,14 +752,22 @@ function renderActions(g) {
   }
 }
 function openPop(group) { const was = !!pop; pop = {stack: [{kind: "group", group}]}; drawPop(); renderActions(state.game); if (!was) ovOpen("pop"); shade(); }
-function closePop() { pop = null; $("pop").hidden = true; renderActions(state.game); focusCmd(); ovClosed("pop"); shade(); }
+function closePop() { pop = null; $("pop").hidden = true; renderActions(state.game); ovClosed("pop"); shade(); }
 function popBack() { if (!pop) return; if (pop.stack.length > 1) { pop.stack.pop(); drawPop(); } else closePop(); }
 function fillCmd(action, values) { return action.cmd.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? ""); }
+// what the story shows for an action: "Talk to Naedinea", "Give honey to Aynna", "Hone a technique: Bash → Ringing Blow"
+function actionName(action, labels = {}) {
+  const base = action.label.replace(/\s*\(\d+\)$/, "").replace(/…$/, "").split(" / ")[0];
+  const parts = action.params.map((prm, i) => (labels[prm.name] || "").replace(/\s*\([^)]*\)$/, ""))
+    .map((v, i) => i && action.params[i].name === "who" ? "to " + v : v).filter(Boolean);
+  if (!parts.length) return base;
+  return base + (base.split(" ").length > 2 ? ": " : " ") + parts.join(" ");
+}
 
-function choose(action, values) {
+function choose(action, values, labels = {}) {
   const i = Object.keys(values).length;
-  if (i >= action.params.length) { const cmd = fillCmd(action, values); closePop(); send(cmd); return; }
-  pop.stack.push({kind: "param", action, i, values}); drawPop();
+  if (i >= action.params.length) { const cmd = fillCmd(action, values); closePop(); send(cmd, actionName(action, labels)); return; }
+  pop.stack.push({kind: "param", action, i, values, labels}); drawPop();
 }
 function rowButton(n, title, desc, note, enabled, onPick, more) {
   const b = document.createElement("button");
@@ -782,30 +787,30 @@ function drawPop() {
     $("popTitle").innerHTML = esc(top.group);
     actionsIn(top.group).forEach((a, i) => {
       body.appendChild(rowButton(i + 1, a.label, a.enabled ? a.desc : a.reason, "", a.enabled,
-        () => a.ui === "saves" ? (closePop(), openSaves()) : a.params.length ? choose(a, {}) : (closePop(), send(a.cmd)), a.params.length > 0 || !!a.ui));
+        () => a.ui === "saves" ? (closePop(), openSaves()) : a.params.length ? choose(a, {}) : (closePop(), send(a.cmd, actionName(a))), a.params.length > 0 || !!a.ui));
     });
     return;
   }
   const a = top.action, prm = a.params[top.i];
-  const crumbs = Object.values(top.values).map(v => ` › ${v}`).join("");
+  const crumbs = Object.values(top.labels).map(v => ` › ${v}`).join("");
   $("popTitle").innerHTML = `${esc(a.label.replace("…", ""))}<small>${esc(crumbs)}</small>`;
   const pr = document.createElement("div"); pr.className = "prompt"; pr.textContent = prm.prompt; body.appendChild(pr);
   if ("text" in prm) {
     const wrap = document.createElement("form"); wrap.className = "textparam";
     wrap.innerHTML = `<input value="${esc(prm.text)}" aria-label="${esc(prm.prompt)}"><button type="submit">OK</button>`;
-    wrap.onsubmit = (e) => { e.preventDefault(); const v = wrap.querySelector("input").value.trim(); if (v) choose(a, {...top.values, [prm.name]: v}); };
+    wrap.onsubmit = (e) => { e.preventDefault(); const v = wrap.querySelector("input").value.trim(); if (v) choose(a, {...top.values, [prm.name]: v}, {...top.labels, [prm.name]: v}); };
     body.appendChild(wrap);
     if (prm.choices && prm.choices.length) {
       const chips = document.createElement("div"); chips.className = "chips";
       chips.innerHTML = '<span class="prompt" style="padding:3px 0">Overwrite:</span>';
-      for (const c of prm.choices) { const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.onclick = () => choose(a, {...top.values, [prm.name]: c}); chips.appendChild(b); }
+      for (const c of prm.choices) { const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.onclick = () => choose(a, {...top.values, [prm.name]: c}, {...top.labels, [prm.name]: c}); chips.appendChild(b); }
       body.appendChild(chips);
     }
     setTimeout(() => { const inp = wrap.querySelector("input"); inp.focus({preventScroll: true}); inp.select(); }, 30);
     return;
   }
   if (!prm.options.length) { const e = document.createElement("div"); e.className = "empty-opt"; e.textContent = "Nothing to choose from right now."; body.appendChild(e); return; }
-  prm.options.forEach((o, i) => body.appendChild(rowButton(i + 1, o.label, "", o.note, true, () => choose(a, {...top.values, [prm.name]: o.value}))));
+  prm.options.forEach((o, i) => body.appendChild(rowButton(i + 1, o.label, "", o.note, true, () => choose(a, {...top.values, [prm.name]: o.value}, {...top.labels, [prm.name]: o.label}))));
 }
 function pickNumber(n) {
   const b = $("popBody").querySelector(`.row[data-n="${n}"]:not([aria-disabled="true"])`);
@@ -839,7 +844,7 @@ function renderMap(g) {
     if (c.t) tip += " — journal: " + (Array.isArray(c.t) ? c.t.join("; ") : "a goal from your journal");
     if (c.me) tip = "You are here — " + tip;
     const say = () => { $("maptip").textContent = tip.charAt(0).toUpperCase() + tip.slice(1); };
-    if (dir && !g.over) { d.classList.add("go"); tip = `Go ${dir}: ${tip}`; d.onclick = () => { say(); send(dir); }; }
+    if (dir && !g.over) { d.classList.add("go"); tip = `Go ${dir}: ${tip}`; d.onclick = () => { say(); send(dir, "Go " + dir); }; }
     else d.onclick = say;
     d.onmouseenter = say;
     el.appendChild(d);
@@ -910,10 +915,10 @@ function renderInv(g) {
   for (const it of g.inventory) {
     const row = document.createElement("div"); row.className = "inv-item";
     const nm = document.createElement("button"); nm.className = "nm"; nm.textContent = it.name; nm.title = "Examine";
-    nm.onclick = () => sendShow("examine " + it.name);
+    nm.onclick = () => sendShow("examine " + it.name, "Examine " + it.name);
     row.appendChild(nm);
     if (it.equipped) { const t = document.createElement("span"); t.className = "tag"; t.textContent = it.kind === "weapon" ? "wielded" : "worn"; row.appendChild(t); }
-    const act = (label, cmd) => { const b = document.createElement("button"); b.className = "act"; b.textContent = label; b.onclick = () => sendShow(cmd); row.appendChild(b); };
+    const act = (label, cmd) => { const b = document.createElement("button"); b.className = "act"; b.textContent = label; b.onclick = () => sendShow(cmd, label.charAt(0).toUpperCase() + label.slice(1) + " " + it.name); row.appendChild(b); };
     if (it.usable) act("use", "use " + it.name);
     if (it.equippable && !it.equipped) act("equip", "equip " + it.name);
     el.appendChild(row);
@@ -1000,7 +1005,7 @@ function openSaves() {
   $("start").hidden = true; $("savesDlg").hidden = false; drawSaves(); ovOpen("saves");
   setTimeout(() => (g && !g.can_save && !touchUI() ? $("saveName") : $("closeSaves")).focus(), 30);
 }
-function closeSaves() { ovClosed("saves"); $("savesDlg").hidden = true; if (!(state && state.game)) openStart(false); else focusCmd(); }
+function closeSaves() { ovClosed("saves"); $("savesDlg").hidden = true; if (!(state && state.game)) openStart(false); }
 
 async function saveOp(body) {
   $("svErr").textContent = "";
@@ -1076,7 +1081,7 @@ function drawSaves() {
 function loadSlot(slot) {
   startAtTop = true;
   fetch("api/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({slot, since: total})})
-    .then(r => r.json()).then(s => { if (s.error) { startAtTop = false; $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; ovClosed("saves"); ovClosed("start"); focusCmd(); });
+    .then(r => r.json()).then(s => { if (s.error) { startAtTop = false; $("svErr").textContent = s.error; return; } apply(s); $("savesDlg").hidden = true; $("start").hidden = true; ovClosed("saves"); ovClosed("start"); });
 }
 function trySave(name, force) {
   const g = state.game, slot = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "");
@@ -1107,16 +1112,15 @@ async function post(url, body) {
   apply(s); return s;
 }
 
-async function send(cmd) {
+async function send(cmd, label = "") {
   cmd = cmd.trim();
   if (!cmd || busy || !state || !state.game) return;
   busy = true;
-  history.unshift(cmd); hIdx = -1;
-  try { await post("api/cmd", {cmd}); } finally { busy = false; focusCmd(); }
+  try { await post("api/cmd", {cmd, label}); } finally { busy = false; }
 }
 
 function openStart(closable) { $("start").hidden = false; $("closeStart").hidden = !closable; $("err").textContent = ""; if (closable) ovOpen("start"); if (!touchUI()) setTimeout(() => $("nm").focus(), 50); }
-function closeStart() { $("start").hidden = true; ovClosed("start"); focusCmd(); }
+function closeStart() { $("start").hidden = true; ovClosed("start"); }
 
 $("newForm").onsubmit = (e) => {
   e.preventDefault();
@@ -1225,7 +1229,7 @@ async function openAtlas() {
   if (!atlas.map || atlas.busy || atlas.want) $("atlasNote").textContent = atlas.map ? "Adding what you've seen lately…" : "Unfolding the map…";
   scheduleAtlas();
 }
-function closeAtlas() { $("atlasDlg").hidden = true; ovClosed("atlas"); $("atlasTip").hidden = true; focusCmd(); }
+function closeAtlas() { $("atlasDlg").hidden = true; ovClosed("atlas"); $("atlasTip").hidden = true; }
 $("atlasBtn").onclick = openAtlas;
 $("atlasClose").onclick = closeAtlas;
 $("atlasDlg").addEventListener("click", (e) => { if (e.target === $("atlasDlg")) closeAtlas(); });
@@ -1350,7 +1354,7 @@ function renderHud(g) {
     `<span><b>${p.gold}</b>c</span>` + `<span title="Travel rations"><b>${p.rations || 0}</b>r</span>` +
     (g.combat ? `<span class="fight">⚔ ${esc(g.combat)}</span>` : `<span class="when">Day ${g.day} · ${esc(g.time)} · ${esc(g.weather)}</span>`);
 }
-function sendShow(cmd) { send(cmd); if (phone()) setTab("story"); }
+function sendShow(cmd, label) { send(cmd, label); if (phone()) setTab("story"); }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => { if (pop) closePop(); setTab(b.dataset.tab); });
 $("hud").onclick = () => setTab(tab === "status" ? "story" : "status");
 
@@ -1366,7 +1370,7 @@ function closeMore() { $("moreSheet").hidden = true; shade(); ovClosed("more"); 
 $("moreBtn").onclick = openMore;
 $("mClose").onclick = closeMore;
 $("shade").onclick = () => { if (!$("moreSheet").hidden) closeMore(); else if (pop) closePop(); };
-$("mSave").onclick = () => { const g = state && state.game; closeMore(); if (g && g.save_slot) send("save"); else openSaves(); };
+$("mSave").onclick = () => { const g = state && state.game; closeMore(); if (g && g.save_slot) send("save", "Save"); else openSaves(); };
 $("mSaves").onclick = () => { closeMore(); openSaves(); };
 $("mNew").onclick = () => { closeMore(); openStart(!!(state && state.game)); };
 $("mAtlas").onclick = () => { closeMore(); openAtlas(); };
@@ -1423,11 +1427,11 @@ $("rollName").onclick = async () => {
   } catch (e) { $("err").textContent = "Couldn't invent a name just now."; }
 };
 $("menuBtn").onclick = () => openStart(!!(state && state.game));
-$("saveBtn").onclick = () => send("save");
-const setHints = (on) => state && state.game && post("api/settings", {hints: on});
+$("saveBtn").onclick = () => send("save", "Save");
+const setHints = (on) => { store.set("hints", on ? "on" : "off"); if (state && state.game) post("api/settings", {hints: on}); };
 $("hintsBtn").onclick = () => setHints(!state.game.hints);
 $("hideHints").onclick = () => setHints(false);
-document.querySelectorAll("#compass button[data-dir]").forEach(b => b.onclick = () => send(b.dataset.dir));
+document.querySelectorAll("#compass button[data-dir]").forEach(b => b.onclick = () => send(b.dataset.dir, "Go " + b.dataset.dir));
 // movement folds into one button (folded by default on phones, open on desktops; each remembers its own choice)
 const moveKey = () => phone() ? "move.phone" : "move.desk";
 function setMove(open, remember) {
@@ -1489,18 +1493,6 @@ swipeToClose($("pop"), () => !!pop, closePop, ".pop-head");
 swipeToClose($("moreSheet"), () => !$("moreSheet").hidden, closeMore, ".grab");
 document.addEventListener("click", (e) => { if (pop && !e.composedPath().includes($("actionsBar"))) closePop(); });
 
-$("cmdform").onsubmit = (e) => { e.preventDefault(); const v = $("cmd").value; $("cmd").value = ""; send(v); };
-$("cmd").addEventListener("keydown", (e) => {
-  const v = e.target.value;
-  if (v === "" && /^[1-9]$/.test(e.key) && state && state.game && (state.game.hints || state.game.over || state.game.choice)) {
-    const sg = state.game.suggestions[+e.key - 1];
-    if (sg) { e.preventDefault(); send(sg.cmd); }
-  } else if (e.key === "ArrowUp" && history.length) {
-    e.preventDefault(); hIdx = Math.min(hIdx + 1, history.length - 1); e.target.value = history[hIdx];
-  } else if (e.key === "ArrowDown") {
-    e.preventDefault(); hIdx = Math.max(hIdx - 1, -1); e.target.value = hIdx < 0 ? "" : history[hIdx];
-  } else if (e.key === "Escape") { e.target.value = ""; }
-});
 document.addEventListener("keydown", (e) => {
   if (!$("atlasDlg").hidden) {
     if (e.key === "Escape") { e.preventDefault(); closeAtlas(); }
@@ -1517,8 +1509,7 @@ document.addEventListener("keydown", (e) => {
   if (pop && /^[1-9]$/.test(e.key) && document.activeElement.tagName !== "INPUT") { e.preventDefault(); pickNumber(+e.key); return; }
   if (!$("start").hidden || document.activeElement.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
   const sg = /^[1-9]$/.test(e.key) && state && state.game && (state.game.hints || state.game.over || state.game.choice) && state.game.suggestions[+e.key - 1];
-  if (sg) { e.preventDefault(); send(sg.cmd); return; }
-  focusCmd();
+  if (sg) { e.preventDefault(); send(sg.cmd, sg.label); }
 });
 
 fetch("api/state?since=0").then(r => r.json()).then(apply);
