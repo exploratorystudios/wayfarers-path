@@ -56,6 +56,7 @@ class Session:
 
     def attach(self, g):
         g.out = self.out
+        g.story_source = lambda: self.log      # a save keeps the story so far
         g.width = NO_WRAP      # the browser wraps text
         self.game = g
 
@@ -70,8 +71,16 @@ class Session:
     def load(self, slot):
         g = Game.load(slot, self.out)
         self.reset_log()
+        self.resume(g)
+
+    def resume(self, g):
+        """Put a loaded game's story back in the log, mark where it picks up, and look around."""
+        story = g.__dict__.pop("story", None) or []
+        self.log = list(story[-MAX_LOG:])
         self.attach(g)
-        g.emit(f"You return to the world of seed {g.seed}, on day {g.world.day}.")
+        self.out(f"═ Resumed on day {g.world.day}" + (f", from '{g.save_slot}'" if getattr(g, "save_slot", None) else ""))
+        if not story:
+            g.emit(f"You return to the world of seed {g.seed}, on day {g.world.day}.")
         g.show_location()
 
     def command(self, cmd, label=""):
@@ -86,7 +95,11 @@ class Session:
             self.out("You are dead. Load a save, or start a new game.")
             return
         g.handle(cmd)
-        self.attach(self.game)   # 'load' may have swapped state in; keep capture + no-wrap
+        if "story" in g.__dict__:      # a typed 'load' swapped a save in: show its story instead
+            self.reset_log()
+            self.resume(g)
+            return
+        self.attach(self.game)   # keep capture + no-wrap
 
     # -- state for the page --------------------------------------------------
     def state(self, since):

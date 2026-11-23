@@ -1108,9 +1108,16 @@ class Game:
         self.over = True
 
     # ------------------------------------------------------------ save / load
+    STORY_KEEP = 1500       # lines of the story kept in a save, so a loaded game can be read back
+
     def __getstate__(self):
         state = self.__dict__.copy()
         state.pop("out", None)
+        source = state.pop("story_source", None)     # set by the web page: the story it has shown so far
+        if source is not None:
+            state["story"] = list(source()[-self.STORY_KEEP:])
+        else:
+            state.pop("story", None)      # played in the terminal since: an older story would no longer lead here
         return state
 
     def __setstate__(self, state):

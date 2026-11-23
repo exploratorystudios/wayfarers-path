@@ -59,6 +59,9 @@ header .place { color: var(--ink-soft); font-family: var(--serif); font-style: i
 #log .echo::before { content: "› "; }
 #log .banner { font-family: var(--sans); font-weight: 700; color: var(--accent); }
 #log .note { font-family: var(--sans); font-size: .88rem; color: var(--ink-soft); }
+#log .resume { display: flex; align-items: center; gap: .8em; margin: 1.6em 0 .4em; font-family: var(--sans); font-size: .76rem;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+#log .resume::before, #log .resume::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
 #log .item { margin: 0 0 .2em; padding-left: 1.1em; text-indent: -1.1em; }
 #log .item::before { content: "• "; color: var(--ink-faint); display: inline-block; width: 1.1em; text-indent: 0; }
 #log .ind { margin: 0 0 .25em; }
@@ -624,6 +627,7 @@ function renderLine(line) {
   else if (line.startsWith("[Day ")) { p.classList.add("status"); p.textContent = line.slice(1, -1); }
   else if (line.startsWith("[Exits")) { p.classList.add("exits"); p.textContent = line.slice(1, -1); }
   else if (line.startsWith("> ")) { p.classList.add("echo"); p.textContent = line.slice(2); }
+  else if (line.startsWith("═ ")) { p.classList.add("resume"); p.textContent = line.slice(2); }      // a loaded save picks up here
   else if (line.startsWith("***") || line.startsWith("** ")) { p.classList.add("banner"); p.textContent = line.replace(/\*/g, "").trim(); }
   else if (line.startsWith("(")) { p.classList.add("note"); p.innerHTML = deco(line); }
   else if (/^@ you|^[ ♣.~n^≈@VR+c]+$/.test(line)) { p.classList.add("pre"); p.textContent = line; }   // the text map
@@ -636,7 +640,7 @@ function renderLine(line) {
   return p;
 }
 
-let startAtTop = false;     // a new game or a loaded save is read from its first line
+let startAtTop = false;     // a new game is read from its first line; a loaded save from where it picks up
 function appendLines(lines) {
   const log = $("log");
   const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
@@ -649,7 +653,13 @@ function appendLines(lines) {
   while (log.childElementCount > 1500) log.firstElementChild.remove();
   if (startAtTop && lines.length) {
     startAtTop = false;
-    log.scrollTop = 0; window.scrollTo(0, 0);
+    const marks = log.querySelectorAll(".resume"), mark = marks[marks.length - 1];   // a loaded save: open where it picks up
+    if (!mark) { log.scrollTop = 0; window.scrollTo(0, 0); return; }
+    const jump = () => {
+      if (log.scrollHeight > log.clientHeight + 4) log.scrollTop = mark.offsetTop - 8;
+      else window.scrollTo(0, mark.getBoundingClientRect().top + window.scrollY - 12);
+    };
+    jump(); requestAnimationFrame(jump);      // again once the page has laid out
     return;
   }
   if (atBottom || lines.some(l => l.startsWith("> "))) {
