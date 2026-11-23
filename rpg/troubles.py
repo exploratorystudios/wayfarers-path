@@ -388,6 +388,8 @@ def offer_trouble(g, npc):
     temper = npc.demeanour if npc.demeanour in ASK_LEAD else "warm"
     lead = (g.narr.pick(ASK_LEAD[temper], f"asklead-{temper}").format(name=npc.name, his=npc.pronouns()["his"], tool=TALK.tool_for(npc))
             if g.rng.random() < 0.6 else g.narr.pick(TALK2.TROUBLE_LEAD, "troublelead").format(name=npc.name))
+    from . import sentences as SN, lex_dialogue as DL
+    lead = SN.expand(g.narr, lead, DL.LEX, key="lead")
     speech = " ".join(x for x in (sit, ask, stake) if x)
     S.ask(g, f"{lead} \"{speech}\"",
           [("Agree to help", "trouble_yes", dict(village=g.pos, giver=npc.name)), ("Not now", "trouble_no", dict(giver=npc.name))], leave=1)

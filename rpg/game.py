@@ -655,7 +655,8 @@ class Game:
         elif w.day > m["last_day"]:
             npc.like(1)
         speak = lambda line: self.emit(n.attrib(npc, line))
-        greeting = n.greet(npc, p.name)
+        from . import speech as SP
+        greeting = n.greet(npc, p.name, SP.react(self, npc, first))
         if first:   # introductions go both ways
             greeting += " " + n.introduce(npc, greeting)
         speak(greeting)

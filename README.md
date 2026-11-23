@@ -146,6 +146,47 @@ shrewd or dreamy), and a whole conversation keeps to it: how they look up as you
 what they say first, how they ask your name and give theirs, how they ask for help and
 how they thank you. A gruff man never asks "not unkindly".
 
+**Everyone has an inner life** (`rpg/inner.py`), worked out the first time it's needed
+from the world's seed and their name, so it never changes (older saves get one too):
+- **Ties with neighbours.** Each village has its web of grudges and kindnesses: a
+  boundary stone that "walks", scales that might be light, a borrowed spade never
+  returned, a roof put back in a gale, a quarrel nobody remembers the cause of, a
+  secret fondness. Both people involved have their own side of the same story, so what
+  you hear from one fits what you hear from the other.
+- **Their own facts.** A worry (a cough in the house, a son set on leaving for a named
+  village, a lean year), a memory tied to a real place nearby (the winter the mere
+  froze, a beast seen out on a named moor), a want (the sea, a slate roof, a dog
+  again), and for those who come to trust you, a secret (they can't read, they still
+  leave milk for the shrine's spirit, they're leaving after the harvest home, they
+  were promised to someone once).
+- **Layers.** Strangers hear the surface. Come back and you hear more. A friend tells
+  you a secret, and someone who'd do anything for you tells you the deepest thing.
+
+**Speech is built at the sentence level and spoken in their voice** (`rpg/sentences.py`,
+`rpg/lex_speech.py`, `rpg/speech.py`). A fact is stored as *roles*, not words: someone's
+bad knee is stored as which part (a knee, both hands, an old break in the arm), what
+caused it and what sets it off. Each beat of the fact (what happened, the proof, what
+they do about it) is a few sentence shapes built from slots, and the slots are filled
+from shared word lists and from the roles. A small realiser makes the verbs agree
+("my knee aches" / "my hands ache"), handles tense and it/them, and picks the shape
+that best fits the moment. So one fact comes out many ways while every mention agrees:
+"When a storm is brewing, my knees ache", "I can feel rain coming in my knees, a day
+before it comes", "My knees have never been right since a fall from a hayrick". Then
+their temperament says it: a gruff one clips it short ("Said nothing. Yet."), a warm
+one runs on with "and", a melancholy one trails off, a nervous one stumbles, a shrewd
+one leans in ("Between us, ..."). Each person also has a saying, an oath and a word
+for you that are theirs alone, and sometimes asks you something back. The lines
+**show rather than tell**: "We bar the doors at dusk now. We never used to own a bar,"
+not "We're frightened."
+
+**All of it is built this way**: greetings, what they say about their work, the village,
+your errands and directions, the gossip about your deeds, news from elsewhere, what they
+notice about you, and how they open and close a request for help.
+
+**They notice you**: blood on you, rain on your cloak, the hour, the look of your
+trade ("Ink on your fingers. A scholar, then."). One person in a village remarks on
+the weather or the hour each day, and on your trade only once.
+
 **What they talk about** (`rpg/talk.py`, `rpg/lex_life.py`), in order of what matters
 to them:
 1. The errand they gave you. They ask after it ("Any sign of the plough-horse?") and
@@ -153,16 +194,16 @@ to them:
 2. Your errands. They tell you what they know of the people, places and beasts you
    need: who someone is and what they're like, how far a village is and whether a
    road goes there, where a beast was last seen.
-3. Fresh news from elsewhere.
-4. Their own life, put together from parts the way the descriptions are: their work
-   this season (by trade: lambing, a frozen mill-race, the autumn eel run), then a word
-   about a neighbour, the village's trouble or a festival, and a closing remark in
-   their own temperament.
-5. The old rumours: a beast seen somewhere, a ruin, a shrine.
+3. On a return visit, the next piece of their own inner life.
+4. Fresh news from elsewhere. Once you've heard a piece of news, nobody repeats it.
+5. Their work this season, built from their trade's seasonal tasks ("If I'm not
+   breaking the ice on the troughs, I'm carrying hay out to the fold"), the village's
+   trouble or a festival, and a closing remark in their temperament.
+6. The old rumours: a beast seen somewhere, a ruin, a shrine.
 
-Each topic is told once (their own life once a day), so going back brings something
-new. One request per conversation: an elder giving you the main quest won't also ask a
-favour in the same breath.
+News of your deeds is told by one person in each village; the rest have heard it too
+and think the better of you for it. One request per conversation: an elder giving you
+the main quest won't also ask a favour in the same breath.
 
 ## Places that do something
 
@@ -614,7 +655,12 @@ load, so wording fixes reach old games too.
 | Road encounters                    | `rpg/encounters.py` (`DECK`, a start function and outcomes) |
 | Village troubles                   | `rpg/troubles.py` (`KINDS`, `TITLES`, `ASKS`, variant lists) |
 | Procedural stories                 | `rpg/plots.py` (`MOTIVES`, `OBJECT_TAGS`, `OBJECTS`, `OBSTACLES`, `TWISTS`, `ENDINGS`, `OUTCOME`) |
-| What people talk about             | `rpg/lex_life.py` (`WORK`, `JOB_SEASON`, `NEIGHBOUR`, `TAIL`, `CHECKIN`, `STEP_NUDGE`), `rpg/talk.py` |
+| What people talk about             | `rpg/lex_life.py` (`WORK`, `JOB_SEASON`, `TAIL`, `CHECKIN`, `STEP_NUDGE`), `rpg/talk.py` |
+| Inner lives: what people say about their worries, memories, wants, secrets and neighbours (roles, sentence shapes, shared word lists) | `rpg/lex_speech.py` (`LEX`, `OWN`, `INCIDENTS`) |
+| Who has which inner life; gossip, voices, sayings, oaths | `rpg/inner.py` (`QUIRKS`, `ASK_BACK`, `VOICES`, `SAYINGS`, `OATHS`) |
+| The sentence realiser (slot syntax, verb agreement) | `rpg/sentences.py` |
+| Everyday talk as sentence shapes: work by trade and season (`JOB_TASKS`, `GROUP_TASKS`, `WORK_SHAPES`), village talk, closing remarks, asking after errands, directions, reactions; greetings, deed gossip and news openers built from parts (`GRAMMAR`) | `rpg/lex_dialogue.py` |
+| What people notice about you       | `rpg/speech.py` (`HURT`, `WET`, `SNOW`, `LATE`, `CLASS`) |
 | Names and introductions by temperament | `rpg/lex_talk.py` (`ASK_NAME`, `NPC_INTRO`, `THANKS`) |
 | Festivals                          | `rpg/living.py` (`FESTIVALS`) |
 | How many of each landmark secret a world holds; the dead travellers | `rpg/secrets.py` (`CAP`, `TRAVELLERS`) |

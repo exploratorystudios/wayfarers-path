@@ -133,41 +133,41 @@ OBJECT_TAGS = {
 }
 M = lambda fits, lines, who="": dict(fits=set(fits.split()), lines=[l if isinstance(l, tuple) else ("", l) for l in lines], who=who)
 MOTIVES = {
-    "loss":      M("missing stray lost stolen memento heirloom", ["I can't sleep for thinking about it.", "Everything feels wrong without {obj}."]),
-    "grief":     M("memento heirloom grave", [("memento heirloom", "It's all I have left of them."), ("grave", "Since the burying, it's the only thing that matters.")]),
-    "love":      M("love memento kin", [("love kin", "I'd go myself if I could. I love {ohim}, God help me."), "Some things you do for love. This is one."]),
-    "debt":      M("trade livestock common", ["I owe more than I can pay. Without it, I'm finished.", "There's money owing, and this is the only way I pay it back."]),
-    "fear":      M("danger undead holy", ["We're frightened. There, I've said it.", "The children won't sleep. Neither will I."]),
-    "duty":      M("danger holy grave common word", ["It's my duty, and I can't do it. So I'm asking you.", "Someone has to. It ought to be me."]),
-    "pride":     M("stolen trade stray", ["The whole village is laughing at me.", "I won't be made a fool of."]),
-    "guilt":     M("missing stray lost quarrel", [("missing stray lost", "It's my fault. I should have seen it coming."), ("quarrel", "I said something I can't take back.")]),
+    "loss":      M("missing stray lost stolen memento heirloom", ["I've walked the lane every night since. I know every stone in it now.", "I still set a place for {obj}. Then I clear it away again."]),
+    "grief":     M("memento heirloom grave", [("memento heirloom", "It's all I have left of them."), ("grave", "I've not been since the burying. I keep putting my boots on and taking them off again.")]),
+    "love":      M("love memento kin", [("love kin", "I'd go myself, but my legs won't have it. I've tried. I got as far as the stile."), "I've a ribbon of {ohis} in my pocket. I keep putting my hand on it."]),
+    "debt":      M("trade livestock common", ["There's a man coming from the market at the next moon with a tally-stick. Mine's the long one.", "There's money owing, and this is the only way I pay it back."]),
+    "fear":      M("danger undead holy", ["We bar the doors at dusk now. We never used to own a bar.", "The children won't sleep. Neither will I."]),
+    "duty":      M("danger holy grave common word", ["It falls to me. It's fallen to me for twenty years. My knees have stopped agreeing.", "I went halfway, last week. Then I came back. I'm not proud of it."]),
+    "pride":     M("stolen trade stray", ["They stop talking when I come into the alehouse. Then they start again, louder.", "My father would have had it back by now. Everybody keeps telling me so."]),
+    "guilt":     M("missing stray lost quarrel", [("missing stray lost", "I left the gate. I know I left the gate. I keep going back to look at it."), ("quarrel", "I said a thing at supper. I'd give my right hand to have it back in my mouth.")]),
     "rivalry":   M("stolen trade livestock", ["If the folk at {fvillage} hear of this, I'll never live it down.", "{other} would love to see me fail."]),
-    "curiosity": M("word holy", ["I just have to know.", "It's been nagging at me for weeks."]),
-    "revenge":   M("predator stolen", [("predator", "It took my best dog. I want it dead."), "Somebody's going to pay for this."]),
-    "promise":   M("missing grave word holy memento", ["I promised. I keep my promises.", "I swore on my mother's grave I'd see it done."]),
+    "curiosity": M("word holy", ["I lie awake making up answers. None of them are any good.", "It's been at me for weeks, like a stone in a boot."]),
+    "revenge":   M("predator stolen", [("predator", "It took my best dog. I found her collar. Only her collar."), "I've a fair idea who. I want to be sure before I knock on their door."]),
+    "promise":   M("missing grave word holy memento", ["I gave my word. My word's about the only thing I own outright.", "I swore on my mother's grave I'd see it done."]),
     "hunger":    M("livestock predator", [("livestock", "Without {obj}, we'll go hungry before the year's out."), ("predator", "Every beast it takes is meat off our table."),
-                                         "It's that or an empty pot."]),
-    "illness":   M("cure", ["My {kin} is sick, and getting worse.", "There's a fever in the house. We need it now."]),
-    "inheritance": M("heirloom", ["It's mine by right. The old man promised it to me.", "Without it, my cousins will have the lot."]),
-    "honour":    M("heirloom predator grave", ["The family's name hangs on it.", "Our honour. It's not much, but it's ours."]),
+                                         "We had nettle soup three nights running. The little ones have stopped asking what's in it."]),
+    "illness":   M("cure", ["My {kin} has stopped eating. Just water, and not much of that.", "There's a fever in the house. I hung wet sheets in the doorway, like my mother did. It hasn't helped."]),
+    "inheritance": M("heirloom", ["The old man promised it to me with his hand on my head. I was nine. I remember the smell of his pipe.", "Without it, my cousins will have the lot."]),
+    "honour":    M("heirloom predator grave", ["My grandfather's name is cut on the moot-stone. I'd like it to stay a name people say kindly.", "We've not got much. We've got our name. People still lend to us on it."]),
     "jealousy":  M("love word", [("love", "I need to know who {ohe} is with."), ("word", "They're all talking. I need to know the truth.")]),
-    "homesick":  M("word memento", [("word", "I've been gone from home too long. I just want news."), ("memento", "It's a bit of home. That's all.")]),
-    "superstition": M("luck holy undead", ["It's bad luck, it's terrible luck, and it's getting worse.", "The wise-woman says the village is cursed until it's done."]),
-    "faith":     M("holy luck", ["The spirits are angry. Someone must make it right.", "It's holy. It shouldn't be left like that."]),
-    "ambition":  M("trade", ["With it, I could make something of myself.", "This is my chance. I'll not get another."], who="notold"),
-    "shame":     M("lost stolen quarrel", ["I can't show my face until it's put right.", "Nobody must know it was me."]),
-    "mercy":     M("sick stray", ["It's suffering out there. Somebody has to do something.", "Nobody deserves to be left like that."]),
-    "justice":   M("stolen", ["It isn't right, and someone has to say so.", "What was taken should be given back. That's all."]),
-    "loneliness": M("kin pet love", ["The house is so quiet now.", "I've no one else."]),
-    "nostalgia": M("grave holy heirloom memento", [("grave holy", "I used to go there as a child. I want it the way it was."), ("heirloom memento", "It was my father's. Things were better then.")]),
-    "protection": M("danger", ["I've got little ones. I won't have them in danger.", "Someone has to keep this village safe."]),
-    "wager":     M("predator stray", ["I made a bet. A stupid one. I need to win it.", "There's money riding on it - mine."], who="notelder"),
-    "apprenticeship": M("lost trade", ["My master will turn me out if I don't make this right.", "I'm only learning. I can't afford a mistake like this."], who="young notelder"),
-    "betrothal": M("memento heirloom love word", ["I'm to be married at the next moon. Everything must be ready.", "The wedding can't go ahead without it."], who="notold notelder"),
+    "homesick":  M("word memento", [("word", "I've not been home in six years. I don't even know if the door's the same colour."), ("memento", "It smells of home. That's all. That's enough.")]),
+    "superstition": M("luck holy undead", ["The milk turns in a night. Two calves born dead. The dog won't go past the gate.", "The wise-woman says the village is cursed until it's done."]),
+    "faith":     M("holy luck", ["The candles go out in a still room. Every one, all at once.", "My grandmother made me kneel there every spring. It shouldn't be left like that."]),
+    "ambition":  M("trade", ["With it, I'd have a stall of my own. I've picked the spot. By the well, out of the wind.", "This is my chance. I'll not get another."], who="notold"),
+    "shame":     M("lost stolen quarrel", ["I go to the well before light now, so nobody's there.", "Nobody must know it was me."]),
+    "mercy":     M("sick stray", ["You can hear it, some nights, when the wind's right. I lie there and listen.", "Nobody deserves to be left like that."]),
+    "justice":   M("stolen", ["Nobody's said a word. Everybody knows. It sits in the village like smoke.", "What was taken should be given back. That's all."]),
+    "loneliness": M("kin pet love", ["I talk to the hens now. They're not much for answering.", "There's nobody else. I've asked. I've asked everyone twice."]),
+    "nostalgia": M("grave holy heirloom memento", [("grave holy", "I used to go there as a child. I want it the way it was."), ("heirloom memento", "It was my father's. He'd turn it over in his hands by the fire, all evening, saying nothing.")]),
+    "protection": M("danger", ["I've got little ones. I've told them it's a story to frighten them. It isn't.", "I sit up with the axe across my knees. I've not slept a whole night in a week."]),
+    "wager":     M("predator stray", ["I made a bet in the alehouse. I'd had three. I'd have bet the roof off my house.", "There's money riding on it - mine."], who="notelder"),
+    "apprenticeship": M("lost trade", ["My master hasn't said a word about it. That's worse than shouting.", "I'm only learning. I can't afford a mistake like this."], who="young notelder"),
+    "betrothal": M("memento heirloom love word", ["I'm to be married at the next moon. My mother's already sewing. She doesn't know yet.", "There's no wedding without it. Not in our family. Not ever."], who="notold notelder"),
     "quarrel":   M("lost stray stolen", ["{other} says it's my fault. I'll prove it isn't.", "It started a quarrel that's split the village."]),
-    "omen":      M("danger holy luck undead", ["I dreamed of it three nights running. It means something.", "A hare crossed my path backwards. I know what that means."]),
+    "omen":      M("danger holy luck undead", ["I've dreamed it three nights running. The same door, the same sound behind it.", "A hare crossed my path backwards. I know what that means."]),
     "vow":       M("holy grave", [("holy grave", "I made a vow at the shrine. I'm too old now to keep it."), "I swore an oath when I was young and foolish. It still binds."], who="old"),
-    "rescue":    M("missing stray sick", ["Every hour counts.", "If the cold doesn't get them, the beasts will."]),
+    "rescue":    M("missing stray sick", ["Every hour you stand here is an hour gone.", "The nights are cold. You know what's out there at night."]),
     "reputation": M("stolen trade", ["Folk won't buy from me while this hangs over me.", "My good name's worth more than coin."], who="seller"),
     "kinship":   M("kin word grave", ["Blood is blood.", "Family looks after family. That's all there is to it."]),
 }
@@ -607,20 +607,27 @@ def offer(g, npc):
 
 # how each temperament leads into asking, and how it closes the asking
 ASK_LEAD = {
-    "nervous": ["{name} wrings {his} hands.", "{name} glances round, then speaks low and fast.", "{name} hesitates, then blurts it out."],
-    "suspicious": ["{name} looks you over once more before deciding.", "{name} lowers {his} voice, though there's no one near."],
-    "gruff": ["{name} sets down {tool} with a thump.", "{name} doesn't waste words."], "warm": ["{name} touches your arm.", "{name}'s smile fades."],
-    "cheerful": ["The grin slips from {name}'s face for a moment.", "{name} tries to make light of it, and can't quite."],
-    "melancholy": ["{name} sighs.", "{name} looks away down the lane."], "shrewd": ["{name} leans closer.", "{name} weighs you up, then seems to decide."],
-    "dreamy": ["{name}'s gaze drifts, then comes back to you.", "{name} speaks as if half to someone else."],
+    "nervous": ["{name} wrings {his} hands.", "{name} glances round, then speaks low and fast.", "{name} hesitates, then blurts it out.",
+                "{name} [twists|fidgets with] {his} [sleeve|apron|cap].", "{name} opens {his} mouth, shuts it, and tries again."],
+    "suspicious": ["{name} looks you over once more before deciding.", "{name} lowers {his} voice, though there's no one near.",
+                   "{name} [glances|looks] [up and down the lane|over {his} shoulder] first.", "{name} [seems to make up {his} mind|comes to a decision]."],
+    "gruff": ["{name} sets down {tool} with a thump.", "{name} doesn't waste words.", "{name} [jerks {his} head|nods] toward [the lane|the hills|you]."],
+    "warm": ["{name} touches your arm.", "{name}'s smile fades.", "{name} [takes your hand|pats your arm] [for a moment|gently]."],
+    "cheerful": ["The grin slips from {name}'s face for a moment.", "{name} tries to make light of it, and can't quite.",
+                 "{name} [laughs, but it comes out wrong|stops smiling]."],
+    "melancholy": ["{name} sighs.", "{name} looks away down the lane.", "{name} [rubs {his} eyes|stares at the ground] [a while|before speaking]."],
+    "shrewd": ["{name} leans closer.", "{name} weighs you up, then seems to decide.", "{name} [taps {his} nose|lowers {his} voice] [as if striking a bargain|and leans in]."],
+    "dreamy": ["{name}'s gaze drifts, then comes back to you.", "{name} speaks as if half to someone else.", "{name} [looks at the sky|watches a bird] [a moment|a while] first."],
 }
 ASK_CLOSE = {
-    "nervous": ["Please.", "I wouldn't ask if there were anyone else.", "Will you? Please?"],
-    "suspicious": ["I can't pay much. But I'd owe you.", "I don't ask for help often."],
-    "gruff": ["Well? Will you or won't you?", "That's all. Will you go?"], "warm": ["Will you help?", "I'd be grateful past saying."],
-    "cheerful": ["What do you say?", "Go on - you look like you could use an adventure."],
-    "melancholy": ["I don't suppose you would...", "But why would you?"], "shrewd": ["There'd be something in it for you.", "Well? Interested?"],
-    "dreamy": ["I think you were meant to come.", "The wind said someone would help."],
+    "nervous": ["Please.", "I wouldn't ask if there were anyone else.", "Will you? Please?", "[I'm sorry to ask.|I hate to ask.] [Will you?|Could you?]"],
+    "suspicious": ["I can't pay much. But I'd owe you.", "I don't ask for help often.", "[I'll make it worth your while.|There'll be something for you.] If you're straight with me."],
+    "gruff": ["Well? Will you or won't you?", "That's all. Will you go?", "[Yes or no?|Well?] [I've work to do.|I'll not ask twice.]"],
+    "warm": ["Will you help?", "I'd be grateful past saying.", "[Would you?|Could you, do you think?] [I'd not forget it.|I'd bless you for it.]"],
+    "cheerful": ["What do you say?", "Go on - you look like you could use an adventure.", "[Fancy it?|How about it?] [It'll be a story to tell!|You'd be a hero.]"],
+    "melancholy": ["I don't suppose you would...", "But why would you?", "[It's too much to ask, I know.|I know it's a lot.] [Still.|But.]"],
+    "shrewd": ["There'd be something in it for you.", "Well? Interested?", "[Name your price.|We can talk terms.] [Within reason.|I'm not made of coin.]"],
+    "dreamy": ["I think you were meant to come.", "The wind said someone would help.", "[I dreamed of someone like you.|The crows said you'd come.] [Was I right?|Will you?]"],
 }
 
 
@@ -640,10 +647,12 @@ def offer_text(g, plot, npc):
     hint = fill(fill(first["intro"], first), F) if not first.get("climax") and first.get("intro") else ""
     temper = npc.demeanour if npc.demeanour in ASK_CLOSE else "warm"
     close = n.pick(ASK_CLOSE[temper], f"askclose-{temper}")
+    from . import sentences as SN, lex_dialogue as DL
+    what, why, close = (SN.expand(n, x, DL.LEX, key="offer") for x in (what, why, close))
     plot["pitch"] = f"\"{_unquote(what)} {_unquote(why)}\""            # for the journal, in their own words
     speech = " ".join(x for x in (_unquote(what), _unquote(why), _unquote(hint), close) if x)
     pr = npc.pronouns()
-    lead = n.pick(ASK_LEAD[temper], f"asklead-{temper}").format(name=npc.name, his=pr["his"], tool=TALK.tool_for(npc))
+    lead = SN.expand(n, n.pick(ASK_LEAD[temper], f"asklead-{temper}").format(name=npc.name, his=pr["his"], tool=TALK.tool_for(npc)), DL.LEX, key="lead")
     return f"{lead} \"{speech}\""
 
 
@@ -665,7 +674,7 @@ def _plot_yes(g, d):
     from . import lex_talk as TALK
     temper = giver.demeanour if giver else "warm"
     he = giver.pronouns()["he"] if giver else "they"
-    g.emit(g.narr.pick(TALK.toned(TALK.THANKS, temper), f"plotthanks-{temper}").format(giver=plot["giver"], he=he) + f" (Journal: {plot['title']}.)")
+    g.emit(g.narr.pick(TALK.toned(TALK.THANKS, temper), f"plotthanks-{temper}").format(giver=plot["giver"], he=he) + f" (Journal: {plot['title']}" + ("" if plot["title"].endswith(("?", "!")) else ".") + ")")
     S.record(g, f"{plot['giver']} of {plot['village']} asked for your help: {plot['title'].lower()}.", "quest", pos=plot["home"])
     _start_step(g, plot, 0)
 

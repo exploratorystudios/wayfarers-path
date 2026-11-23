@@ -161,7 +161,7 @@ def new_quest(g, kind, title, desc, reward, giver=None, target=None, item=None, 
     g.quests.append(q)
     if companion:
         g.companions.append(companion)
-    g.emit(f"(New in your journal: {title}.)")
+    g.emit(f"(New in your journal: {title}" + ("" if title.endswith(("?", "!")) else ".") + ")")
     return q
 
 

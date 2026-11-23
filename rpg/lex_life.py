@@ -124,25 +124,6 @@ JOB_SEASON = {
 }
 
 # a word about the village or a neighbour
-NEIGHBOUR = [
-    "{other} the {ojob} reckons it'll be a hard winter. {ohe.cap} always reckons that.",
-    "{other} the {ojob} was asking after travellers. You might look {ohim} up.",
-    "If you want to know anything about {village}, ask {other} the {ojob}. {ohe.cap} knows everyone's business.",
-    "{other} the {ojob} has been good to me this year. I'll not forget it.",
-    "Don't let {other} the {ojob} talk your ear off. Or do. {ohe.cap}'s lonely, I think.",
-    "{other} the {ojob} and I don't speak. It's a long story, and not a good one.",
-    "{other} the {ojob} sings while {ohe} works. You'll hear {ohim} if you stay the night.",
-]
-NEIGHBOUR_TEMPER = {
-    "suspicious": ["{other} the {ojob}'s been acting strange lately. I'm only saying.", "Watch {other} the {ojob}. That's all I'll say."],
-    "gruff": ["{other} the {ojob} still owes me for last winter. Tell {ohim} I said so."],
-    "shrewd": ["{other} the {ojob} charges too much. Come to me first."],
-    "warm": ["{other} the {ojob} will see you right, if you need anything. Good heart, that one."],
-    "cheerful": ["{other} the {ojob} fell in the millpond last week. You should have seen {ohis} face!"],
-    "melancholy": ["{other} the {ojob} lost {ohis} mother in the spring. Be kind to {ohim}, if you meet."],
-    "dreamy": ["{other} the {ojob} has a cat that I think understands every word we say."],
-    "nervous": ["{other} the {ojob} frightens me a little. Not that {ohe} means to."],
-}
 VILLAGE = [
     "{village} lives by {economy}, and has since my grandfather's time.",
     "There's not much to {village} but {economy} and gossip, and we're short of neither.",
@@ -157,14 +138,22 @@ FESTIVAL = ["It's {festival}, mind, so you'll eat well tonight.", "Still, it's {
 
 # how they close, in their own temperament
 TAIL = {
-    "nervous": ["Not that I'm complaining. I'm not, really.", "I worry, that's all. I always worry."],
-    "suspicious": ["Not that it's any of your business.", "Why do you ask, anyway?"],
-    "gruff": ["Not that anyone thanks me for it.", "That's all there is to say about it."],
-    "warm": ["But here's me going on. How are you keeping?", "Still, there are worse lives. Sit a while, if you like."],
-    "cheerful": ["Still, can't complain! Well, I can, but nobody listens.", "Ah, it's a good life, mostly."],
-    "melancholy": ["It was easier once. Everything was.", "Ah well. It passes the days."],
-    "shrewd": ["There's money in it, if you're clever about it.", "A sensible person could do well round here, mind."],
-    "dreamy": ["Sometimes I think the work does itself, and I only watch.", "The days go by like water."],
+    # how they close: in what they do and say, not in what they claim to feel
+    "nervous": ["Sorry. I'm talking too much. I do that.", "Don't mind me. I'll be all right. I'm always all right.", "I'll stop. You've places to be.",
+                "I checked the door twice this morning. Three times. Never mind.", "Is that someone coming? No. No, it isn't."],
+    "suspicious": ["Not that it's any of your business.", "Why do you want to know, anyway?", "And that's all you'll get out of me.",
+                   "Anyway. I've said enough.", "You ask a lot of questions, for someone just passing."],
+    "gruff": ["Not that anyone thanks me for it.", "Well. Work won't do itself.", "Enough talk.", "There. Now you know.", "That's it. That's the news."],
+    "warm": ["But here's me going on. How are you keeping?", "You'll stay for a bite, won't you? There's always too much.", "Sit a while, if you like. The step's warm.",
+             "Here - your cloak's torn at the hem. Leave it with me a minute.", "You've a look of my sister about you. Round the eyes."],
+    "cheerful": ["Ha! Listen to me.", "Mustn't grumble. Well, I must, but I mustn't.", "Still, the sun comes up. Most days.",
+                 "Anyway! What's the news from out there?", "And I'd do it all again tomorrow. Probably will."],
+    "melancholy": ["It was easier once. Everything was.", "Still. Nothing lasts.", "I don't know why I'm telling you this.",
+                   "My mother used to say the same. She's been gone nine winters.", "Ah well. It passes the days."],
+    "shrewd": ["Remember that, if you're buying.", "Worth knowing, that.", "There's money in it, for someone who keeps their ears open.",
+               "I'll say no more. Not for nothing, anyway.", "You didn't hear it from me. But you did hear it."],
+    "dreamy": ["Or so it seems to me, anyway.", "The days go by like water.", "Do you ever feel the days belong to someone else?",
+               "There was a heron on the roof this morning. I took it as a good sign.", "Sometimes I think the work does itself, and I only watch."],
 }
 
 # ---------------------------------------------------------------- your errands, in their mouths
@@ -346,7 +335,7 @@ _MORE_JOB = {
                     "winter": ["Smoked eel for the winter. My house smells of it. So do I."]},
     "drover": {"spring": ["Taking the young beasts up to summer pasture. Two weeks on the road, with the dogs."],
                "summer": ["Fattening on the hills. I go up and count them and come down again."],
-               "autumn": ["Drove to the autumn fair next week. Two hundred head and three dogs, and me."],
+               "autumn": ["Off to the autumn fair next week. Two hundred head and three dogs, and me."],
                "winter": ["The drove roads are closed till spring. I mend harness and drink too much."]},
     "carter": {"spring": ["The roads are soft. I've been stuck to the axles twice this week."],
                "summer": ["Hay to the farms and stone to the builders. My horse and I don't stop."],
@@ -384,25 +373,6 @@ for _j, _seasons in _MORE_JOB.items():
     for _s, _lines in _seasons.items():
         JOB_SEASON.setdefault(_j, {})[_s] = JOB_SEASON.get(_j, {}).get(_s, []) + _lines
 
-NEIGHBOUR += [
-    "{other} the {ojob} is courting, they say. {ohe.cap} goes red as a radish if you mention it.",
-    "{other} the {ojob} can tell you what the weather'll do three days off. Always right, too. It's unsettling.",
-    "{other} the {ojob} keeps a raven that steals spoons. Nobody's brave enough to tell {ohim}.",
-    "{other} the {ojob} has a cousin in every village from here to the hills. Ask {ohim}, if you're lost.",
-    "{other} the {ojob} lent me a hand when my roof came in. I owe {ohim} for that.",
-    "{other} the {ojob} came here as a stranger, years back. Folk still call {ohim} the newcomer.",
-    "{other} the {ojob} tells the best stories at the alehouse, and the least true.",
-    "{other} the {ojob} hasn't been well. You might stop by, if you've a kind word.",
-]
-NEIGHBOUR_TEMPER["suspicious"] += ["{other} the {ojob} had money all of a sudden, last spring. Nobody knows where from."]
-NEIGHBOUR_TEMPER["gruff"] += ["{other} the {ojob} lets {ohis} beasts in my field. I've told {ohim} twice."]
-NEIGHBOUR_TEMPER["shrewd"] += ["{other} the {ojob} is behind on the rent, so you'll get a good price there."]
-NEIGHBOUR_TEMPER["warm"] += ["{other} the {ojob} will feed you if you let {ohim}. Let {ohim}."]
-NEIGHBOUR_TEMPER["cheerful"] += ["{other} the {ojob} sang at the last wedding. The dogs joined in. Best night of the year."]
-NEIGHBOUR_TEMPER["melancholy"] += ["{other} the {ojob} and I were going to be married, once. Long ago now."]
-NEIGHBOUR_TEMPER["dreamy"] += ["{other} the {ojob} says {ohe} saw lights on the hill at midsummer. I believe {ohim}."]
-NEIGHBOUR_TEMPER["nervous"] += ["{other} the {ojob} says there's something in the old well. I don't go near it now."]
-
 VILLAGE += [
     "{village}'s an old place. Older than the road, the old ones say.",
     "Nothing much happens in {village}. That's how we like it.",
@@ -429,17 +399,6 @@ TIME_NOW = {
     "deepnight": ["What are you doing abroad at this hour?"],
 }
 
-for _t, _lines in {
-    "nervous": ["Sorry. I talk too much when I'm worried.", "Don't mind me. I'll be all right."],
-    "suspicious": ["Anyway. I've said enough.", "And that's all you'll get out of me."],
-    "gruff": ["Well. Work won't do itself.", "Enough talk."],
-    "warm": ["You'll stay for a bite, won't you?", "It's good to have someone to talk to."],
-    "cheerful": ["Ha! Listen to me.", "Anyway, mustn't grumble. Well, I must, but I mustn't."],
-    "melancholy": ["Still. Nothing lasts.", "I don't know why I'm telling you all this."],
-    "shrewd": ["Remember that, if you're buying.", "Worth knowing, that."],
-    "dreamy": ["Or so it seems to me, anyway.", "Do you ever feel the days are someone else's dream?"],
-}.items():
-    TAIL[_t] += _lines
 
 for _t, _lines in {
     "nervous": ["You've not given up? On {obj}? Please say you've not."], "suspicious": ["Well? You said you'd see to {obj}."],

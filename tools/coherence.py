@@ -101,6 +101,12 @@ def collect(worlds=30, seed0=7000):
                     line = TK.life(g, npc)
                     if line:
                         yield "talk", with_biome(c2, w.tiles[v].biome), line
+                # everything in their inner life, told
+                from rpg import inner as IN, speech as SP
+                for f in IN.of(w, npc)["facts"]:
+                    said = SP.compose(g, npc, f)
+                    if said:
+                        yield "talk", with_biome(c2, w.tiles[v].biome), said
         for _ in range(15):
             it = w.make_item(rng.randint(1, 4))
             yield "item", c, it.name + ". " + n.item_full(it)
@@ -133,7 +139,8 @@ RULES = [(name, ("place", "site", "intro", "feature"), (lambda pred: lambda c: p
           (lambda rx, unless: lambda s: rx.search(s) and not (unless and unless.search(s)))(rx, unless))
          for name, rx, pred, unless in CO.CONTEXT] + [
     ("young and old together", ("npc",), None, lambda s: YOUNG.search(s) and OLD.search(s)),
-    ("unfilled slot in a story", ("story",), None, lambda s: "{" in s or "}" in s),
+    ("unfilled slot in a story", ("story", "talk"), None, lambda s: "{" in s or "}" in s),
+    ("doubled word in talk", ("talk",), None, lambda s: bool(re.search(r"\b(the|a|an|and|of|to|my) \1\b", s, re.I))),
     ("a name where a pronoun belongs", ("story",), None, lambda s: bool(__import__("re").search(r"\b(he|she|it) (he|she|it)\b", s))),
     ("age said twice on an elder", ("npc",), None, lambda s: W("elderly", "aged", "ancient").search(s) and W("elder", "eldest").search(s)),
     ("hair-age and hair colour clash", ("npc",), None, lambda s: HAIR_AGE.search(s) and (HAIR_COLOUR.search(s) or NO_HAIR.search(s))),

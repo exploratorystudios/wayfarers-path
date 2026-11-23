@@ -73,6 +73,9 @@ class Narrator:
         self.g.extend(TALK2.EXTEND)       # more conversation and village lines
         self.g.extend(COMPOSE.EXTEND)     # openings from parts; weather, mood and talk lines
         self.g.add(TALK.toned_rules())    # names and introductions, each in the speaker's own temperament
+        from . import lex_dialogue as DIALOGUE
+        self.g.add(DIALOGUE.GRAMMAR)      # greetings, deed gossip and news openers built from parts
+        self.g.extend(DIALOGUE.GRAMMAR_EXTEND)
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -681,7 +684,7 @@ class Narrator:
             line = self.say("{npc_intro}", self.talk_ctx(n, first=True), [n.demeanour])
         return line
 
-    def greet(self, n, player):
+    def greet(self, n, player, noticed=None):
         """First meeting: what they're doing as you come up, a greeting in their temperament,
         and the exchange of names. Later: a greeting coloured by how they feel about you."""
         m, day = n.mem, self.w.day
@@ -691,6 +694,8 @@ class Narrator:
             ask = self.say("{ask_name}", ctx, [n.demeanour])
             theirs = ask.startswith('"') and not ask.startswith(('"' + player, '"I\'m ' + player))
             # their greeting and their question are one speech; your answer is its own
+            if noticed:                                     # what they notice about you, in the same breath
+                hello = join_speech(hello, '"' + noticed + '"')
             return beat + " " + (join_speech(hello, ask) if theirs else hello + " " + ask)
         addr = player if m["knows_name"] else self.pick(["stranger", "traveller", "friend"])
         gap = day - m["last_day"]
@@ -702,7 +707,9 @@ class Narrator:
             gap_line = self.pick([f"It's been {'a day' if gap == 1 else f'{gap} days'}.", "Keeping well?", "Still in one piece, I see."])
         line = self.say("{return_greet}", dict(addr=addr, name=n.name, gap=["again", "once more", "back again"], gap_line=gap_line, **n.pronouns()), [n.tier])
         if gap >= 3 and gap_line not in line:
-            line += " " + gap_line
+            line = join_speech(line, '"' + gap_line + '"') if line.endswith('"') else line + " " + gap_line
+        if noticed:
+            line = join_speech(line, '"' + noticed + '"') if line.endswith('"') else line + ' "' + noticed + '"'
         return self.attrib(n, line)
 
     def recognise(self, n):
@@ -714,13 +721,19 @@ class Narrator:
         if carrying and not any(e["kind"] == "relic_seen" for e in m["events"]):
             n.remember("relic_seen", said=True)
             return self.say("{mem_deed_relic}", dict(thing=carrying, name=n.name))
-        # news of deeds: heard if nearby, or once a day has passed for it to travel
+        # news of deeds: heard if nearby, or once a day has passed for it to travel. One person in each
+        # village tells you what they've heard; the rest have heard it too, and think the better of you for it
+        told_here = w.__dict__.setdefault("deeds_told", set())
         while m["deeds_heard"] < len(deeds):
             d = deeds[m["deeds_heard"]]
             dist = abs(d["pos"][0] - n.home[0]) + abs(d["pos"][1] - n.home[1])
             if d["day"] >= w.day and dist > 4:
                 break
             m["deeds_heard"] += 1
+            if (n.home, m["deeds_heard"]) in told_here:
+                n.like(1 if d["kind"] != "boss" else 3)
+                continue
+            told_here.add((n.home, m["deeds_heard"]))
             if d["kind"] == "boss":
                 n.like(3)
                 return self.say("{mem_deed_boss}", dict(thing=d["thing"]))
