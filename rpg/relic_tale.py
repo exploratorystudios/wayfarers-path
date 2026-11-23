@@ -95,7 +95,7 @@ def speech(g, npc):
     elif shape == 1:    # the trouble first, then the cause
         body = f"Ever since the {relic} left us, {since}. It was {meant}, you understand. {loss} {offer}"
     elif shape == 2:    # a question to the stranger
-        body = f"Have you heard of the {relic}? No - why would you. It was {meant}. {loss} And since, {since}. {offer}"
+        body = f"Have you heard of the {relic}? No - why would you? It was {meant}. {loss} And since, {since}. {offer}"
     elif shape == 3:    # blunt
         body = f"I'll not dress it up. The {relic} is gone, and {since} ever since. {loss} {offer}"
     else:               # a confession

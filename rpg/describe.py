@@ -19,7 +19,7 @@ from . import lex_wide as WIDE
 from . import lex_temper as TEMPER
 from . import lex_talk_more as TALK2
 from . import lex_compose as COMPOSE
-from .textgen import Grammar, tidy, article, cap, title
+from .textgen import Grammar, tidy, article, cap, title, join_speech
 
 PREP_WORDS = ("the ",)
 
@@ -671,8 +671,15 @@ class Narrator:
         scope = [n.tier] if beat == "talk_beat" else []
         return self.say("{%s}" % beat, self.talk_ctx(n), scope) + " " + line
 
-    def introduce(self, n):
-        return self.say("{npc_intro}", self.talk_ctx(n, first=True), [n.demeanour])
+    def introduce(self, n, after=""):
+        """Their name and trade. After a gesture of theirs ('She nods slowly.'), open on speech, not a second gesture."""
+        line = self.say("{npc_intro}", self.talk_ctx(n, first=True), [n.demeanour])
+        beat_ended = after and not after.rstrip().endswith('"') and not after.rstrip().endswith(("you.", n.name + "."))
+        for _ in range(8):
+            if not (beat_ended and not line.startswith('"')):
+                break
+            line = self.say("{npc_intro}", self.talk_ctx(n, first=True), [n.demeanour])
+        return line
 
     def greet(self, n, player):
         """First meeting: what they're doing as you come up, a greeting in their temperament,
@@ -680,7 +687,11 @@ class Narrator:
         m, day = n.mem, self.w.day
         if m["met"] == 0:
             ctx = self.talk_ctx(n, first=True, player=player)
-            return " ".join([self.say("{meet_beat}", ctx, [n.demeanour]), self.say("{greet}", ctx, [n.demeanour]), self.say("{ask_name}", ctx, [n.demeanour])])
+            beat, hello = self.say("{meet_beat}", ctx, [n.demeanour]), self.say("{greet}", ctx, [n.demeanour])
+            ask = self.say("{ask_name}", ctx, [n.demeanour])
+            theirs = ask.startswith('"') and not ask.startswith(('"' + player, '"I\'m ' + player))
+            # their greeting and their question are one speech; your answer is its own
+            return beat + " " + (join_speech(hello, ask) if theirs else hello + " " + ask)
         addr = player if m["knows_name"] else self.pick(["stranger", "traveller", "friend"])
         gap = day - m["last_day"]
         if gap >= 3:

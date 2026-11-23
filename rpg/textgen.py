@@ -63,6 +63,20 @@ def and_list(items, word="and"):
     return ", ".join(items[:-1]) + f" {word} " + items[-1]
 
 
+def join_speech(a, b):
+    """Two quoted lines from the same speaker, one after the other, become one speech:
+    '"Hello." "Name?"' -> '"Hello. Name?"'. Anything else is joined with a space."""
+    a, b = a.rstrip(), b.lstrip()
+    if a.endswith('"') and b.startswith('"'):
+        return a[:-1].rstrip() + " " + b[1:]
+    return (a + " " + b).strip()
+
+
+def one_voice(text):
+    """Inside a passage spoken by one person, run back-to-back quotes together into one."""
+    return re.sub(r'([^\s"])"\s+"(?=\S)', r"\1 ", text)
+
+
 def cap(s):
     for i, ch in enumerate(s):
         if ch.isalpha():

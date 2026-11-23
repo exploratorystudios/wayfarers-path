@@ -354,7 +354,8 @@ def journal(g):
             if near != g.pos:
                 goal = goal.rstrip(".") + f" (nearest: {g.narr.dir_phrase(g.pos, near)})."
         entries.append(dict(kind="main", title=mq.heading(g), who=f"for {elder.name}, in {MQ.home_name(w)}" if elder else "",
-                            why=st[:1].upper() + st[1:] + "." if st else "", steps=[("now", goal)]))
+                            why=st[:1].upper() + st[1:] + "." if st else "",
+                            steps=[("done", f"You came home and told {elder.name if elder else 'the elder'} it was done.")] if g.won else [("now", goal)]))
     else:
         entries.append(dict(kind="main", title="The road", who="", why="", steps=[("now", "Speak with the village elder.")]))
     plots = {p["id"]: p for p in getattr(g, "plots", [])}

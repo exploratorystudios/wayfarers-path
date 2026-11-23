@@ -75,7 +75,7 @@ OBJECTS = {
     # items
     "heirloom": dict(kind="item", lines=["\"The {oname} is gone - stolen {when}. It's been in the family six generations.\"", "\"Somebody took the {oname} {when}. It's all we had of the old days.\""],
                      title=["The stolen {oname}", "The {oname}"]),
-    "tool": dict(kind="item", lines=["\"My {oname} went missing {when}. I can't work without it.\"", "\"Someone's had my {oname} - took it {when}. My trade's at a standstill.\""],
+    "tool": dict(kind="item", lines=["\"My {oname} went missing {when}. I can't do a day's work now.\"", "\"Someone made off with my {oname} {when}. My trade's at a standstill.\""],
                  title=["{giver}'s {oname}", "The missing {oname}"]),
     "remedy": dict(kind="item", lines=["\"There's a {oname} that grows {dir}, the old wives say. It's the only thing that'll help.\"",
                                        "\"The cure's a {oname}. Our wise-woman says it grows {dir}, if you know where.\""],
@@ -86,7 +86,7 @@ OBJECTS = {
     "keepsake": dict(kind="item", lines=["\"I lost my {oname} {when}, out {dir}. I know it's foolish. It's all I have of them.\"",
                                          "\"My {oname}. I dropped it {when}, somewhere {dir}. Please.\""],
                      title=["{giver}'s {oname}", "A small lost thing"]),
-    "charter": dict(kind="item", lines=["\"The {oname} that proves our rights to the common was taken {when}. Without it, the lord's men will have the land.\"",
+    "charter": dict(kind="item", lines=["\"The {oname} that proves our claim to the common was taken {when}. Without it, the lord's men will have the land.\"",
                                         "\"Our {oname} - the old parchment - has gone. Taken {dir}, we think. Everything depends on it.\""],
                     title=["The {oname}", "Proof of right"]),
     "charm": dict(kind="item", lines=["\"The {oname} that hung over our gate is gone - taken {when}. Since then, nothing's gone right.\"",
@@ -100,7 +100,7 @@ OBJECTS = {
                                        "\"There's a grave by the {place} {dir} - my {kin}'s. I can't walk that far any more.\""],
                   title=["A grave by the {place}", "{giver}'s {kin}"]),
     # word
-    "news": dict(kind="word", lines=["\"I need word from {far} in {fvillage}. I've heard nothing {when}.\"", "\"Go to {fvillage}, find {far}, and ask if it's true. I have to know.\""],
+    "news": dict(kind="word", lines=["\"I need word from {far} in {fvillage}. I've heard nothing in weeks, and that's not like {far}.\"", "\"Go to {fvillage}, find {far}, and ask whether what they're saying about the family there is true. I have to know.\""],
                  title=["Word from {fvillage}", "Ask {far}"]),
 }
 PERSON_WHO = {"child": ["little ", "young "], "elder": ["old "], "sweetheart": [""], "apprentice": ["young "], "runaway": ["young ", ""], "stranger": [""]}
@@ -140,7 +140,7 @@ MOTIVES = {
     "fear":      M("danger undead holy", ["We're frightened. There, I've said it.", "The children won't sleep. Neither will I."]),
     "duty":      M("danger holy grave common word", ["It's my duty, and I can't do it. So I'm asking you.", "Someone has to. It ought to be me."]),
     "pride":     M("stolen trade stray", ["The whole village is laughing at me.", "I won't be made a fool of."]),
-    "guilt":     M("missing stray lost quarrel", [("missing stray lost", "It's my fault. I should have stopped it."), ("quarrel", "I said something I can't take back.")]),
+    "guilt":     M("missing stray lost quarrel", [("missing stray lost", "It's my fault. I should have seen it coming."), ("quarrel", "I said something I can't take back.")]),
     "rivalry":   M("stolen trade livestock", ["If the folk at {fvillage} hear of this, I'll never live it down.", "{other} would love to see me fail."]),
     "curiosity": M("word holy", ["I just have to know.", "It's been nagging at me for weeks."]),
     "revenge":   M("predator stolen", [("predator", "It took my best dog. I want it dead."), "Somebody's going to pay for this."]),
@@ -619,7 +619,7 @@ ASK_CLOSE = {
     "suspicious": ["I can't pay much. But I'd owe you.", "I don't ask for help often."],
     "gruff": ["Well? Will you or won't you?", "That's all. Will you go?"], "warm": ["Will you help?", "I'd be grateful past saying."],
     "cheerful": ["What do you say?", "Go on - you look like you could use an adventure."],
-    "melancholy": ["I don't suppose you would...", "But why would you."], "shrewd": ["There'd be something in it for you.", "Well? Interested?"],
+    "melancholy": ["I don't suppose you would...", "But why would you?"], "shrewd": ["There'd be something in it for you.", "Well? Interested?"],
     "dreamy": ["I think you were meant to come.", "The wind said someone would help."],
 }
 

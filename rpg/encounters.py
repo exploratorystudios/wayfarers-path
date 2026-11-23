@@ -472,6 +472,7 @@ def _news(g, d):
     items = living.news(g.world, g.pos)
     if items:
         text = g.rng.choice(items)[1]
+        text = text.rstrip(".") + ("" if text.rstrip().endswith(("!", "?")) else ",")
         g.emit(f"\"Did you hear? {text}\" they say, and you tell them what you've seen in turn.")
     else:
         g.emit("You swap news. Theirs is mostly about the weather. So is yours.")

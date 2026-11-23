@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .world import World, DIRS
 from .describe import Narrator
-from .textgen import wrap, cap, article, title, plural
+from .textgen import wrap, cap, article, title, plural, join_speech, one_voice
 from . import travel as TR
 from . import mind
 from . import classes as K
@@ -150,7 +150,30 @@ class Game:
 
     # ------------------------------------------------------------ output
     def emit(self, text=""):
-        self.out(wrap(text, self.width))
+        held = self.__dict__.get("_held")
+        if held is not None:
+            held.append(text)
+        else:
+            self.out(wrap(text, self.width))
+
+    def one_speaker(self, fn, *args):
+        """Run fn, and print what it says as one person speaking: quotes that follow straight on from
+        each other, in a paragraph or across two, become a single speech."""
+        self._held = held = []
+        try:
+            result = fn(*args)
+        finally:
+            self._held = None
+        merged = []
+        for line in held:
+            line = one_voice(line)
+            if merged and merged[-1].rstrip().endswith('"') and line.lstrip().startswith('"'):
+                merged[-1] = join_speech(merged[-1], line)
+            else:
+                merged.append(line)
+        for line in merged:
+            self.emit(line)
+        return result
 
     def status_line(self):
         w, p = self.world, self.player
@@ -634,7 +657,7 @@ class Game:
         speak = lambda line: self.emit(n.attrib(npc, line))
         greeting = n.greet(npc, p.name)
         if first:   # introductions go both ways
-            greeting += " " + n.introduce(npc)
+            greeting += " " + n.introduce(npc, greeting)
         speak(greeting)
         m["introduced"] = True
         if for_trade:
@@ -648,12 +671,12 @@ class Game:
         handed = S.on_talk(self, npc)
         LV.festival_gift(self, npc)
         main_talk = False          # one request per conversation: the main quest is plenty on its own
-        if npc.role == "elder" and npc.home == w.start and w.quest.elder(self, npc):
+        if npc.role == "elder" and npc.home == w.start and self.one_speaker(w.quest.elder, self, npc):
             main_talk = True
         elif npc.role == "elder" and npc.home == w.start and not self.has_quest:
             self.has_quest = True
             main_talk = True
-            w.quest.offer(self, npc)
+            self.one_speaker(w.quest.offer, self, npc)
         elif npc.role == "merchant" and first:
             from . import lex_talk_more as TALK2
             pr = npc.pronouns()

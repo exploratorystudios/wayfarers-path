@@ -316,7 +316,7 @@ def start_trouble(g, v):
                                        "who has the right to the spring", "a broken promise of marriage", "an insult at the harvest feast"]))
     site["trouble"] = t
     w.trouble_log = getattr(w, "trouble_log", []) + [kind]
-    S.record(g, f"Trouble came to {site['name']}: {short(t)}.", "news", pos=v)
+    S.record(g, f"There was trouble in {site['name']}; {short(t)}.", "news", pos=v)
 
 
 def short(t):
