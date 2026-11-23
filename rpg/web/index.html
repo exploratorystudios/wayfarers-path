@@ -428,7 +428,8 @@ aside { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; 
 
   .pop { position: fixed; left: 0; right: 0; bottom: 0; width: auto; max-height: 78dvh; border-radius: 16px 16px 0 0; z-index: 30;
     padding-bottom: env(safe-area-inset-bottom); border-bottom: none; }
-  .pop-head { padding: 10px 12px; }
+  .pop-head { padding: 16px 12px 10px; }
+  .pop-head::before { content: ""; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--line); }
   .pop-head span { font-size: 1rem; }
   .pop-head button { font-size: 1.6rem; padding: 2px 12px; min-width: 44px; min-height: 40px; }
   .pop-body { padding: 4px 6px 10px; }
@@ -1438,6 +1439,49 @@ $("moveHide").onclick = () => setMove(false, true);
 phoneMQ.addEventListener("change", () => setMove(moveDefault(), false));
 $("popBack").onclick = popBack;
 $("popClose").onclick = closePop;
+
+// Phone bottom sheets follow a finger dragging down and close when let go far or fast enough.
+// From the body the drag only starts when it is scrolled to the top, so scrolling still works.
+function swipeToClose(el, isOpen, close, handle) {
+  let s = null;   // {y0, x0, fromHandle, dragging, dy, pts}
+  const shadeEl = $("shade");
+  const reset = () => { el.style.transition = el.style.transform = ""; shadeEl.style.transition = shadeEl.style.opacity = ""; };
+  el.addEventListener("touchstart", (e) => {
+    if (!phone() || !isOpen() || e.touches.length !== 1) { s = null; return; }
+    const t = e.touches[0];
+    s = { y0: t.clientY, x0: t.clientX, fromHandle: !!e.target.closest(handle), dragging: false, decided: false, dy: 0, pts: [] };
+  }, {passive: true});
+  el.addEventListener("touchmove", (e) => {
+    if (!s) return;
+    const t = e.touches[0], dy = t.clientY - s.y0, dx = t.clientX - s.x0;
+    if (!s.decided) {
+      if (Math.abs(dy) < 6 && Math.abs(dx) < 6) return;
+      s.decided = true;
+      s.dragging = dy > 0 && Math.abs(dy) > Math.abs(dx) && (s.fromHandle || el.scrollTop <= 0) && !e.target.closest("input, textarea, select");
+      if (!s.dragging) { s = null; return; }
+      el.style.transition = shadeEl.style.transition = "none";
+    }
+    e.preventDefault();
+    s.dy = Math.max(0, dy);
+    s.pts.push([e.timeStamp, s.dy]); if (s.pts.length > 5) s.pts.shift();
+    el.style.transform = `translateY(${s.dy}px)`;
+    shadeEl.style.opacity = String(Math.max(0, 1 - s.dy / el.offsetHeight));
+  }, {passive: false});
+  const end = () => {
+    if (!s || !s.dragging) { s = null; return; }
+    const p = s.pts, v = p.length > 1 ? (p[p.length - 1][1] - p[0][1]) / Math.max(1, p[p.length - 1][0] - p[0][0]) : 0;
+    const h = el.offsetHeight, go = s.dy > Math.min(140, h * 0.3) || (v > 0.5 && s.dy > 20);
+    s = null;
+    el.style.transition = "transform .18s ease-out"; shadeEl.style.transition = "opacity .18s ease-out";
+    el.style.transform = go ? `translateY(${h}px)` : "";
+    shadeEl.style.opacity = go ? "0" : "";
+    setTimeout(() => { if (go) close(); reset(); }, 190);
+  };
+  el.addEventListener("touchend", end);
+  el.addEventListener("touchcancel", end);
+}
+swipeToClose($("pop"), () => !!pop, closePop, ".pop-head");
+swipeToClose($("moreSheet"), () => !$("moreSheet").hidden, closeMore, ".grab");
 document.addEventListener("click", (e) => { if (pop && !e.composedPath().includes($("actionsBar"))) closePop(); });
 
 $("cmdform").onsubmit = (e) => { e.preventDefault(); const v = $("cmd").value; $("cmd").value = ""; send(v); };
