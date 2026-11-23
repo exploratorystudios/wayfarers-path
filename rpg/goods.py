@@ -13,10 +13,10 @@ from .textgen import cap, article
 # name -> kind, value, use, what it does (shown on examine), how it looks
 GOODS = {
     "pot of oak-gall ink": dict(kind="reagent", value=12, use=None,
-                                desc="Black ink made from oak galls. A spellcrafter writes a new spell out with it before the spell will hold ('craft').",
+                                desc="Black ink made from oak galls. A spellcrafter writes a new spell out with it before the spell will hold.",
                                 looks=["a stoppered clay pot of black ink", "a little horn pot of ink, sealed with wax"]),
     "bundle of beeswax candles": dict(kind="reagent", value=10, use=None,
-                                      desc="Good beeswax, the kind burned at shrines. A prayer is composed by their light, or not at all ('compose').",
+                                      desc="Good beeswax, the kind burned at shrines. A prayer is composed by their light, or not at all.",
                                       looks=["six honey-coloured candles tied with string", "a bundle of beeswax candles that smells of summer"]),
     "whetstone": dict(kind="tool", value=8, use="hone", desc="Ten minutes' work puts a fresh edge on your weapon: harder blows for half a day. It wears away with use.",
                       looks=["a grey stone worn hollow in the middle", "a fine-grained stone in a leather sleeve"]),

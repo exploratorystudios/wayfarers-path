@@ -59,6 +59,10 @@ header .place { color: var(--ink-soft); font-family: var(--serif); font-style: i
 #log .echo::before { content: "› "; }
 #log .banner { font-family: var(--sans); font-weight: 700; color: var(--accent); }
 #log .note { font-family: var(--sans); font-size: .88rem; color: var(--ink-soft); }
+#log .item { margin: 0 0 .2em; padding-left: 1.1em; text-indent: -1.1em; }
+#log .item::before { content: "• "; color: var(--ink-faint); display: inline-block; width: 1.1em; text-indent: 0; }
+#log .ind { margin: 0 0 .25em; }
+#log .item + p:not(.item), #log .ind + p:not(.ind) { margin-top: .6em; }
 #log .pre { font-family: var(--mono); font-size: .86rem; white-space: pre; margin: 0; line-height: 1.45; color: var(--ink-soft); overflow-x: auto; }
 #log .speech b { color: var(--speech); font-weight: 600; }
 #log .dmg { color: var(--bad); font-family: var(--sans); font-size: .82em; }
@@ -622,7 +626,11 @@ function renderLine(line) {
   else if (line.startsWith("> ")) { p.classList.add("echo"); p.textContent = line.slice(2); }
   else if (line.startsWith("***") || line.startsWith("** ")) { p.classList.add("banner"); p.textContent = line.replace(/\*/g, "").trim(); }
   else if (line.startsWith("(")) { p.classList.add("note"); p.innerHTML = deco(line); }
-  else if (/^ {2}|^@ you|^[ ♣.~n^≈@VR+c]+$/.test(line)) { p.classList.add("pre"); p.textContent = line; }
+  else if (/^@ you|^[ ♣.~n^≈@VR+c]+$/.test(line)) { p.classList.add("pre"); p.textContent = line; }   // the text map
+  else if (line.startsWith("• ")) { p.classList.add("item"); p.innerHTML = deco(line.slice(2)); }     // a shop's wares
+  else if ((m = line.match(/^( {2,})(.*)$/s))) {                                                      // an indented list line: wraps on a phone
+    p.classList.add("ind"); p.style.paddingLeft = (m[1].length / 2) + "em"; p.innerHTML = deco(m[2]);
+  }
   else if ((m = line.match(/^([A-Z][\w'-]+): (.*)$/s))) { p.classList.add("speech"); p.innerHTML = `<b>${esc(m[1])}:</b> ${deco(m[2])}`; }
   else { p.innerHTML = deco(line); }
   return p;

@@ -283,7 +283,8 @@ def weave(g, school, rest):
                           f"(Parts you know: {', '.join(sorted(have)) or 'none'}. Learn more {ARTS.SCHOOLS[school]['art']}s to learn more parts.)")
         shown = "; ".join(f"{s['label']} ({s['cost']}): {s['desc']}" for *_, s in opts[:12])
         return g.emit(f"{w['craft']}: you know {', '.join(sorted(have))}. You could make: {shown} "
-                      f"('{w['verb']} <parts>', e.g. '{w['verb']} {' '.join(x for x in opts[0][:3] if x)}'. Each takes a {w['material']} and {w['hours']} hours.)")
+                      + (f"(Use Craft › {w['craft']}… to choose one." if ui.web else f"('{w['verb']} <parts>', e.g. '{w['verb']} {' '.join(x for x in opts[0][:3] if x)}'.")
+                      + f" Each takes a {w['material']} and {w['hours']} hours.)")
     words = [x.lower() for x in rest if x not in ("and", "of", "a", "an")]
     match = None
     for pr, sh, tw, sec, spec in opts:

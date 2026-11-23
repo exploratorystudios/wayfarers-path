@@ -542,11 +542,11 @@ class Game:
         self.emit(ARTS.describe_stats(self))
         s = K.spec(p)
         if s:
-            abil = ", ".join(f"{K.ABILITIES[a]['label']} ({a}, {K.ABILITIES[a]['cost']})" for a in K.known(p))
+            abil = ", ".join((f"{K.ABILITIES[a]['label']} ({K.ABILITIES[a]['cost']} {s['res']})" if ui.web else f"{K.ABILITIES[a]['label']} ({a}, {K.ABILITIES[a]['cost']})") for a in K.known(p))
             self.emit(f"{s['name']} - {s['res']} {p.res}/{p.res_max}. Arts: {abil}.")
             self.emit("Traits: " + "; ".join(f"{a} ({b})" for a, b in ARTS.traits(p)))
             if p.points:
-                self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: 'improve' might, grace, wits or spirit.)")
+                self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: " + (f"{ui.ref('improve')}." if ui.web else "'improve' might, grace, wits or spirit.") + ")")
             extra = [f"guarding ({p.guard} blows)" if getattr(p, "guard", 0) else "", f"warded ({p.ward})" if getattr(p, "ward", 0) else "",
                      "hidden" if getattr(p, "hidden", 0) else ""]
             if any(extra):
@@ -796,7 +796,7 @@ class Game:
             return self.emit(self.narr.say("{sys_no_trader}"))
         self.trading_with = m.name
         if len(here) > 1 and not rest:
-            self.emit(f"(Others here sell too: {self.who_list([n for n in here if n is not m])}. 'trade <name>' to see their wares.)")
+            self.emit(f"(Others here sell too: {self.who_list([n for n in here if n is not m])}." + (" Use People › See wares… to choose whose stall." if ui.web else " 'trade <name>' to see their wares.") + ")")
         if not m.known:      # walking up to the stall means meeting whoever keeps it
             self.emit(f"You step over to {m.called()}'s wares.")
             self.cmd_talk([], npc=m, for_trade=True)
@@ -811,8 +811,12 @@ class Game:
             self.emit(self.narr.attrib(m, self.narr.say("{markup_line}"), "trade_beat"))
         self.out(f"{m.name} has for sale:")
         for it in m.stock:
-            self.out(f"  {article(it.name):45s} {self.buy_price(m, it):4d} coins")
-        self.out(f"You have {self.player.gold} coins. ('buy <item>', 'sell <item>', 'examine <item>')")
+            if ui.web:      # a narrow screen: no padded columns, the price follows the name
+                self.out(f"• {article(it.name)} — {self.buy_price(m, it)} coins")
+            else:
+                self.out(f"  {article(it.name):45s} {self.buy_price(m, it):4d} coins")
+        self.out(f"You have {self.player.gold} coins." + (f" (People › Buy…, People › Sell…, Look › Examine…)" if ui.web
+                                                          else " ('buy <item>', 'sell <item>', 'examine <item>')"))
         if TR.sells_rations(m):
             left = TR.supply(m)
             self.out(f"{m.name} has {left} travel ration{'s' if left != 1 else ''} at {TR.RATION_PRICE} coins each ({ui.ref('buy rations')}). You carry {TR.rations(self)}."
@@ -1396,7 +1400,7 @@ class Game:
             return self.emit(f"No save called '{self.safe_slot(rest[0])}'. ({ui.how('saves')} to list them.)")
         ref = rest[0] if "/" in rest[0] else path.stem if path.parent.name == getattr(self, "run_id", None) else self.save_ref(path)
         if rest[1:2] != ["yes"]:
-            return self.emit(f"Deleting '{ref}' can't be undone. Type 'delete {ref} yes' to confirm.")
+            return self.emit(f"Deleting '{ref}' can't be undone. " + ("Delete it from the Saves window." if ui.web else f"Type 'delete {ref} yes' to confirm."))
         self.delete_save(self.save_ref(path))
         if self.save_ref(path) == self.save_id():
             self.save_slot = None
@@ -1514,10 +1518,10 @@ class Game:
         for school, keys in by.items():
             sc = ARTS.SCHOOLS.get(school, {})
             self.emit(f"{sc.get('menu', 'Arts')}: " + "; ".join(
-                f"{K.ABILITIES[k]['label']} ('{k}', {K.ABILITIES[k]['cost']} {res}) - {K.ABILITIES[k]['desc']}" for k in keys))
+                f"{K.ABILITIES[k]['label']} ({'' if ui.web else repr(k) + ', '}{K.ABILITIES[k]['cost']} {res}) - {K.ABILITIES[k]['desc']}" for k in keys))
         self.emit("Traits: " + "; ".join(f"{a} - {b}" for a, b in ARTS.traits(p)))
         if p.points:
-            self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: 'improve' might, grace, wits or spirit.)")
+            self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: " + (f"{ui.ref('improve')}." if ui.web else "'improve' might, grace, wits or spirit.") + ")")
 
     def cmd_forage(self, rest):
         self.landmark("forage", rest)
