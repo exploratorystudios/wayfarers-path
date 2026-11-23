@@ -176,6 +176,8 @@ class Grammar:
 
         def repl(m):
             spec = m.group(1)
+            if spec.startswith(("@", "~")) or ".subj" in spec:      # word-level slots: filled afterwards by sentences.py
+                return m.group(0)
             var = None
             if ">" in spec:
                 spec, var = spec.split(">", 1)

@@ -103,10 +103,11 @@ class BeastQuest(MQ.MainQuest):
     def offer(self, g, npc):
         w, n = g.world, g.narr
         va, vb = w.tiles[self.va].site["name"], w.tiles[self.vb].site["name"]
-        g.emit(f"{npc.name} doesn't waste words. \"You'll have heard of {self.title}. If you haven't, you will. {self.origin} {self.toll}\"")
-        he = self.who(w, self.wa, self.va)["he"]
-        g.emit(f"\"Nobody here can kill it. Maybe you can. Talk to {self.wa} in {va}, {n.dir_phrase(g.pos, self.va)} - {he} fought it once and lived. "
-               f"And {self.wb} at {vb} has seen where it goes. Find it, kill it, and bring me something of it, so I know it's done.\"")
+        from . import lex_elders as EL
+        pa, pb = self.who(w, self.wa, self.va), self.who(w, self.wb, self.vb)
+        g.emit(EL.speak(g, npc, "beast", dict(title=self.title, title_cap=cap(self.title), origin=self.origin, toll=self.toll,
+                                              wa=self.wa, va=va, dir_a=n.dir_phrase(g.pos, self.va), wa_he=pa["he"], wa_he_cap=cap(pa["he"]), wa_him=pa["him"],
+                                              wb=self.wb, vb=vb, wb_he_cap=cap(pb["he"]))))
         g.emit("(Quest: learn how to kill the beast, hunt it to its lair, and bring proof home.)")
         self.active = True
 
@@ -172,8 +173,8 @@ class BeastQuest(MQ.MainQuest):
         w = narr.w
         if self.raided:
             v = w.tiles[self.raided[-1]].site["name"]
-            return f"{self.title} was at {v} again. Took what it wanted and was gone before anyone could lift a hand"
-        return f"{self.title} is out there, {narr.dir_phrase(here, w.quest_pos)}. Folk at {w.tiles[self.vb].site['name']} know more than they say"
+            return f"{self.title} was at {v} again. [Took what it wanted and was gone before anyone could lift a hand|Two sheep and a dog, this time|They heard it at the doors all night]"
+        return f"{self.title} is [out there|abroad|hunting], {narr.dir_phrase(here, w.quest_pos)}. Folk at {w.tiles[self.vb].site['name']} [know more than they say|have seen where it goes|could tell you more]"
 
     def place_lines(self, narr, pos):
         if self.done or pos not in self.tracks:

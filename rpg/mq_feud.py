@@ -79,10 +79,8 @@ class FeudQuest(MQ.MainQuest):
     def offer(self, g, npc):
         w, n = g.world, g.narr
         a, b = self.names(w)
-        g.emit(f"{npc.name} is grim. \"{a} and {b} are sharpening scythes for each other. It started over something at {self.place(w)}, and "
-               f"it's grown in the telling until nobody remembers what's true. If it comes to blood, every village from here to the hills will be in it by winter.\"")
-        g.emit(f"\"Somebody has to hear both sides with no stake in it, and go and see for themselves. Start at {a}, {n.dir_phrase(g.pos, self.va)}, "
-               f"and {b}, {n.dir_phrase(g.pos, self.vb)}. Find out what happened at {self.place(w)}. Then do what you think is right, and come and tell me.\"")
+        from . import lex_elders as EL
+        g.emit(EL.speak(g, npc, "feud", dict(a=a, b=b, place=self.place(w), dir_a=n.dir_phrase(g.pos, self.va), dir_b=n.dir_phrase(g.pos, self.vb))))
         g.emit("(Quest: hear both sides of the feud, find out what really happened, and settle it.)")
 
     def goal(self, g):
@@ -136,8 +134,8 @@ class FeudQuest(MQ.MainQuest):
     def rumour(self, narr, here):
         a, b = self.names(narr.w)
         if self.done:
-            return f"{a} and {b} have made it up. Who'd have thought"
-        return f"there'll be blood between {a} and {b} before the year's out, mark me"
+            return f"{a} and {b} have [made it up|shaken hands|stopped sharpening scythes]. [Who'd have thought|Wonders never cease|I'd not have believed it]"
+        return f"there'll be blood between {a} and {b} [before the year's out|by winter|before long], [mark me|you see if there isn't|I'd lay money on it]"
 
     # ------------------------------------------------------------ hooks
     def on_arrive(self, g):

@@ -39,6 +39,22 @@ class _Biome:
         self.biome = biome
 
 
+def _spread(rules):
+    """(weight, shape) -> that many copies of the shape. The grammar's no-repeat memory bars an option by its
+    place in the list for a few picks after it's used; one heavily weighted built shape would be barred
+    straight after use and the older fixed lines would fill in. Copies keep the built shape available."""
+    out = {}
+    for key, opts in rules.items():
+        lst = []
+        for o in opts:
+            if isinstance(o, tuple):
+                lst += [o[1]] * max(1, int(round(o[0])))
+            else:
+                lst.append(o)
+        out[key] = lst
+    return out
+
+
 class Narrator:
     def __init__(self, world, seed=None):
         self.w = world
@@ -60,6 +76,7 @@ class Narrator:
         self.g.add(M.MIND)
         from . import lex_classes
         self.g.add(lex_classes.RULES)
+        self.g.add(lex_classes.PARTS)
         self.g.extend(V.EXTEND)
         self.g.add(V.REPLACE)
         self.g.add(V.INTRO)
@@ -75,7 +92,13 @@ class Narrator:
         self.g.add(TALK.toned_rules())    # names and introductions, each in the speaker's own temperament
         from . import lex_dialogue as DIALOGUE
         self.g.add(DIALOGUE.GRAMMAR)      # greetings, deed gossip and news openers built from parts
-        self.g.extend(DIALOGUE.GRAMMAR_EXTEND)
+        self.g.extend(_spread(DIALOGUE.GRAMMAR_EXTEND))
+        self.g.extend(_spread(lex_classes.EXTEND))   # abilities built from parts
+        from . import lex_describe as DESC
+        self.g.add(DESC.GRAMMAR)          # description frames built from parts, with words chosen to fit the place
+        self.g.extend(_spread(DESC.EXTEND))
+        for key, shapes in _spread(DESC.EXTEND).items():      # the land- and season-specific versions of each frame get them too
+            self.g.extend({k: shapes for k in list(self.g.rules) if k.endswith(":" + key)})
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -112,7 +135,10 @@ class Narrator:
         for _ in range(8):
             c = dict(base)
             c.update(ctx or {})
-            s = tidy(self.g.expand(template, c, scopes))
+            s = self.g.expand(template, c, scopes)
+            if "{" in s:                     # word-level slots ({@verb:...}, {~is|are}) the grammar left for the realiser
+                s = self.words(s, c, biome)
+            s = tidy(s)
             # contradicting the moment is worst, then repeating ourselves, then a word used twice
             score = (10 * len(C.context_clashes(s, w.season, w.weather, w.time_of_day, biome))
                      + (3 if s in self.recent else 0) + len(C.repeated_words(s)) + self.echo(s))
@@ -123,6 +149,12 @@ class Narrator:
         self.recent.append(best)
         self.remember_phrases(best)
         return best
+
+    def words(self, text, ctx, biome=None):
+        """Fill word-level slots, choosing words that fit the land, season, weather and hour."""
+        from . import sentences as SN, lex_dialogue as DL
+        self._here_biome = biome or getattr(self, "_here_biome", None)
+        return SN.Realiser(self, DL.LEX, ctx, "desc").fill(text)
 
     @staticmethod
     def _shingles(s):
@@ -176,7 +208,8 @@ class Narrator:
         if tile is not None:
             c.update(tile.flavour)
         c.update(ctx or {})
-        return self.g.expand(template, c, scopes if scopes is not None else self.scopes())
+        s = self.g.expand(template, c, scopes if scopes is not None else self.scopes())
+        return self.words(s, c, tile.biome if tile is not None else None) if "{" in s else s
 
     def pick(self, items, key=None):
         return self.g.pick(items, key)
@@ -387,12 +420,7 @@ class Narrator:
                   "There is {adjp.a} {noun} here, {d}.",
                   "{adjp.a.cap} {noun} {verb} {where}.",
                   "{adjp.a.cap} {noun} - {d} - {verb} {where}.",
-                  "Not far off, {adjp.a} {noun} {verb} {where}.",
-                  "The eye goes to {adjp.a} {noun}, {d}.",
-                  "{adjp.a.cap} {noun} catches your attention: {d}.",
-                  "Off to one side, {adjp.a} {noun} {verb} {where}.",
                   "Here, {adjp.a} {noun} {verb} {where}, {d}.",
-                  "One thing stands out: {adjp.a} {noun}, {d}.",
                   "{adjp.a.cap} {noun} {verb} {where} - {d}.",
                   "Close by, {adjp.a} {noun}; {d}."]
         if not f.where.startswith(PREP_WORDS):
@@ -404,6 +432,8 @@ class Narrator:
         # striking openers ("One thing stands out...") are noticed when they recur: use them sparingly
         loud = ("Not far off", "The eye goes", "catches your attention", "Off to one side", "One thing stands out", "Close by", "Just {where}")
         weighted = [(fr, 0.35 if any(x in fr for x in loud) else 1.0) for fr in frames]
+        from . import lex_describe as DESC
+        weighted += [(fr, wt) for fr, wt in DESC.FEATURE_FRAMES if "{d}" not in fr or any("{d}" in x for x in frames)]
         line = self.say(self.g.choose("featframe", weighted), self.feature_ctx(f, biome), sc)
         if self.rng.random() < 0.4:
             extra = self.moment(f, biome)
@@ -762,6 +792,9 @@ class Narrator:
         w, r = self.w, self.rng
         opts = []
         qr = w.quest.rumour(self, here)
+        if qr:                                   # built like any other speech: [a|b] choices filled each time it's told
+            from . import sentences as SN, lex_dialogue as DL
+            qr = SN.expand(self, qr, DL.LEX, key="questrumour")
         if qr:
             opts.append(("quest", qr, None))
         for sp in w.species:

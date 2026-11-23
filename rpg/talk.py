@@ -226,6 +226,8 @@ def life(g, npc):
         ctx["festival"] = fest["name"]
         middle.append(("fest", DL.FESTIVAL_SHAPES))
     middle.append(("village", DL.VILLAGE_SHAPES))
+    if (npc.home, "forecast", w.day) not in w.__dict__.setdefault("reacted", set()):
+        middle.append(("forecast", DL.FORECAST_SHAPES))
     said = w.__dict__.setdefault("reacted", set())          # the weather and the hour: one person per village per day
     if w.weather in LIFE.WEATHER_NOW and (npc.home, "lifeweather", w.day) not in said:
         middle.append((f"weather-{w.weather}", LIFE.WEATHER_NOW[w.weather]))
@@ -235,6 +237,8 @@ def life(g, npc):
         k, shapes = g.rng.choice(middle)
         if k.startswith(("weather-", "time-")):
             said.add((npc.home, "lifeweather" if k.startswith("weather-") else "lifetime", w.day))
+        if k == "forecast":
+            said.add((npc.home, "forecast", w.day))
         parts.append(SN.say(n, shapes, DL.LEX, ctx, f"life-{k}"))
     if g.rng.random() < 0.7:
         parts.append(SN.say(n, DL.TAIL_SHAPES.get(temper, DL.TAIL_SHAPES["warm"]), DL.LEX, ctx, f"tail-{temper}"))

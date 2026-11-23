@@ -127,11 +127,11 @@ class HeirQuest(MQ.MainQuest):
     def offer(self, g, npc):
         w, n = g.world, g.narr
         first = self.trail[0]
-        g.emit(f"{npc.name} has been waiting for someone with legs younger than {npc.pronouns()['his']} own. \"It's my {self.relation}, {self.name}. "
-               + cap(self.fmt(self.reason["told"])) + "\"")
-        g.emit(f"\"The last anyone saw, {self.fmt('{they}')} was making for {self.place_name(w, first)}, {n.dir_phrase(g.pos, first)}. "
-               f"Follow, and find {self.fmt('{them}')}. Bring {self.fmt('{them}')} home if you can. If you can't, bring me word. "
-               f"But be quick: give it more than {self.days_left(w)} days and the trail will be cold.\"")
+        from . import lex_elders as EL
+        they = self.fmt("{they}")
+        g.emit(EL.speak(g, npc, "heir", dict(relation=self.relation, hname=self.name, reason=cap(self.fmt(self.reason["told"])),
+                                             they_s={"text": they, "num": "pl" if they == "they" else "sg"}, they_cap=cap(they), them=self.fmt("{them}"),
+                                             first=self.place_name(w, first), dir=n.dir_phrase(g.pos, first), days=self.days_left(w))))
         g.emit(f"(Quest: follow {self.name}'s trail and find {self.fmt('{them}')}. The trail goes cold after day {self.deadline}.)")
 
     def goal(self, g):

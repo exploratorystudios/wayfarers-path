@@ -1,8 +1,8 @@
 """The elder's tale of the lost relic, built per world instead of one speech with the names swapped.
 
 Layers: what the relic was to the village, how it was lost (eight different shapes of story, some with
-a named person in them), when, what has gone wrong since, what the village offers, and how the elder
-tells it (five shapes of speech, plus how they set about saying it). The choice comes from the world's
+a named person in them), when, what has gone wrong since, and what the village offers. How the elder
+tells it is in lex_elders.py. The choice comes from the world's
 seed with its own dice, so the story is the same however often you ask, and older saves get one too.
 """
 import random
@@ -48,13 +48,6 @@ OFFER = ["Bring it home and {village} will not forget you.", "Bring it back, and
          "Whoever brings it home will have their name in our songs.", "I can't pay what it's worth. But {village} will remember.",
          "Do this, and ask anything of us that we can give.", "Bring it home. I'd like to see it here once before I die.",
          "Bring it back to {village}, and we'll owe you more than we can say."]
-# how the elder sets about it (before the speech)
-DELIVERY = ["{name} studies you a long moment, then speaks.", "{name} lowers {his} voice.", "{name} glances round before speaking.",
-            "{name} takes your arm and walks you a little apart from the others.", "{name} is quiet for a while, then makes up {his} mind.",
-            "{name} sighs, and seems to decide something.", "{name} looks you up and down, as if measuring you for a task.",
-            "{name} sets down what {he} was doing.", "{name} waits until no one else is near.", "{name} rubs {his} eyes, and begins."]
-
-
 def tale(world):
     """The world's relic story (cached on the world; worked out from the seed alone)."""
     t = world.__dict__.get("_relic_tale")
@@ -72,7 +65,7 @@ def tale(world):
 
 
 def speech(g, npc):
-    """What the elder says when they give you the quest: the delivery, then the tale in one of five shapes."""
+    """What the elder says when they give you the quest, told through the shapes in lex_elders.py."""
     w, n = g.world, g.narr
     t = tale(w)
     q = w.tiles[w.quest_pos]
@@ -87,17 +80,5 @@ def speech(g, npc):
     since = t["since"].format(**fill)
     since = since[0].lower() + since[1:] if since.startswith("The ") else since
     offer = t["offer"].format(**fill)
-    pr = npc.pronouns()
-    lead = n.pick(DELIVERY, "relic-delivery").format(name=npc.name, he=pr["he"], his=pr["his"])
-    shape = t["shape"]
-    if shape == 0:      # what it was, how it went, what came after
-        body = f"There was a thing kept here once - the {relic}. It was {meant}. {loss} Since then, {since}. {offer}"
-    elif shape == 1:    # the trouble first, then the cause
-        body = f"Ever since the {relic} left us, {since}. It was {meant}, you understand. {loss} {offer}"
-    elif shape == 2:    # a question to the stranger
-        body = f"Have you heard of the {relic}? No - why would you? It was {meant}. {loss} And since, {since}. {offer}"
-    elif shape == 3:    # blunt
-        body = f"I'll not dress it up. The {relic} is gone, and {since} ever since. {loss} {offer}"
-    else:               # a confession
-        body = f"You'll hear it from someone, so it may as well be me. The {relic} was {meant}, and we let it go. {loss} Since then, {since}. {offer}"
-    return f"{lead} \"{body}\""
+    from . import lex_elders as EL
+    return EL.speak(g, npc, "relic", dict(relic=relic, meant=meant, loss=loss, since=since, offer=offer))

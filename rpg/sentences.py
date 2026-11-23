@@ -22,6 +22,8 @@ Slot syntax  {name.mod.mod>var}
   {~one|many}   pick by the subject's number: '{~is|are}', '{~was|were}', '{~has|have}'
   {it}     'it' or 'them' for the last subject; {its} 'its' or 'their'
   [a|b|c]  inline choice; [a|] makes something optional
+  {@pos:tag,tag,with=var,for=var,now}   a single word chosen by what it means (lex_words.py): a verb that
+           suits var as its subject, an adjective that can describe var, weather that fits the season
 
 Word-list entries are strings, or (text, "pl") for a plural, and may contain slots themselves.
 """
@@ -95,6 +97,17 @@ def gerund(lemma):
     return head + "ing" + rest
 
 
+_WORDS = None
+
+
+def WORDS():
+    global _WORDS
+    if _WORDS is None:
+        from . import lex_words
+        _WORDS = lex_words.table()
+    return _WORDS
+
+
 class Realiser:
     """Fills sentence shapes. Uses the narrator's grammar for its no-repeats choosing."""
 
@@ -132,14 +145,17 @@ class Realiser:
             spec, var = spec.split(">", 1)
         name, *mods = spec.split(".")
         num = "sg"
-        if name == "it":
+        tags = set()
+        if name.startswith("@"):                                   # a word chosen by what it means
+            val, num, tags = self.word(name[1:])
+        elif name == "it":
             val = "it" if self.num == "sg" else "them"
         elif name == "its":
             val = "its" if self.num == "sg" else "their"
         elif name in self.roles:
             val = self.roles[name]
             if isinstance(val, dict):
-                num, val = val.get("num", "sg"), val["text"]
+                num, tags, val = val.get("num", "sg"), set(str(val.get("tags", "")).split()), val["text"]
             elif isinstance(val, (list, tuple)) and val and isinstance(val[0], str) and len(val) == 2 and val[1] in ("sg", "pl"):
                 val, num = val
             if "{" in str(val) or "[" in str(val):
@@ -165,8 +181,43 @@ class Realiser:
             elif mod in MODS:
                 val = MODS[mod](val)
         if var:
-            self.roles[var] = {"text": val, "num": num}
+            self.roles[var] = {"text": val, "num": num, "tags": " ".join(sorted(tags))}
         return val
+
+    def tags_of(self, var):
+        v = self.roles.get(var)
+        return set(str(v.get("tags", "")).split()) if isinstance(v, dict) else set()
+
+    def word(self, spec):
+        """'verb:hurt,with=part' -> a verb tagged 'hurt' whose subject tags meet part's tags. Conditions:
+        plain tags (all must be on the word), with=var (a verb that suits var as subject), for=var (an
+        adjective that can describe var), now (fits the current season). Returns (text, number, tags)."""
+        pos, _, cond = spec.partition(":")
+        need, with_, for_, moment = set(), None, None, {}
+        w = self.narr.w
+        here = {"now": ("season", getattr(w, "season", None)), "sky": ("weather", getattr(w, "weather", None)),
+                "hour": ("time", getattr(w, "time_of_day", None)), "here": ("biome", getattr(self.narr, "_here_biome", None))}
+        for c in filter(None, cond.split(",")):
+            if c.startswith("with="):
+                with_ = self.tags_of(c[5:])
+            elif c.startswith("for="):
+                for_ = self.tags_of(c[4:])
+            elif c in here:
+                moment[here[c][0]] = here[c][1]
+            else:
+                need.add(c)
+        # a word limited to some seasons, weathers, hours or lands is only chosen when the moment fits it;
+        # a word with no such limit always fits (the 'now' etc. conditions only rule out words that don't)
+        fits = lambda e: all(v is None or k not in e[3] or v in e[3][k] for k, v in moment.items()) and \
+            all(moment.get(k) for k in e[3] if k == "biome")           # a land-bound word needs to know the land
+        pool = [e for e in WORDS().get(pos, []) if need <= e[1] and (with_ is None or e[2] & with_) and (for_ is None or e[2] & for_) and fits(e)]
+        if not pool:
+            self.narr.g.missing.add("@" + spec)
+            return spec.split(":")[0], "sg", set()
+        key = "word:" + pos + ":" + ",".join(sorted(need)) + ":" + ",".join(sorted(with_ or for_ or ()))
+        text = self.choose(key, [e[0] for e in pool])
+        e = next(x for x in pool if x[0] == text)
+        return text, ("pl" if "pl" in e[1] else "sg"), set(e[1])
 
 
 def say(narr, shapes, lex, roles=None, key=""):

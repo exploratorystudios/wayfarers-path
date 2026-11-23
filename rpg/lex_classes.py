@@ -58,3 +58,46 @@ RULES = {
     "ab_turn_beast": ["{the_c.cap} is flesh and blood; your command means nothing to it.", "Turning works on the dead. {the_c.cap} is very much alive."],
     "undead_soften": ["Your blessing blunts the cold of its touch."],
 }
+
+# ---------------------------------------------------------------- built from parts
+# The lines above are kept; these shapes are added beside them (weighted to be used most of the time), so
+# an ability used in every fight doesn't come out the same three ways. Sub-rules are named 'c_...'.
+PARTS = {
+    "c_nock": ["You nock and draw", "You draw to your ear", "You loose from long range", "Your bow sings", "You let fly", "You take aim and loose"],
+    "c_arrow_in": ["the arrow takes", "the shaft sinks into", "the arrow thuds into", "the arrow buries itself in", "the shaft punches into", "your arrow finds"],
+    "c_close_shot": ["You loose at close range", "You snap off a shot", "You shoot almost point-blank", "You draw and loose in one movement",
+                     "You put an arrow in at arm's length"],
+    "c_arrow_miss": ["Your arrow hisses", "The shaft whips", "Your shot goes", "The arrow flies"],
+    "c_shield_into": ["You drive your shield into", "Your shield rim catches", "You slam your shield into", "You ram the boss of your shield into",
+                      "You hammer your shield against"],
+    "c_fire_from": ["Fire gathers in your palm and", "A bolt of flame", "Heat roars from your hands and", "Your word becomes fire and", "A knot of flame"],
+    "c_fire_tail": ["", ", and its {part} blackens", ", scorching its {part}", " in a burst of sparks", ", and the air stinks of singed hair"],
+    "c_blade_in": ["finds the soft place in", "sinks deep into", "opens up", "slides between the plates of", "bites into"],
+}
+EXTEND = {
+    "ab_shoot_open": [(8, "{c_nock}, and {c_arrow_in} {the_c}'s {part} [before it knows you're there|while it's still far off|as it comes on|as it charges].")],
+    "ab_shoot_hit": [(8, "{c_close_shot}; {c_arrow_in} {the_c}'s {part}.")],
+    "ab_shoot_miss": [(8, "{c_arrow_miss} [past|over|wide of] {the_c}[ and skips away into the grass| and vanishes| by a hand's breadth|].")],
+    "ab_bash_hit": [(8, "{c_shield_into} {the_c}'s {part} [with a crunch|with a dull thud|hard|with a crack]."),
+                    (1, "You [slam|barrel|shoulder] forward, shield first, and {the_c} [reels|staggers|is knocked back].")],
+    "ab_bash_stun": [(8, "{c_shield_into} {the_c}'s {part}, and it [staggers|sways|reels], [stunned|dazed|senseless for a moment].")],
+    "ab_bash_miss": [(8, "You [lunge|drive forward|swing] with your shield, but {the_c} [slips aside|twists clear|ducks away].")],
+    "ab_stunned": [(8, "{the_c.cap} [shakes its head|lurches|blinks stupidly|stumbles], [too dazed to strike|still stunned|and does nothing].")],
+    "ab_guard": [(8, "You [set your feet|plant yourself|crouch low] and [raise your shield|bring your shield up|lock your shield before you].")],
+    "ab_guard_absorb": [(2, "[Your shield takes most of it.|The blow skids off your shield.|Your shield arm jars, but the blow is turned.]")],
+    "ab_firebolt": [(8, "{c_fire_from} [leaps at|lashes at|bursts against|slams into] {the_c}{c_fire_tail}.")],
+    "ab_ward": [(8, "[You trace a circle in the air|You speak the warding word|You draw the sign of guarding], and [a shimmering skin|pale light|a faint, humming shell] "
+                    "[hardens|knits itself|settles] around you.")],
+    "ab_fear_ok": [(8, "You [send|pour|plant] [dread|terror|a nameless fear] into {the_c}'s mind. [Its eyes roll white.|It recoils.|It wants only to be gone.|It shrinks back, whimpering.]")],
+    "ab_fear_resist": [(8, "{the_c.cap} [shakes off|shrugs off|pushes through] the [dread|fear|terror] you send at it.")],
+    "ab_backstab": [(8, "[You're behind {the_c} before it knows it|One quick step from nowhere|You come at {the_c} from its blind side|You slip in close], "
+                        "and your blade {c_blade_in} its {part}.")],
+    "ab_vanish": [(8, "[You twist away and drop low|A feint, a shadow, a step sideways|You slip into the nearest cover|You roll away into the long grass] - "
+                      "and {the_c} [has lost you|casts about, baffled|snuffles at empty air|stares at where you were].")],
+    "ab_heal": [(8, "You [pray|whisper the old words|lay your hands on your wounds], and [warmth|light|a slow calm] [runs through you|sinks into your wounds|spreads from your chest]; "
+                    "[cuts close|the pain eases|bruises fade].")],
+    "ab_smite": [(8, "[Holy force|Light|Judgement] [cracks down on|lances into|falls on] {the_c}[ like a hammer|, striking its {part}|, searing its {part}|].")],
+    "ab_turn_ok": [(8, "You [raise your symbol|lift your hand|speak the old command][ and speak with the authority of the living| and name it dead|]. "
+                       "{the_c.cap} [recoils|shrinks away|cowers back].")],
+    "ab_track_sign": [(8, "[To the {dir}|Off to the {dir}|Away {dir}], [the signs say|the ground tells of|there's fresh sign of] {a_c}. {intent.cap}")],
+}

@@ -276,9 +276,22 @@ def cant(g, verb, f):
 
 def asleep(g, verb, f, sec):
     when = COND_WORDS.get(sec.get("cond"), "another time")
-    return g.narr.pick([f"You {verb} at the {f.noun}, and for a moment you feel you have nearly understood something. Perhaps {when}…",
-                        f"Nothing answers. Yet you can't shake the feeling the {f.noun} is waiting - for something, or for a different hour.",
-                        f"The {f.noun} keeps its own counsel. Folk say such places are different {when}."])
+    from . import sentences as SN, lex_dialogue as DL
+    from .textgen import cap
+    return SN.say(g.narr, ASLEEP, DL.LEX, dict(verb=verb, noun=f.noun, when=when, when_cap=cap(when)), "asleep")
+
+
+# a landmark whose secret wants another moment: built from parts, so it isn't the same three lines every time
+ASLEEP = [
+    "You {verb} at the {noun}, and for a moment you [feel|think] you have [nearly understood something|almost heard something|nearly seen something]. "
+    "[Perhaps {when}.|{when_cap}, maybe.|Try again {when}.]",
+    "Nothing [answers|stirs|happens]. [Yet|Still] you [can't shake the feeling|have the sense] the {noun} is [waiting|listening|holding something back] - "
+    "[for something, or for a different hour|for another hour|for {when}].",
+    "The {noun} [keeps its own counsel|gives nothing away|stays silent]. [Folk say|They say|You'd guess] such places are different {when}.",
+    "[Not now.|Not yet.] The {noun} [feels asleep|seems to be sleeping|is quiet], [the way a hearth is quiet before it's lit|like a held breath|like a shut door]. "
+    "{when_cap}, perhaps.",
+    "[You wait.|You give it time.] [Nothing.|Not a thing.] But [the hairs on your arms lift|you feel watched|the air seems thinner here], and you think of coming back {when}.",
+]
 
 
 # ------------------------------------------------------------------ plain outcomes (no secret)

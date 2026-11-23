@@ -124,6 +124,13 @@ TROUBLE_SHAPES = [
     "Everyone's [on edge|jumpy|short with each other], what with {trouble}.",
     "I'd talk more cheerfully, but there's {trouble}, and it [weighs on everyone|sits on the whole village|is all anyone thinks about].",
 ]
+# what the weather's going to do, said with words chosen to fit the season (lex_words.py)
+FORECAST_SHAPES = [
+    "{@noun:weather,bad,now.subj.cap>wx} {~is|are} {@verb:approach,with=wx.ing}, by the look of the sky.",
+    "[There's|I'd say there's] {@noun:weather,bad,now>wx} on the way. [Mark me.|You'll see.|My bones say so.]",
+    "Looks like {@noun:weather,bad,now.subj>wx} {~is|are} {@verb:approach,with=wx.ing} [tonight|by morning|before dark|for the week].",
+    "[The birds are low.|The cows are lying down.|The smoke's going straight down.] {@noun:weather,bad,now.subj.cap>wx} {~is|are} {@verb:approach,with=wx.ing}.",
+]
 FESTIVAL_SHAPES = [
     "It's {festival}, [mind|anyway], so [you'll eat well tonight|there'll be dancing later|even I'll be merry by dark].",
     "Still, it's {festival}. [Even I can manage a smile.|The ale's flowing.|Hard to stay glum.|The children have been up since dawn.]",

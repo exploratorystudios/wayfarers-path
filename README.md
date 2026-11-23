@@ -181,7 +181,31 @@ not "We're frightened."
 
 **All of it is built this way**: greetings, what they say about their work, the village,
 your errands and directions, the gossip about your deeds, news from elsewhere, what they
-notice about you, and how they open and close a request for help.
+notice about you, how they open and close a request for help, the rumours about the
+main quest, and **the elders' opening speeches** (`rpg/lex_elders.py`). Each quest hands
+its facts (the beast's name and history, who to ask and the way there) to the elder's
+speech shapes, so the same quest is told differently from world to world and elder to
+elder, while the story parts each quest builds for its world are kept whole.
+
+**Some words are chosen one at a time, by what they mean** (`rpg/lex_words.py`). Words
+carry tags, and a slot asks for a word that fits its partner: `{@verb:hurt,with=part}` is
+a verb that a body part can do (knees *swell* and *creak*, a back *seizes up* but doesn't
+creak), `{@noun:weather,bad,now}` is foul weather that can happen this season (no snow
+coming in summer), and `{@adj:for=part}` an adjective that suits the part. This is used
+where it adds the most: old injuries, what a sick relative does through the night, and
+people's forecasts ("Looks like sleet is rolling in by morning"). The sentence shapes
+around them keep the idiom and the voice.
+
+**Descriptions use it too.** The framing lines of a place description (being surrounded,
+the land going on beyond, smells and sounds, walking on, how a landmark catches your eye)
+were short fixed lists, and they were what a player noticed repeating. They're now built
+from parts (`rpg/lex_describe.py`), with words chosen to fit: what's all around you fits
+the land ("Oaks and birches press in all around you", "Reeds rise as far as you can see",
+"Fields roll on to the south and east"), and what carries a smell or a sound fits the
+weather and the hour ("The damp air is thick with peat", "The night air carries an owl
+calling"). Class abilities and the hints a landmark gives when its moment hasn't come are
+built the same way. Measured over whole playthroughs, the number of four-word phrases a
+player reads five or more times fell from about 90 to about 14.
 
 **They notice you**: blood on you, rain on your cloak, the hour, the look of your
 trade ("Ink on your fingers. A scholar, then."). One person in a village remarks on
@@ -659,6 +683,10 @@ load, so wording fixes reach old games too.
 | Inner lives: what people say about their worries, memories, wants, secrets and neighbours (roles, sentence shapes, shared word lists) | `rpg/lex_speech.py` (`LEX`, `OWN`, `INCIDENTS`) |
 | Who has which inner life; gossip, voices, sayings, oaths | `rpg/inner.py` (`QUIRKS`, `ASK_BACK`, `VOICES`, `SAYINGS`, `OATHS`) |
 | The sentence realiser (slot syntax, verb agreement) | `rpg/sentences.py` |
+| Words chosen by meaning (tags, which verbs suit which subjects, seasons) | `rpg/lex_words.py` |
+| Description frames built from parts (being surrounded, the land beyond, smells, sounds, walking on, how a landmark is noticed) | `rpg/lex_describe.py` (`GRAMMAR`, `EXTEND`, `FEATURE_FRAMES`) |
+| Class abilities built from parts | `rpg/lex_classes.py` (`PARTS`, `EXTEND`) |
+| The elders' opening speeches (how they set about it, and each quest's speech shapes) | `rpg/lex_elders.py` (`LEADS`, `BEATS`, `LEX`) |
 | Everyday talk as sentence shapes: work by trade and season (`JOB_TASKS`, `GROUP_TASKS`, `WORK_SHAPES`), village talk, closing remarks, asking after errands, directions, reactions; greetings, deed gossip and news openers built from parts (`GRAMMAR`) | `rpg/lex_dialogue.py` |
 | What people notice about you       | `rpg/speech.py` (`HURT`, `WET`, `SNOW`, `LATE`, `CLASS`) |
 | Names and introductions by temperament | `rpg/lex_talk.py` (`ASK_NAME`, `NPC_INTRO`, `THANKS`) |

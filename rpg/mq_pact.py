@@ -76,12 +76,9 @@ class PactQuest(MQ.MainQuest):
 
     def offer(self, g, npc):
         w, n = g.world, g.narr
-        g.emit(f"{npc.name} speaks low, as if someone might be listening. \"There was a pact, long ago, between this village and {self.spirit}. "
-               f"Every hundred years we take three gifts up to the spirit's place and say the old words. This is the year. {self.why} "
-               f"{self.wrong}\"")
+        from . import lex_elders as EL
         parts = "; ".join(f"the {s['noun']} {n.dir_phrase(g.pos, s['pos'])}" for s in self.spots)
-        g.emit(f"\"The songs name the places: {parts}. Take a gift from each, and carry them to {self.spirit}'s shrine, "
-               f"{n.dir_phrase(g.pos, w.quest_pos)}, and go by night. That's when the spirit listens.\"")
+        g.emit(EL.speak(g, npc, "pact", dict(spirit=self.spirit, why=self.why, wrong=self.wrong, spots=parts, dir=n.dir_phrase(g.pos, w.quest_pos))))
         g.emit("(Quest: gather the three gifts and bring them to the spirit's shrine by night.)")
 
     def goal(self, g):
@@ -151,7 +148,7 @@ class PactQuest(MQ.MainQuest):
                 f"you'll be talking to an empty hill.\"")
 
     def rumour(self, narr, here):
-        return f"the old pact with {self.spirit} has run out, they say, and nobody's been up the hill to make it again"
+        return f"the old pact with {self.spirit} has [run out|lapsed|come due], [they say|so the old folk say], and [nobody's been up the hill to make it again|nobody remembers the words|the hill's gone quiet]"
 
     def holds(self, it):
         return it.kind == "token" and any(it.name == s["item"] for s in self.spots)

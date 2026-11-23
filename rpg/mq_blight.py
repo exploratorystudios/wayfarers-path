@@ -98,11 +98,9 @@ class BlightQuest(MQ.MainQuest):
     def offer(self, g, npc):
         w, n = g.world, g.narr
         site, region = self.site_words(w)
-        g.emit(f"{npc.name} takes you to the edge of the village and looks out over the land a long while. \"It started out there, "
-               f"{n.dir_phrase(g.pos, w.quest_pos)}. {self.cause.format(site=site, region=region)} {self.sign}\"")
+        from . import lex_elders as EL
         when = "It's already in our gardens." if self.late else f"At this rate it'll be on our doorsteps in {self.days_left(w)} days."
-        g.emit(f"\"It's coming this way, a little every day. {when} Something at the heart "
-               f"of it is feeding it. Kill what's there, and bless the ground - a shrine's favour will do it, or holy water. Then come home and tell me it's done.\"")
+        g.emit(EL.speak(g, npc, "blight", dict(dir=n.dir_phrase(g.pos, w.quest_pos), cause=self.cause.format(site=site, region=region), sign=self.sign, when=when)))
         g.emit("(Quest: find the heart of the blight, kill what feeds it, bless the ground, and return. It spreads every day.)")
 
     def goal(self, g):
@@ -170,8 +168,8 @@ class BlightQuest(MQ.MainQuest):
     def rumour(self, narr, here):
         w = narr.w
         if self.cleansed:
-            return "the grey's going out of the grass. Whatever you did, it's working"
-        return f"the blight's spreading from {w.region_of(w.quest_pos)['name']}, {narr.dir_phrase(here, w.quest_pos)}. A little more every morning"
+            return "the grey's [going out of|lifting from] the [grass|fields]. [Whatever you did, it's working|Somebody did something right|You can see green again]"
+        return f"the blight's [spreading|creeping out|coming] from {w.region_of(w.quest_pos)['name']}, {narr.dir_phrase(here, w.quest_pos)}. [A little more every morning|Another field every day|You can watch it move, nearly]"
 
     def place_lines(self, narr, pos):
         w = narr.w

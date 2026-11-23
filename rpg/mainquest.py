@@ -307,7 +307,7 @@ class RelicQuest(MainQuest):
         w = narr.w
         q = w.tiles[w.quest_pos]
         return (f"the {w.relic.name} lies in {article(q.site['state'] + ' ' + q.site['purpose'])} {narr.dir_phrase(here, w.quest_pos)}, "
-                f"in {w.region_of(w.quest_pos)['name']}. Something old guards it.")
+                f"in {w.region_of(w.quest_pos)['name']}. [Something old guards it.|Something guards it that doesn't sleep.|Nobody who's gone for it has come back.]")
 
     def on_take(self, g, it):
         if it.kind == "relic":

@@ -61,10 +61,9 @@ class BeaconsQuest(MQ.MainQuest):
 
     def offer(self, g, npc):
         w, n = g.world, g.narr
-        g.emit(f"{npc.name} looks older than {npc.pronouns()['he']} did a month ago. \"{self.wrong.format(season=w.season)} "
-               f"The old ones would have known what to do: {self.sleeper} has gone to sleep, and must be woken, and the way to wake a sleeper like that is fire.\"")
-        g.emit("\"Three beacons stand on the high places: " + "; ".join(f"{w.region_of(p)['name']}, {n.dir_phrase(g.pos, p)}" for p in self.beacons) +
-               ". Light all three, and go up to where the sleeper lies when it stirs. Then come home and tell me the year has turned.\"")
+        from . import lex_elders as EL
+        spots = "; ".join(f"{w.region_of(p)['name']}, {n.dir_phrase(g.pos, p)}" for p in self.beacons)
+        g.emit(EL.speak(g, npc, "beacons", dict(wrong=self.wrong.format(season=w.season), sleeper=self.sleeper, sleeper_cap=cap(self.sleeper), spots=spots)))
         g.emit("(Quest: light the three beacons, then go to the sleeper's high place.)")
 
     def goal(self, g):
@@ -109,8 +108,8 @@ class BeaconsQuest(MQ.MainQuest):
 
     def rumour(self, narr, here):
         if self.lit:
-            return f"someone's lit the old beacon on {narr.w.region_of(self.lit[-1])['name']}. You can see it from the ridge at night"
-        return "the year's stuck. Old folk say the beacons want lighting, like in their grandmothers' day"
+            return f"someone's lit the old beacon on {narr.w.region_of(self.lit[-1])['name']}. [You can see it from the ridge at night|First time in a lifetime|The old folk wept to see it]"
+        return "the year's [stuck|not turning|frozen in place]. [Old folk say|The old ones say|My grandmother would have said] the beacons want lighting, like in their grandmothers' day"
 
     def holds_season(self):
         return not self.done            # the year is stuck until the sleeper wakes

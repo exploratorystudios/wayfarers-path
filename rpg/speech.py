@@ -35,7 +35,8 @@ _LOWERABLE = {"the", "a", "an", "it", "it's", "its", "there", "there's", "my", "
               "just", "only", "always", "sometimes", "mostly", "maybe", "perhaps", "good", "bad", "poor", "rain", "frost", "snow", "winter",
               "spring", "summer", "autumn", "harvest", "nothing", "anything", "anyone", "everybody", "somebody", "nights", "night", "days", "day",
               "years", "year", "word", "news", "people", "children", "work", "trade", "money", "blame", "weigh", "near", "close", "across",
-              "like", "long", "funny", "dust", "long", "hay", "quiet", "busy", "thatch", "ha", "well", "oh"}
+              "like", "long", "funny", "dust", "hay", "quiet", "busy", "thatch", "ha", "well", "oh", "whenever", "wherever",
+              "whatever", "never", "looks", "every", "this", "any", "been", "got", "was", "were", "are", "my", "your"}
 
 
 def _lower_first(s, names):
@@ -69,6 +70,7 @@ def context(g, npc, fact=None):
     if fact and fact["kind"] in ("dance", "promised"):
         ctx["kname"], kg = inner["lover"], inner["lgender"]
     ctx.update(dict(khe="she" if kg == "female" else "he", khim="her" if kg == "female" else "him", khis="her" if kg == "female" else "his"))
+    ctx["kp"] = {"text": ctx["khe"], "tags": "person"}            # the kinsman as a subject for words chosen to suit a person
     if fact and fact["kind"] in ("tie", "gossip"):
         other = next((x for x in w.tiles[npc.home].npcs if x.name == fact["other"]), None)
         if other:
@@ -119,7 +121,7 @@ def compose(g, npc, fact):
     return '"' + voice(g, npc, parts, ctx, asks, light, opinion) + '"'
 
 
-def voice(g, npc, sentences, ctx=None, asks=None, light=True, opinion=False):
+def voice(g, npc, sentences, ctx=None, asks=None, light=True, opinion=False, plain=False):
     """Say these sentences the way this person talks."""
     ctx = ctx or {}
     inner = IN.of(g.world, npc)
@@ -159,7 +161,7 @@ def voice(g, npc, sentences, ctx=None, asks=None, light=True, opinion=False):
                 s[i] = "I - " + x
                 break
     # exclaiming
-    if exclaim and light and r.random() < exclaim:
+    if exclaim and light and not plain and r.random() < exclaim:
         i = r.randrange(len(s))
         if s[i].endswith("."):
             s[i] = s[i][:-1] + "!"
@@ -172,14 +174,14 @@ def voice(g, npc, sentences, ctx=None, asks=None, light=True, opinion=False):
         i = r.randrange(len(s))
         if s[i][-1] in ".!?" and len(s[i]) < 120:
             s[i] = s[i][:-1] + ", " + word + s[i][-1]
-    elif roll > 0.95 and len(s) > 1:
+    elif roll > 0.95 and len(s) > 1 and not plain:
         s.insert(1, cap(inner["oath"]) + "!")
     # asking you something back
     if asks and r.random() < ask:
         s.append(g.narr.say(r.choice(asks), ctx))
     # their saying, once in a while (and not every time you see them)
     m = npc.mem
-    if r.random() < 0.12 and m.get("said_saying", -9) < g.world.day - 2:
+    if not plain and r.random() < 0.12 and m.get("said_saying", -9) < g.world.day - 2:
         m["said_saying"] = g.world.day
         s.append(inner["saying"])
     # an opener
@@ -188,7 +190,7 @@ def voice(g, npc, sentences, ctx=None, asks=None, light=True, opinion=False):
         op = r.choice(openers)
         s[0] = op + (_lower_first(s[0], names) if op.endswith((", ", "- ", ": ")) else s[0])
     # trailing off
-    if trail and r.random() < trail and s[-1].endswith("."):
+    if trail and not plain and r.random() < trail and s[-1].endswith("."):
         s[-1] = s[-1][:-1] + "..."
     return " ".join(s)
 
