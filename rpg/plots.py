@@ -307,6 +307,112 @@ ENDINGS = {
     "share":       "Share it, fairly",
     "bury":        "Do right by the dead first",
 }
+# ======================================================================= THE FOLLOWER
+# The 'followed' twist: who has been dogging your steps from the village, why, and what you do about them.
+# Settling it is a choice of its own; the errand then ends the usual way (for a beast, still the kill).
+# Each option: label, what happens, liking (giver, follower), reward scale, an aftermath line for the end, and a
+# note for the chronicle. 'close' options end the errand on the spot.
+FOLLOWED = {
+    "glory": dict(who="neighbour", reveal=[
+        "You double back and catch {shadow} crouched behind a bush, red to the ears. {sh_he_cap} only wanted to be there when it was done - to have a story of {sh_his} own, for once.",
+        "It's {shadow}, from {village}, caught in the open and trying to look as if {sh_he} was out for a walk. {sh_he_cap} admits it: {sh_he} wanted a share of the glory."],
+        options={
+            "f_credit": ("Let {shadow} share the credit", "You wave {shadow} over. From here on it's {sh_his} story as much as yours, and {sh_he} looks ten years younger for it.",
+                         (0, 4), 0.8, "{shadow} tells the tale louder than you would, and takes half the thanks. You let {sh_him}.", "and let {shadow} share the credit"),
+            "f_send": ("Send {shadow} home", "\"Go home, {shadow}.\" {sh_he_cap} goes, scowling, kicking at the ferns.",
+                       (0, -2), 1.0, None, None)}),
+    "worry": dict(who="kin", reveal=[
+        "It's {shadow}, {giver}'s {sh_kin}. {giver} didn't trust a stranger with this, and sent {sh_him} to keep an eye on you.",
+        "You catch {shadow} - {giver}'s {sh_kin} - picking a burr out of {sh_his} sleeve. \"{giver} said to watch you,\" {sh_he} mumbles. \"Just in case.\""],
+        options={
+            "f_together": ("Let {shadow} walk with you", "You wave {shadow} out of hiding, and the two of you go on together. {sh_he_cap} talks the whole way.",
+                           (2, 3), 1.0, "{shadow} vouches for every step of it, and {giver} looks a little ashamed of ever doubting you.", "with {giver}'s {sh_kin} {shadow} for company"),
+            "f_words": ("Have words with {giver} about being watched", "You send {shadow} home with a message: you don't work with someone looking over your shoulder.",
+                        (-2, 0), 1.3, "\"I had to be sure,\" {giver} mutters, and adds a good deal to what {he} owes you.", "and made {giver} pay for having you watched")}),
+    "rival": dict(who="rival", reveal=[
+        "It's {far}, from {fvillage}. {fhe_cap} heard what {giver} was offering, and meant to let you do the hard part and then get there first.",
+        "You round on your follower: {far}, of {fvillage}, who has no business here at all. {fhe_cap} doesn't bother denying it. \"There's coin in this. Why should it all be yours?\""],
+        options={
+            "f_chase": ("Run {far} off", "You come at {far}, and {fhe} runs for {fvillage} without looking back.",
+                        (1, -3), 1.0, None, "and ran off {far} of {fvillage}, who meant to steal the job"),
+            "f_deal": ("Take {far}'s coin and let {fhim} claim it", "{far} counts coins into your hand and goes on ahead, to be the one who did it.",
+                       (-4, 3), 0, None, "You took {far}'s coin and let {fhim} claim the credit for {giver}'s errand.", "close")}),
+    "guilty": dict(who="neighbour", reveal=[
+        "It's {shadow}. {sh_he_cap} goes white when you catch {sh_him}, and it all comes out: {guilt}. {sh_he_cap} followed you to see whether you'd find out.",
+        "You catch {shadow} by the collar. {sh_he_cap} doesn't struggle; it's almost a relief to {sh_him}. {guilt_cap}. {sh_he_cap} had to know if you'd find out."],
+        options={
+            "f_expose": ("Tell the village what {shadow} did", "You'll tell {village} the whole of it. {shadow} doesn't argue.",
+                         (1, -4), 1.0, "When you tell it, the village turns to look at {shadow}. {sh_he_cap} doesn't meet anyone's eye.", "and told {village} what {shadow} had done"),
+            "f_confess": ("Make {shadow} tell {giver} {sh_him}self", "\"You'll tell {giver},\" you say. \"Not me. You.\" {shadow} swallows, and nods.",
+                          (1, 1), 1.0, "{shadow} stammers it all out to {giver}. It's hard to watch, and better than the alternative.", "and saw {shadow} own up to {giver}"),
+            "f_secret": ("Keep {shadow}'s secret", "You let {sh_him} go. Some things don't need to be said.",
+                         (0, 4), 1.0, None, None)}),
+    "child": dict(who="child", reveal=[
+        "It's a child - {shadow}, from {village}, no more than ten, with a stick for a sword. {sh_he_cap} wants to do what you do when {sh_he} grows up.",
+        "A small face peers out of the bracken: {shadow}, a {village} child, who has walked all this way on {sh_his} own to see a real adventure."],
+        options={
+            "f_lesson": ("Let {shadow} watch, then walk {sh_him} home", "You make {shadow} promise to stay back, and {sh_he} does - mostly. {sh_his_cap} eyes are enormous.",
+                         (2, 0), 1.0, "{shadow} is home before you've finished telling it, already telling it better.", "with a {village} child trailing at your heels"),
+            "f_shoo": ("Send {shadow} running home", "\"Home. Now.\" {shadow} runs, and you watch until {sh_he}'s out of sight.",
+                       (0, 0), 1.0, None, None)}),
+}
+# what the follower had done, for 'guilty', by kind of errand
+GUILT = {"item": "{sh_he} took it in the first place, and lost it", "animal": "{sh_he} left the gate open",
+         "person": "{sh_he} said something cruel the night before {obj} went", "creature": "{sh_he} drew it here, leaving offal out at the edge of the wood",
+         "place": "{sh_he} let the place go to ruin, after promising to keep it", "word": "{sh_he} was meant to carry this message months ago, and never did"}
+KIN_WORDS = {"female": ["niece", "youngest", "cousin", "sister", "granddaughter"], "male": ["nephew", "youngest", "cousin", "brother", "grandson"]}
+
+
+def _setup_followed(g, plot, F, home):
+    """Choose who is following you, and why, when the twist is chosen."""
+    w = g.world
+    kind = plot["kind"]
+    motives = [m for m in FOLLOWED if not (m == "rival" and plot.get("far_home") == home)]
+    m = _choose(g, "follower", motives)
+    who = FOLLOWED[m]["who"]
+    if who == "neighbour":
+        name = F["other"]
+        n = S.find_npc(w, name)
+        pr = n.pronouns() if n else _pron(g.rng.choice(["female", "male"]))
+    elif who == "rival":
+        name, pr = F["far"], dict(he=F["fhe"], him=F["fhim"], his=F["fhis"])
+    else:
+        gender = g.rng.choice(["female", "male"])
+        name, pr = w.new_name(w.culture_of(home), gender), _pron(gender)
+        F["sh_kin"] = g.rng.choice(KIN_WORDS[gender])
+    F.update(shadow=name, sh_he=pr["he"], sh_him=pr["him"], sh_his=pr["his"], sh_he_cap=cap(pr["he"]), sh_his_cap=cap(pr["his"]))
+    if m == "guilty":
+        F["guilt"] = fill(GUILT[kind], F)
+        F["guilt_cap"] = cap(F["guilt"])
+    plot["follow"] = m
+    plot["follow_real"] = who in ("neighbour", "rival")      # someone whose liking you can change
+
+
+def _settle_follower(g, plot, key):
+    """Carry out the choice about the follower. Returns True if that ends the errand."""
+    F = plot["F"]
+    label, text, (dg, df), bonus, after, note, *close = FOLLOWED[plot["follow"]]["options"][key]
+    g.emit(fill(text, F))
+    if dg:
+        _like(g, plot["giver"], dg)
+    if df and plot.get("follow_real"):
+        _like(g, F["shadow"], df)
+    plot["bonus"] = plot.get("bonus", 1.0) * bonus if bonus else plot.get("bonus", 1.0)
+    plot["follow_after"] = fill(after, F) if after else None
+    plot["follow_note"] = fill(note, F) if note else None
+    if close:
+        gold = g.rng.randint(20, 45)
+        g.player.gold += gold
+        g.emit(f"({gold} coins.)")
+        _close(g, plot, plot["follow_note"], xp=15, story=f"you sold {plot['giver']}'s errand to a rival", like=-2)
+        return True
+    if key == "f_expose":
+        for n in g.world.tiles[plot["home"]].npcs:
+            if n.name not in (plot["giver"], F["shadow"]):
+                n.like(1)
+    return False
+
+
 # a beast is either dealt with or let go: walking back to the giver with it still alive isn't an ending
 KIND_ENDINGS_OK = {"creature": {"kill", "spare", "free", "expose", "bury"}}
 KIND_DEFAULT_ENDINGS = {"person": ["return"], "animal": ["return", "free"], "creature": ["kill"], "item": ["return", "keep"],
@@ -495,6 +601,8 @@ def make(g, npc):
     if g.rng.random() < 0.55:
         tw = [k for k, t in TWISTS.items() if t[0] == "any" or kind in t[0].split()]
         plot["twist"] = _choose(g, "twist", tw)
+        if plot["twist"] == "followed":
+            _setup_followed(g, plot, F, home)
     # the climax step
     plot["steps"].append(_climax_step(g, plot, F))
     plot["F"] = F
@@ -860,6 +968,11 @@ def _climax(g, plot):
     F = plot["F"]
     tw = plot.get("twist")
     endings = list(KIND_DEFAULT_ENDINGS[plot["kind"]])
+    if tw == "followed" and plot.get("follow"):
+        fo = FOLLOWED[plot["follow"]]
+        g.emit(fill(TWISTS[tw][1], F) + " " + fill(g.narr.pick(fo["reveal"]), F))
+        opts = [(fill(o[0], F), "plot_end", dict(id=plot["id"], ending=k)) for k, o in fo["options"].items()]
+        return S.ask(g, "What about " + F["shadow"] + "?", opts, leave=0)
     if tw:
         g.emit(fill(TWISTS[tw][1], F))
         for e in TWISTS[tw][2]:
@@ -898,6 +1011,10 @@ def _plot_end(g, d):
         return
     e, F, w, p = d["ending"], plot["F"], g.world, g.player
     kind = plot["kind"]
+    if e.startswith("f_") and plot.get("follow"):
+        if _settle_follower(g, plot, e):
+            return
+        e = KIND_DEFAULT_ENDINGS[kind][0]           # then the errand ends the ordinary way
     if e not in KIND_ENDINGS_OK.get(kind, (e,)):      # a choice saved before beasts lost the endings that skipped the fight
         e = "kill"
     plot["ending"] = e
@@ -1072,11 +1189,15 @@ def _complete(g, plot):
     like = {"return": 4, "kill": 4, "persuade": 5, "tell_truth": 3, "comfort_lie": 4, "expose": -2, "bargain": 1, "spare": 2, "let_go": 2,
             "report": 3, "keep_secret": 4, "share": 3, "forgive": 3, "bury": 4}.get(e, 3)
     g.emit(fill(g.narr.pick(ENDING_TEXT.get(e, ENDING_TEXT["return"])), F))
+    if plot.get("follow_after"):
+        g.emit(plot["follow_after"])
     if e == "expose":
         for n in g.world.tiles[plot["home"]].npcs:
             if n.name != plot["giver"]:
                 n.like(2)
     done = outcome(plot)
+    if plot.get("follow_note"):
+        done = done.rstrip(".") + ", " + plot["follow_note"] + "."
     _close(g, plot, done, xp=xp, gold=gold, like=like, story="you" + done[3:].rstrip("."), item_chance=0.25)
 
 
