@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .actions import catalog, groups
 from .advisor import suggest
+from . import arts as ARTS
 from . import classes as K
 from . import story as S
 from .game import Game
@@ -123,7 +124,7 @@ class Session:
             player=dict(name=p.name, klass=p.class_name, res_name=(K.spec(p) or {}).get("res"), res=getattr(p, "res", 0),
                         res_max=getattr(p, "res_max", 0), guard=getattr(p, "guard", 0), ward=getattr(p, "ward", 0),
                         hidden=getattr(p, "hidden", 0), hp=max(0, p.hp), maxhp=p.maxhp, level=p.level, xp=p.xp, xp_next=p.level * 30,
-                        atk=p.atk, df=p.df, gold=p.gold, rations=getattr(p, "rations", 0),
+                        atk=p.atk, df=p.df, gold=p.gold, points=getattr(p, "points", 0) if any(ARTS.stat(p, k) < ARTS.STAT_MAX for k in ARTS.STATS) else 0, rations=getattr(p, "rations", 0),
                         weapon=p.weapon.name if p.weapon else None, armour=p.armour.name if p.armour else None),
             place=g.narr.header(g.pos), day=w.day, time=tod, season=w.season, weather=w.weather,
             quest=quest, inventory=inv, combat=g.combat.name if g.combat else None,

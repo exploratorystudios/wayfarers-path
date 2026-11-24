@@ -546,7 +546,7 @@ class Game:
             self.emit(f"{s['name']} - {s['res']} {p.res}/{p.res_max}. Arts: {abil}.")
             self.emit("Traits: " + "; ".join(f"{a} ({b})" for a, b in ARTS.traits(p)))
             if p.points:
-                self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: " + (f"{ui.ref('improve')}." if ui.web else "'improve' might, grace, wits or spirit.") + ")")
+                self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: " + (f"{ui.ref('improve')}" if ui.web else "'improve' might, grace, wits or spirit.") + ")")
             extra = [f"guarding ({p.guard} blows)" if getattr(p, "guard", 0) else "", f"warded ({p.ward})" if getattr(p, "ward", 0) else "",
                      "hidden" if getattr(p, "hidden", 0) else ""]
             if any(extra):
@@ -1492,7 +1492,7 @@ class Game:
         if not ARTS.literate(p, "arcane") and ARTS.literate(p, "divine"):
             return CR.weave(self, "divine", rest)
         if not ARTS.literate(p, "arcane"):
-            return self.emit("Spellcraft needs Arcane Letters." + (f" You could hone your techniques instead ({ui.ref('hone')})." if any(k in CR.HONES for k in p.known) else ""))
+            return self.emit("Spellcraft needs Arcane Letters." + (f" You could hone your techniques instead ({ui.ref('hone')})." if any(CR.can_hone(k) for k in p.known) else ""))
         CR.weave(self, "arcane", rest)
 
     def cmd_compose(self, rest):
@@ -1528,7 +1528,7 @@ class Game:
                 f"{K.ABILITIES[k]['label']} ({'' if ui.web else repr(k) + ', '}{K.ABILITIES[k]['cost']} {res}) - {K.ABILITIES[k]['desc']}" for k in keys))
         self.emit("Traits: " + "; ".join(f"{a} - {b}" for a, b in ARTS.traits(p)))
         if p.points:
-            self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: " + (f"{ui.ref('improve')}." if ui.web else "'improve' might, grace, wits or spirit.") + ")")
+            self.emit(f"(You have {p.points} point{'s' if p.points > 1 else ''} to spend: " + (f"{ui.ref('improve')}" if ui.web else "'improve' might, grace, wits or spirit.") + ")")
 
     def cmd_forage(self, rest):
         self.landmark("forage", rest)

@@ -120,7 +120,8 @@ ORIGINAL = {"firebolt": ("arcane", 1), "ward": ("arcane", 1), "fear": ("arcane",
             "backstab": ("cant", 1), "vanish": ("cant", 1)}
 
 # fx: dmg(base, per level, pierce, undead x, hits, weapon) / stun / weaken / expose / dot / flee / heal / ward / guard /
-#     escape / buff / cleanse / reveal / execute
+#     escape / buff / cleanse / reveal / execute / drain (share of damage dealt, as healing) / restore (mana, faith, stamina)
+# More arts, in the same shape, live in arts_more.py and are merged in below.
 ARTS = {
     # arcane
     "frost": dict(label="Frost Dart", school="arcane", circle=1, cost=2, target=True,
@@ -262,6 +263,11 @@ ARTS = {
                       fx=[("execute", 0.4), ("dmg", dict(weapon=True, base=3, per=1))],
                       say=["You find the place and strike once. It is enough.", "One clean, cold stroke: {the_c} folds."]),
 }
+
+from .arts_more import MORE as _MORE      # noqa: E402  (the wider repertoire)
+for _k in _MORE:
+    assert _k not in ARTS and _k not in ORIGINAL, _k
+ARTS.update(_MORE)
 
 for _k, _a in ARTS.items():
     _a.setdefault("say", [])
@@ -468,18 +474,49 @@ def improve(g, rest):
 
 
 def on_level(p, level):
-    """Called on each new level: a point to spend, and every third level your calling shapes you."""
+    """Called on each new level: a point to spend; every third level your calling shapes you and teaches you an art."""
     ensure(p)
     p.points += 1
     out = [f"(You have a point to spend on growing: {ui.ref('improve')} might, grace, wits or spirit.)" if not ui.web else
-           f"(You have a point to spend on growing might, grace, wits or spirit: {ui.ref('improve')}.)"]
+           f"(You have a point to spend on growing might, grace, wits or spirit. Spend it from {ui.ref('improve')})"]
     k = GROWTH_STAT.get(p.klass)
-    if k and level % 3 == 0 and p.stats[k] < STAT_MAX:
-        p.stats[k] += 1
-        if k == "spirit" and p.stats[k] > 5:
-            p.res_max += 1
-        out.insert(0, f"(Your calling shapes you: you are {word(p, k)} now.)")
+    if k and level % 3 == 0:
+        first = []
+        if p.stats[k] < STAT_MAX:
+            p.stats[k] += 1
+            if k == "spirit" and p.stats[k] > 5:
+                p.res_max += 1
+            first.append(f"(Your calling shapes you: you are {word(p, k)} now.)")
+        first.append(calling_art(p, level))      # after the stat, which may open a deeper circle
+        out = first + out
     return out
+
+
+def level_circle(level):
+    """The deepest circle a calling teaches by itself at this level: second at 3, third at 6... fifth from 12."""
+    return min(5, 1 + level // 3)
+
+
+def calling_art(p, level):
+    """Every third level: an art of your class's own school you don't know yet, as deep as your level and
+    your stat allow. With nothing left to teach, an extra point instead."""
+    import random
+    from . import classes as K
+    school = own_school(p)
+    top = level_circle(level)
+    pool = [k for k in arts_in(school) if k not in p.known and school_of(k)[1] <= top and can_learn(p, k)[0]] if school else []
+    if not pool:
+        p.points += 1
+        return "(Your calling has nothing new to teach you just now, so you have an extra point to spend.)"
+    deepest = max(school_of(k)[1] for k in pool)
+    rng = random.Random(f"{getattr(p, 'name', '')}|{level}|{len(p.known)}")
+    key = rng.choice([k for k in pool if school_of(k)[1] == deepest])
+    p.known.append(key)
+    a, sc = K.ABILITIES[key], SCHOOLS[school]
+    res = (K.spec(p) or {}).get("res", "effort")
+    where = f"; it's in your {sc['menu']} menu" if ui.web else f"; '{key}' to use it"
+    return (f"(Your calling teaches you a new {sc['art']}: {a['label']}, {CIRCLE_WORDS[school_of(key)[1]]} circle. "
+            f"{a['desc']} Costs {a['cost']} {res}{where}.)")
 
 
 # ------------------------------------------------------------------ running an art
@@ -509,6 +546,17 @@ def run(g, key, c):
                 dmg = max(1, base if arg.get("pierce") else base - c.df)
                 c.hp -= dmg
                 dealt += dmg
+        elif kind == "drain":
+            if dealt:
+                before = p.hp
+                p.hp = min(p.maxhp, p.hp + max(1, int(dealt * arg)))
+                if p.hp > before:
+                    lines.append(f"(+{p.hp - before} HP)")
+        elif kind == "restore":
+            if getattr(p, "res_max", 0):
+                before = p.res
+                p.res = min(p.res_max, p.res + arg + power(p, school) // 2)
+                lines.append(f"(+{p.res - before} {(K.spec(p) or {}).get('res', 'power')})")
         elif kind == "execute":
             if c is not None and c.hp <= c.maxhp * arg and not c.boss:
                 dealt += c.hp
@@ -618,15 +666,29 @@ def readable(it):
 
 
 def _settle(g, it):
-    """A book's lesson is settled the first time someone who can read it looks inside."""
+    """A book's lesson is settled the first time someone who can read it looks inside. It never teaches an
+    art your class started with, and prefers one you don't know: if its circle has none left, the next one up."""
     f = it.facts
     if f.get("teaches"):
         return f["teaches"]
+    from . import classes as K
     p = g.player
-    pool = [k for k in arts_in(f["school"]) if school_of(k)[1] <= f["circle"]]
-    fresh = [k for k in pool if k not in p.known]
-    exact = [k for k in fresh if school_of(k)[1] == f["circle"]]
-    f["teaches"] = g.rng.choice(exact or fresh or pool)
+    start = set((K.spec(p) or {}).get("abilities", ()))
+    every = [k for k in arts_in(f["school"]) if k not in start]
+    fresh = [k for k in every if k not in p.known]
+    pick = []
+    for top in range(f["circle"], 6):
+        pick = [k for k in fresh if school_of(k)[1] <= top]
+        if pick:
+            break
+    if pick:
+        best = max(school_of(k)[1] for k in pick)
+        exact = [k for k in pick if school_of(k)[1] == f["circle"]]
+        pick = exact or [k for k in pick if school_of(k)[1] == best]
+    else:
+        pick = [k for k in every if school_of(k)[1] <= f["circle"]] or every     # you know the whole school
+    f["teaches"] = g.rng.choice(pick)
+    f["circle"] = max(f["circle"], school_of(f["teaches"])[1])
     return f["teaches"]
 
 

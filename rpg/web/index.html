@@ -115,6 +115,13 @@ body.move-min .movebtn { display: flex; }
 .gbtn:hover, .gbtn[aria-expanded="true"] { border-color: var(--accent); }
 .gbtn .n { font-size: .7rem; color: var(--ink-faint); margin-left: 4px; }
 .gbtn.none { color: var(--ink-faint); }
+.gbtn.flag { border-color: var(--accent); position: relative; }
+.gbtn.flag::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.row.flag .t { color: var(--accent); font-weight: 600; }
+.row.flag .note { color: var(--accent); }
+.grow-btn { display: block; width: 100%; margin: 8px 0 2px; padding: 8px 10px; border: 1px solid var(--accent); border-radius: 7px; background: none; color: var(--accent); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.grow-btn:hover { background: var(--panel-2); }
+.hud .pts { color: var(--accent); font-weight: 700; }
 .pop { position: absolute; bottom: calc(100% + 6px); left: 12px; width: min(460px, calc(100% - 24px)); max-height: min(60vh, 520px); overflow: auto;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.35); z-index: 6; }
 .pop[hidden] { display: none; }
@@ -751,10 +758,11 @@ function renderActions(g) {
   box.querySelectorAll(".gbtn").forEach(b => b.remove());
   for (const grp of g.groups) {
     const acts = g.actions.filter(a => a.group === grp), live = acts.filter(a => a.enabled).length;
+    const flags = acts.filter(a => a.flag).map(a => a.flag);      // something waiting in here, like a point to spend
     const b = document.createElement("button");
-    b.type = "button"; b.className = "gbtn" + (live ? "" : " none");
+    b.type = "button"; b.className = "gbtn" + (live ? "" : " none") + (flags.length ? " flag" : "");
     b.innerHTML = `${esc(grp)}<span class="n">${live}/${acts.length}</span>`;
-    b.title = `${live} of ${acts.length} available right now`;
+    b.title = `${live} of ${acts.length} available right now` + (flags.length ? ` · ${flags.join(", ")}` : "");
     b.setAttribute("aria-expanded", pop && pop.stack[0].group === grp ? "true" : "false");
     b.onclick = () => (pop && pop.stack[0].group === grp) ? closePop() : openPop(grp);
     box.appendChild(b);
@@ -770,6 +778,13 @@ function renderActions(g) {
   }
 }
 function openPop(group) { const was = !!pop; pop = {stack: [{kind: "group", group}]}; drawPop(); renderActions(state.game); if (!was) ovOpen("pop"); shade(); }
+// open a menu straight at one action's first choice (the status panel's "point to spend" button)
+function openAction(group, id) {
+  const a = state && state.game && actionsIn(group).find(x => x.id === id);
+  if (!a || !a.enabled) return;
+  openPop(group);
+  if (a.params.length) choose(a, {});
+}
 function closePop() { pop = null; $("pop").hidden = true; renderActions(state.game); ovClosed("pop"); shade(); }
 function popBack() { if (!pop) return; if (pop.stack.length > 1) { pop.stack.pop(); drawPop(); } else closePop(); }
 function fillCmd(action, values) { return action.cmd.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? ""); }
@@ -804,8 +819,10 @@ function drawPop() {
   if (top.kind === "group") {
     $("popTitle").innerHTML = esc(top.group);
     actionsIn(top.group).forEach((a, i) => {
-      body.appendChild(rowButton(i + 1, a.label, a.enabled ? a.desc : a.reason, "", a.enabled,
-        () => a.ui === "saves" ? (closePop(), openSaves()) : a.params.length ? choose(a, {}) : (closePop(), send(a.cmd, actionName(a))), a.params.length > 0 || !!a.ui));
+      const row = rowButton(i + 1, a.label, a.enabled ? a.desc : a.reason, "", a.enabled,
+        () => a.ui === "saves" ? (closePop(), openSaves()) : a.params.length ? choose(a, {}) : (closePop(), send(a.cmd, actionName(a))), a.params.length > 0 || !!a.ui);
+      if (a.flag) row.classList.add("flag");
+      body.appendChild(row);
     });
     return;
   }
@@ -899,6 +916,7 @@ function renderStatus(g) {
   const p = g.player, hpPct = Math.round(100 * p.hp / p.maxhp);
   $("status").innerHTML = `
     <div class="stat-row"><b>${esc(p.name)}</b><span>Level ${p.level} ${esc(p.klass)}</span></div>
+    ${p.points ? `<button type="button" class="grow-btn" id="growBtn">You have ${p.points} point${p.points > 1 ? "s" : ""} to spend: Improve…</button>` : ""}
     <div class="stat-row"><span>Health</span><b>${p.hp} / ${p.maxhp}</b></div>
     <div class="bar hp ${hpPct < 35 ? "low" : ""}"><div style="width:${hpPct}%"></div></div>
     ${p.res_name ? `<div class="stat-row"><span>${esc(p.res_name.charAt(0).toUpperCase() + p.res_name.slice(1))}</span><b>${p.res} / ${p.res_max}</b></div>
@@ -910,6 +928,7 @@ function renderStatus(g) {
     <div class="stat-row"><span>Day ${g.day}, ${esc(g.time)}</span><span>${esc(g.season)} · ${esc(g.weather)}</span></div>
     ${g.combat ? `<div class="combat">Fighting: ${esc(g.combat)}</div>` : ""}
     <div class="quest-box"><span>Quest</span>${esc(g.quest)}</div>`;
+  if (p.points) $("growBtn").onclick = () => openAction("Info", "improve");
 }
 
 function renderJournal(g) {
@@ -1369,6 +1388,7 @@ function renderHud(g) {
   const meter = (cls, label, a, b) => `<span class="meter ${cls}"><b>${label}</b> ${a}/${b}<i><u style="width:${pct(a, b)}%"></u></i></span>`;
   $("hud").innerHTML = meter(p.hp < p.maxhp * 0.35 ? "low" : "", "♥", Math.max(0, p.hp), p.maxhp) +
     (p.res_name ? meter("res " + esc(p.res_name), esc(p.res_name.charAt(0).toUpperCase() + p.res_name.slice(1)), p.res, p.res_max) : "") +
+    (p.points ? `<span class="pts" title="Points to spend: Info › Improve">+${p.points}</span>` : "") +
     `<span><b>${p.gold}</b>c</span>` + `<span title="Travel rations"><b>${p.rations || 0}</b>r</span>` +
     (g.combat ? `<span class="fight">⚔ ${esc(g.combat)}</span>` : `<span class="when">Day ${g.day} · ${esc(g.time)} · ${esc(g.weather)}</span>`);
 }

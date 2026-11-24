@@ -24,7 +24,7 @@ def groups(g):
     out = list(GROUPS)
     from . import crafts as CR
     p = g.player
-    if not (ARTS.literate(p, "arcane") or ARTS.literate(p, "divine") or any(k in CR.HONES or k in p.crafted for k in K.known(p))):
+    if not (ARTS.literate(p, "arcane") or ARTS.literate(p, "divine") or any(CR.can_hone(k) or k in p.crafted for k in K.known(p))):
         out.remove("Craft")
     for i, menu in enumerate(art_menus(g.player)):
         out.insert(out.index("Fight") + 1 + i, menu)
@@ -56,12 +56,12 @@ def catalog(g):
     fighting = g.combat is not None
     out = []
 
-    def act(group, id_, label, desc, cmd=None, params=None, enabled=True, reason="", ui=None):
+    def act(group, id_, label, desc, cmd=None, params=None, enabled=True, reason="", ui=None, flag=""):
         if dead and id_ not in ("load", "saves", "help", "manage"):
             enabled, reason = False, "You are dead. Load a save, or start a new game."
         out.append(dict(group=group, id=id_, label=label, desc=desc, cmd=cmd or id_,
                         params=params or [], enabled=bool(enabled), reason="" if enabled else reason,
-                        **({"ui": ui} if ui else {})))
+                        **({"ui": ui} if ui else {}), **({"flag": flag} if flag and enabled else {})))
 
     # ------------------------------------------------------------ a choice is waiting
     pend = getattr(g, "pending", None)
@@ -226,7 +226,7 @@ def catalog(g):
     hones = [_opt(f"{K.ABILITIES[k]['label']} → {o[1]}", f"{k} {o[1].split()[0].lower()}", o[2]) for k, os_ in CR.honeable(p) for o in os_]
     joins = [_opt(f"{K.ABILITIES[a]['label']} into {K.ABILITIES[b]['label']}", f"{a} with {b}", "join two techniques") for a, b in CR.combos(p)
              if f"{K.ABILITIES[a]['label']} into {K.ABILITIES[b]['label']}" not in {s["label"] for s in p.crafted.values()}]
-    if any(k in CR.HONES for k in p.known) or hones or joins:
+    if any(CR.can_hone(k) for k in p.known) or hones or joins:
         act("Craft", "hone", "Hone a technique…", "Refine a technique you've practised (2 hours), or join two (3 hours).", "hone {which}",
             [dict(name="which", prompt="Hone what?", options=hones + joins)], enabled=(hones or joins) and not fighting,
             reason="Not mid-fight." if fighting else "Use your techniques in earnest; with practice they can be honed.")
@@ -257,16 +257,25 @@ def catalog(g):
         enabled=shrine and not t.site.get("used"), reason="Only at a shrine." if not shrine else "This shrine has already answered you.")
 
     # ------------------------------------------------------------ info
+    ARTS.ensure(p)
+    growth = [_opt(ARTS.STAT_LABEL[k], k, f"you are {ARTS.standing(p, k)}" + (f"; {ARTS.near_hint(p, k)}" if ARTS.near_hint(p, k) else ""))
+              for k in ARTS.STATS if ARTS.stat(p, k) < ARTS.STAT_MAX]
+    pts = p.points if growth else 0
+    improve = lambda: act(       # first in Info while a point is waiting, so levelling up leads somewhere
+        "Info", "improve", f"Improve… ({pts})" if pts else "Improve…",
+        (f"You have {pts} point{'s' if pts > 1 else ''} to spend on might, grace, wits or spirit. " if pts else
+         "Spend a point on might, grace, wits or spirit. ") + "Each level brings one.", "improve {stat}",
+        [dict(name="stat", prompt="Grow in what?", options=growth)], enabled=pts > 0,
+        reason="Each new level brings a point to spend." if growth else "You've grown as far as anyone can.",
+        flag=f"{pts} point{'s' if pts > 1 else ''} to spend" if pts else "")
+    if pts:
+        improve()
     act("Info", "journal", "Journal", "Your quests, and what you're under (luck, curses...).")
     act("Info", "chronicle", "Chronicle", "Everything notable that has happened.")
     act("Info", "status", "Status", "Your health, level and gear.")
     act("Info", "arts", "Arts & traits", "Everything you can do, and what you can learn to read.")
-    ARTS.ensure(p)
-    growth = [_opt(ARTS.STAT_LABEL[k], k, f"you are {ARTS.standing(p, k)}" + (f"; {ARTS.near_hint(p, k)}" if ARTS.near_hint(p, k) else ""))
-              for k in ARTS.STATS if ARTS.stat(p, k) < ARTS.STAT_MAX]
-    act("Info", "improve", f"Improve… ({p.points})" if p.points else "Improve…",
-        "Spend a point on might, grace, wits or spirit. Each level brings one.", "improve {stat}",
-        [dict(name="stat", prompt="Grow in what?", options=growth)], enabled=p.points > 0, reason="Each new level brings a point to spend.")
+    if not pts:
+        improve()
     act("Info", "map", "Text map", "Print the map into the story log.")
     if not ui.web:      # the web page has no command box, so no list of typed commands
         act("Info", "help", "All commands", "Every typed command, at a glance.")

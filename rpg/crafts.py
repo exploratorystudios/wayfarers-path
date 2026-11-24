@@ -36,6 +36,8 @@ WEAVES = {
             "storm":  dict(fx=[("stun", 0.35)], word="Storm", lingering=("stun", 0.2)),
             "stone":  dict(fx=[("expose", 2)], word="Stone", lingering=("expose", 1)),
             "shadow": dict(fx=[("flee", dict(turns=2, base=0.5))], word="Shadow", lingering=("dot", (2, 3, "is gnawed by shadow"))),
+            "acid":   dict(fx=[("expose", 1)], word="Acid", lingering=("dot", (2, 3, "is eaten by acid"))),
+            "hunger": dict(fx=[("drain", 0.4)], word="Hungering", lingering=("weaken", 1)),
         },
         shape={
             "bolt":  dict(fx=[("dmg", dict(base=4, per=1, pierce=True))], cost=2, circle=1, word="Bolt", target=True),
@@ -43,6 +45,7 @@ WEAVES = {
             "lance": dict(fx=[("dmg", dict(base=8, per=2, pierce=True))], cost=4, circle=3, word="Lance", target=True),
             "ward":  dict(fx=[("ward", dict(base=6, per=2))], cost=2, circle=1, word="Ward", self_only=True),
             "veil":  dict(fx=[("escape", 2)], cost=3, circle=3, word="Veil", combat_only=True, self_only=True),
+            "rain":  dict(fx=[("dmg", dict(base=2, per=1, pierce=True, hits=3))], cost=5, circle=4, word="Rain", target=True),
         },
         twist={
             "lingering": dict(cost=1, circle=1, word="Lingering"),
@@ -51,7 +54,12 @@ WEAVES = {
             "great":     dict(cost=2, circle=1, word="Great"),
         },
         sources={"firebolt": ["fire", "bolt"], "frost": ["frost", "bolt"], "thunder": ["storm", "burst"], "lance": ["fire", "lance", "lingering"],
-                 "ward": ["ward"], "blink": ["veil"], "fear": ["shadow"], "unmake": ["stone", "great"], "farsight": ["quiet"]},
+                 "ward": ["ward"], "blink": ["veil"], "fear": ["shadow"], "unmake": ["stone", "great"], "farsight": ["quiet"],
+                 "spark": ["storm", "bolt"], "daze": ["storm", "quiet"], "acid": ["acid", "bolt"], "mageskin": ["ward"], "shards": ["frost", "twin"],
+                 "leech": ["hunger", "bolt"], "slow": ["frost", "quiet"], "mirror": ["ward", "veil"], "gust": ["storm", "burst"],
+                 "fireball": ["fire", "burst", "lingering"], "chain": ["storm", "twin"], "rust": ["acid", "stone"], "trance": ["quiet"],
+                 "petrify": ["stone", "great"], "tempest": ["storm", "rain"], "wither": ["hunger", "lance"], "meteor": ["fire", "rain", "great"],
+                 "stillness": ["veil", "great"], "inferno": ["fire", "rain", "lingering"]},
         say=["You shape the working the way you wrote it out: {name} leaps from your hands at {the_c}.",
              "The new spell comes easily now - {name}, straight into {the_c}'s {part}.",
              "You speak your own words, and {name} answers."],
@@ -65,11 +73,15 @@ WEAVES = {
             "vigil": dict(fx=[("ward", dict(base=6, per=2))], word="Vigil", lingering=("guard", 1), self_only=True),
             "light": dict(fx=[("stun", 0.5)], word="Light", lingering=("stun", 0.15), target=True),
             "peace": dict(fx=[("flee", dict(turns=2, base=0.7))], word="Peace", lingering=("flee", dict(turns=1, base=0.2)), target=True),
+            "sorrow": dict(fx=[("weaken", 2)], word="Sorrow", lingering=("weaken", 1), target=True),
+            "dawn":  dict(fx=[("dmg", dict(base=2, per=1, pierce=True, undead=3)), ("heal", dict(base=3, per=1))], word="Dawn",
+                          lingering=("heal", dict(base=3, per=1)), target=True),
         },
         shape={   # form
             "word":     dict(fx=[], cost=2, circle=1, word="Word"),
             "litany":   dict(fx=[("strength", 1.6)], cost=4, circle=3, word="Litany"),
             "blessing": dict(fx=[("lasting", None)], cost=3, circle=2, word="Blessing", peace_only=True, self_only=True),
+            "hymn":     dict(fx=[("strength", 2.2)], cost=6, circle=4, word="Hymn"),
         },
         twist={
             "lasting": dict(cost=1, circle=1, word="Lasting"),
@@ -77,13 +89,19 @@ WEAVES = {
             "twinned": dict(cost=2, circle=2, word="Twinned"),
         },
         sources={"heal": ["mercy", "word"], "smite": ["wrath", "word"], "turn": ["peace"], "bless": ["blessing"], "sanctuary": ["vigil"],
-                 "purify": ["mercy", "humble"], "radiance": ["light", "litany"], "miracle": ["litany", "lasting", "twinned"]},
+                 "purify": ["mercy", "humble"], "radiance": ["light", "litany"], "miracle": ["litany", "lasting", "twinned"],
+                 "mend": ["mercy", "humble"], "rebuke": ["wrath"], "shelter": ["vigil", "word"], "fortune": ["light", "blessing"],
+                 "censure": ["sorrow", "word"], "sear": ["wrath", "word"], "renew": ["mercy", "lasting"], "vigil": ["vigil", "blessing"],
+                 "judgment": ["wrath", "litany"], "hallow": ["vigil", "lasting"], "banish": ["peace", "litany"], "zeal": ["wrath", "blessing"],
+                 "pillar": ["wrath", "hymn"], "intercede": ["mercy", "hymn"], "silence": ["light", "sorrow"], "wrath": ["wrath", "hymn", "twinned"],
+                 "aegis": ["vigil", "hymn"], "dawn": ["dawn", "hymn"]},
         say=["You pray the words you wrote yourself, and {name} falls on {the_c}.", "Your own prayer - {name} - and it is answered against {the_c}."],
         say_self=["You speak {name}, your own prayer, and feel it heard.", "{name}: you wrote it by candlelight, and now it holds you up."],
     ),
 }
 # blessings: what a lasting form of each virtue leaves on you
-BLESSING_BUFF = {"mercy": ("blessed", 12, 1), "wrath": ("strong", 12, 1), "vigil": ("warded", 12, 1), "light": ("lucky", 12, 1), "peace": ("warded", 8, 1)}
+BLESSING_BUFF = {"mercy": ("blessed", 12, 1), "wrath": ("strong", 12, 1), "vigil": ("warded", 12, 1), "light": ("lucky", 12, 1), "peace": ("warded", 8, 1),
+                 "sorrow": ("warded", 8, 1), "dawn": ("blessed", 16, 1)}
 
 
 def known_parts(p, school):
@@ -149,6 +167,8 @@ def build(school, pr, sh, tw=None, sec=None):
                 return None
             fx.append(P["lingering"])
         if tw == "twin":
+            if sh == "rain":
+                return None
             for kind, arg in fx:
                 if kind == "dmg":
                     arg["hits"] = 2
@@ -165,7 +185,7 @@ def build(school, pr, sh, tw=None, sec=None):
                     arg["base"] += 4
         if mult != 1.0:
             for kind, arg in fx:
-                if isinstance(arg, dict) and "base" in arg:
+                if kind in ("dmg", "heal", "ward") and isinstance(arg, dict) and "base" in arg:     # not a flee chance
                     arg["base"] = round(arg["base"] * mult)
                     arg["per"] = round(arg.get("per", 0) * mult)
     # fold the element's flat bonus into the damage
@@ -243,6 +263,12 @@ def describe_fx(fx):
             bits.append("a killing stroke against the badly hurt")
         elif k == "cleanse":
             bits.append("curses and sickness lifted")
+        elif k == "drain":
+            bits.append("some of the harm returned to you as healing")
+        elif k == "restore":
+            bits.append("your power partly restored")
+        elif k == "reveal":
+            bits.append("a look over the land around you")
     return cap(", ".join(bits)) + "." if bits else "A small working."
 
 
@@ -358,6 +384,132 @@ FX_EQUIV = {
     "vanish": [("escape", 3)],
 }
 HONED_FROM = {v[0]: k for k, vs in HONES.items() for v in vs}
+from .arts_more import MORE as _MORE      # noqa: E402
+assert not set(HONED_FROM) & set(_MORE), set(HONED_FROM) & set(_MORE)    # a honed art must never replace a learned one
+
+# Refinements for techniques without hand-made ones, built from what the technique does. Each is
+# (name, applies(fx), change(fx, extra)); a technique always gets the same two, chosen by its name.
+_TARGETS = ("dmg", "stun", "weaken", "expose", "dot", "flee", "ambush")
+
+
+def _has(fx, kind):
+    return any(k == kind for k, _ in fx)
+
+
+def _bump(fx, kind, key, n, top=None):
+    for k, a in fx:
+        if k == kind and isinstance(a, dict):
+            a[key] = a.get(key, 0) + n if top is None else min(top, a.get(key, 0) + n)
+
+
+def _r_heavy(fx, ex):
+    _bump(fx, "dmg", "base", 3)
+    ex["cost"] = ex.get("cost", 0) + 1
+
+
+def _r_quick(fx, ex):
+    _bump(fx, "dmg", "base", -1)
+    for i, (k, a) in enumerate(fx):
+        if k == "stun":
+            fx[i] = (k, max(0.2, a - 0.1))
+        elif k in ("heal", "ward") and isinstance(a, dict):
+            a["base"] = max(1, a["base"] - 2)
+    ex["cost"] = ex.get("cost", 0) - 1
+
+
+def _r_stun_up(fx, ex):
+    for i, (k, a) in enumerate(fx):
+        if k == "stun":
+            fx[i] = (k, min(0.95, a + 0.25))
+
+
+def _r_buff_long(fx, ex):
+    for i, (k, a) in enumerate(fx):
+        if k == "buff":
+            fx[i] = (k, (a[0], a[1] * 2, a[2]))
+
+
+def _r_flee_up(fx, ex):
+    for k, a in fx:
+        if k == "flee":
+            a["base"] = min(0.95, a["base"] + 0.15)
+            a["turns"] += 1
+
+
+def _r_steady(fx, ex):
+    for i, (k, a) in enumerate(fx):
+        if k == "guard":
+            fx[i] = (k, a + 1)
+    _bump(fx, "ward", "base", 4)
+
+
+def _r_reveal(fx, ex):
+    for i, (k, a) in enumerate(fx):
+        if k in ("reveal", "escape"):
+            fx[i] = (k, a + 1)
+
+
+def _dmg_on(fx, key, val):
+    for k, a in fx:
+        if k == "dmg":
+            a[key] = val
+
+
+REFINE = [
+    ("Heavy", lambda fx: _has(fx, "dmg"), _r_heavy),
+    ("Quick", lambda fx: True, _r_quick),
+    ("Cruel", lambda fx: _has(fx, "dmg") and not _has(fx, "dot"), lambda fx, ex: fx.append(("dot", (2, 3, "bleeds")))),
+    ("Sure", lambda fx: _has(fx, "stun"), _r_stun_up),
+    ("Crippling", lambda fx: _has(fx, "dmg") and not _has(fx, "weaken"), lambda fx, ex: fx.append(("weaken", 1))),
+    ("Keen", lambda fx: any(k == "dmg" and not a.get("pierce") for k, a in fx), lambda fx, ex: _dmg_on(fx, "pierce", True)),
+    ("Staggering", lambda fx: _has(fx, "dmg") and not _has(fx, "stun"), lambda fx, ex: fx.append(("stun", 0.3))),
+    ("Deep", lambda fx: _has(fx, "heal"), lambda fx, ex: (_bump(fx, "heal", "base", 5), _bump(fx, "heal", "per", 1))),
+    ("Lasting", lambda fx: _has(fx, "buff"), _r_buff_long),
+    ("Steadfast", lambda fx: _has(fx, "guard") or _has(fx, "ward"), _r_steady),
+    ("Fearsome", lambda fx: _has(fx, "flee"), _r_flee_up),
+    ("Far-seeing", lambda fx: _has(fx, "reveal"), _r_reveal),
+    ("Ghostly", lambda fx: _has(fx, "escape"), _r_reveal),
+    ("Hobbling", lambda fx: _has(fx, "stun") and not _has(fx, "weaken"), lambda fx, ex: fx.append(("weaken", 1))),
+    ("Fortunate", lambda fx: not any(k in _TARGETS for k, _ in fx) and not any(k == "buff" and a[0] == "lucky" for k, a in fx),
+     lambda fx, ex: fx.append(("buff", ("lucky", 4, 1)))),
+    ("Guarded", lambda fx: not any(k in _TARGETS for k, _ in fx) and not _has(fx, "ward") and not _has(fx, "escape"),
+     lambda fx, ex: fx.append(("ward", dict(base=3, per=1)))),
+]
+
+
+def _made_hones(key):
+    """Two refinements built for a technique from its effects (the same two every time)."""
+    import zlib
+    from . import arts as ARTS
+    a = ARTS.ARTS.get(key)
+    if not a or a.get("crafted"):
+        return []
+    fits = [r for r in REFINE if r[1](a["fx"]) and not (r[0] == "Quick" and a["cost"] <= 1)]
+    if len(fits) < 2:
+        return []
+    start = zlib.crc32(key.encode()) % len(fits)
+    picked = [fits[start], fits[(start + 1 + zlib.crc32(key[::-1].encode()) % (len(fits) - 1)) % len(fits)]]
+    out = []
+    for word, _, change in picked:
+        fx = [(k, dict(v) if isinstance(v, dict) else v) for k, v in a["fx"]]
+        ex = {}
+        change(fx, ex)
+        extra = dict(cost=max(1, a["cost"] + ex["cost"])) if "cost" in ex else {}
+        label = f"{word} {a['label']}"
+        out.append((word.lower().replace("-", "") + key, label, describe_fx(fx), fx, extra))
+    return out
+
+
+def hones_for(key):
+    """The two refinements a technique can be honed into: hand-made for the originals, built for the rest."""
+    from . import arts as ARTS
+    if ARTS.school_of(key)[0] not in HONE_SCHOOLS:
+        return []
+    return HONES.get(key) or _made_hones(key)
+
+
+def can_hone(key):
+    return bool(hones_for(key))
 COMBO_STAT = 7      # the school's stat it takes to join two techniques
 
 
@@ -376,7 +528,7 @@ def fx_of(key):
 
 def honeable(p):
     """[(technique, [options])] you could hone right now."""
-    return [(k, HONES[k]) for k in p.known if k in HONES and p.practice.get(k, 0) >= PRACTICE]
+    return [(k, hones_for(k)) for k in p.known if can_hone(k) and p.practice.get(k, 0) >= PRACTICE]
 
 
 def make_hone(p, src, opt):
@@ -415,7 +567,8 @@ def combos(p):
             tb = any(k in ("dmg", "stun", "weaken", "expose", "dot", "ambush") for k, _ in fb)
             if not (ta or tb):
                 continue
-            if not (HONED_FROM.get(a) or HONED_FROM.get(b) or p.practice.get(a, 0) >= PRACTICE or p.practice.get(b, 0) >= PRACTICE):
+            honed = lambda k: HONED_FROM.get(k) or ARTS.ARTS.get(k, {}).get("honed_from")
+            if not (honed(a) or honed(b) or p.practice.get(a, 0) >= PRACTICE or p.practice.get(b, 0) >= PRACTICE):
                 continue
             out.append((a, b))
     return out
@@ -452,7 +605,7 @@ def hone(g, rest):
     words = [x.lower() for x in rest]
     if not words:
         ready = honeable(p)
-        prog = [f"{K.ABILITIES[k]['label']} {min(p.practice.get(k, 0), PRACTICE)}/{PRACTICE}" for k in p.known if k in HONES and k not in dict(ready)]
+        prog = [f"{K.ABILITIES[k]['label']} {min(p.practice.get(k, 0), PRACTICE)}/{PRACTICE}" for k in p.known if can_hone(k) and k not in dict(ready)]
         bits = []
         if ready:
             bits.append("Ready to hone: " + "; ".join(f"{K.ABILITIES[k]['label']} -> " + " or ".join(f"{o[1]}{_typed(f'hone {k} ' + o[1].split()[0].lower())}" for o in opts) for k, opts in ready))
@@ -492,11 +645,11 @@ def hone(g, rest):
                                    f"You work the join over and over until it stops being two things. {spec['label']}."])
                       + f" ({spec['desc']} Costs {spec['cost']} {K.res_name(p)}.{_named(key)})")
     src = next((k for k in p.known if k == words[0] or K.ABILITIES[k]["label"].lower().startswith(words[0])), None)
-    if not src or src not in HONES:
+    if not src or not can_hone(src):
         return g.emit(f"That isn't a technique you can hone. ({ui.ref('hone')} lists what you can.)")
     if p.practice.get(src, 0) < PRACTICE:
         return g.emit(f"You need more practice with {K.ABILITIES[src]['label']} first ({p.practice.get(src, 0)}/{PRACTICE}). Use it in earnest.")
-    opts = HONES[src]
+    opts = hones_for(src)
     choice = next((o for o in opts if len(words) > 1 and (o[0] == words[1] or o[1].lower().split()[0].startswith(words[1]))), None)
     if not choice:
         return g.emit(f"Hone {K.ABILITIES[src]['label']} into what? " + " or ".join(f"{o[1]} - {o[2]}{_typed(f'hone {src} ' + o[1].split()[0].lower())}" for o in opts))
