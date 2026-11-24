@@ -285,7 +285,8 @@ TWISTS = {
 # ======================================================================= ENDINGS
 # label (as a choice), and what it does
 ENDINGS = {
-    "return":      "Take it back to {giver}, as promised",
+    "return":      {"person": "Bring {obj} home to {giver}", "animal": "Bring {obj} back to {giver}", "item": "Take it back to {giver}",
+                    "place": "Go back and tell {giver} it's done", "word": "Take the news back to {giver}"},
     "kill":        "Finish it - that's what you came for",
     "spare":       "Let it live, and say it fled",
     "free":        "Cut it loose and let it go",
@@ -306,6 +307,8 @@ ENDINGS = {
     "share":       "Share it, fairly",
     "bury":        "Do right by the dead first",
 }
+# a beast is either dealt with or let go: walking back to the giver with it still alive isn't an ending
+KIND_ENDINGS_OK = {"creature": {"kill", "spare", "free", "expose", "bury"}}
 KIND_DEFAULT_ENDINGS = {"person": ["return"], "animal": ["return", "free"], "creature": ["kill"], "item": ["return", "keep"],
                         "place": ["return"], "word": ["return"]}
 
@@ -871,10 +874,12 @@ def _climax(g, plot):
                                  "item": ["It's {obj}, sure enough.", "There it is: {obj}."],
                                  "place": ["You reach {obj}. It's quiet here.", "{obj_cap}, at last."],
                                  "word": ["{far} tells you everything.", "{far} gives you the news, slowly."]}[plot["kind"]]), F))
-    endings = endings[:4]
+    ok = KIND_ENDINGS_OK.get(plot["kind"])
+    endings = [e for e in endings if ok is None or e in ok][:4]
     if len(endings) == 1:          # nothing to decide
         return _plot_end(g, dict(id=plot["id"], ending=endings[0]))
-    opts = [(fill(ENDINGS[e], F), "plot_end", dict(id=plot["id"], ending=e)) for e in endings]
+    label = lambda e: ENDINGS[e][plot["kind"]] if isinstance(ENDINGS[e], dict) else ENDINGS[e]
+    opts = [(fill(label(e), F), "plot_end", dict(id=plot["id"], ending=e)) for e in endings]
     S.ask(g, "What now?", opts, leave=0)
 
 
@@ -892,8 +897,10 @@ def _plot_end(g, d):
     if not plot or plot["status"] != "active":
         return
     e, F, w, p = d["ending"], plot["F"], g.world, g.player
-    plot["ending"] = e
     kind = plot["kind"]
+    if e not in KIND_ENDINGS_OK.get(kind, (e,)):      # a choice saved before beasts lost the endings that skipped the fight
+        e = "kill"
+    plot["ending"] = e
     if e == "persuade":
         if g.rng.random() < 0.3 + 0.1 * (max(ARTS.stat(p, "spirit"), ARTS.stat(p, "wits")) - 4):
             g.emit(fill("You sit with {obj} a long time, and talk, and at last {ohe} sighs and gets up. \"All right. Home.\"", F))
@@ -908,7 +915,15 @@ def _plot_end(g, d):
             plot["bonus"] = 0.8
             g.emit("You try to drive the price up. It doesn't make you any friends.")
         return _final_return(g, plot)
-    if e == "kill" and kind == "creature":
+    if kind == "creature" and e in ("bury", "expose"):     # these come before the beast is dealt with, not instead of it
+        if e == "bury":
+            from . import story as ST
+            ST.add_buff(g, "blessed", 24)
+            g.emit("You do what's right by the dead first: a few stones, a few words. It feels like enough. (You feel blessed.) "
+                   "The beast is still out there.")
+        else:
+            g.emit("The village will want to hear what you found - but the beast comes first.")
+    if kind == "creature" and e in ("kill", "bury", "expose"):
         c = plot.get("creature")
         if c is None or not any(c in t.creatures for t in w.tiles.values()):
             c = w.make_creature(_species(g, plot["target"], undead=plot["okey"] == "dead"), w.tiles[plot["target"]].danger or 2)
