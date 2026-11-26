@@ -68,6 +68,8 @@ class Narrator:
         self.g = Grammar(self.rng)
         for rules in (L.RULES, E.CREATURE_RULES, E.ITEM_RULES, E.SITE_RULES, E.COMBAT_RULES):
             self.g.add(rules)
+        from . import lex_fight
+        self.g.add(lex_fight.RULES)       # the words of a fight, by weapon (rpg/fight.py chooses the lines)
         npc = dict(E.NPC_RULES)
         for role, opts in npc.pop("doing").items():
             self.g.add({f"{role}:doing": opts})
@@ -905,21 +907,6 @@ class Narrator:
                           f"You sit a moment and eat the {it.name}. It does you good."])
 
     # ------------------------------------------------------------ combat
-    def player_attack(self, outcome, weapon, c):
-        cls = weapon.cls if weapon else "fist"
-        wname = f"your {weapon.facts.get('noun', weapon.name)}" if weapon else "your fist"
-        ctx = dict(weapon=wname, target=self.creature_np(c, True),
-                   part=c.species["arch"]["parts"])
-        return self.say("{%s}" % outcome, ctx, [cls])
-
-    def enemy_attack(self, outcome, c, armour):
-        ctx = dict(attacker=self.creature_np(c, True), attackverb=c.species["arch"]["attacks"],
-                   armour=(armour.name.split()[-1] if armour else "skin"))
-        return self.say("{%s}" % outcome, ctx)
-
-    def death(self, c):
-        return self.say("{the_c.cap} {death}.", dict(the_c=self.creature_np(c, True), death=c.species["arch"]["death"]))
-
     def flee(self, ok, c):
         return self.say("{flee_ok}" if ok else "{flee_fail}", dict(attacker=self.creature_np(c, True)))
 

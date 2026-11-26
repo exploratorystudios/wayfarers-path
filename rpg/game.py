@@ -13,6 +13,7 @@ from .describe import Narrator
 from .textgen import wrap, cap, article, title, plural, join_speech, one_voice
 from . import travel as TR
 from . import mind
+from . import fight as FIGHT
 from . import classes as K
 from . import story as S
 from . import secrets as SEC
@@ -949,14 +950,17 @@ class Game:
             if self.find(rest, [t.npcs]):
                 return self.emit("You think better of it. These folk have done you no harm.")
             return self.emit(self.narr.say("{sys_no_fight}"))
+        opener = FIGHT.opening(self, target) if self.combat is not target else ""
         self.combat = target
         p, n = self.player, self.narr
         p.hidden = 0
+        if opener:
+            self.emit(opener)
         hp_before = target.hp
         roll = self.rng.randint(1, 20) + p.atk - target.df
         crit_at = (18 if getattr(p, "klass", None) == "rogue" else 21) - 3 * S.buff(self, "lucky")
         if roll < 6:
-            self.emit(n.player_attack("miss", p.weapon, target))
+            self.emit(FIGHT.blow(self, target, "miss"))
         else:
             dmg = max(1, p.atk + self.rng.randint(0, 3) - target.df)
             if roll >= crit_at:
@@ -966,7 +970,7 @@ class Game:
             else:
                 tier, dmg = "graze", max(1, dmg // 2)
             target.hp -= dmg
-            self.emit(n.player_attack(tier, p.weapon, target) + f" ({dmg} damage)")
+            self.emit(FIGHT.blow(self, target, tier) + f" ({dmg} damage)")
         if target.hp <= 0:
             return self.finish_off(target)
         took = hp_before - target.hp
@@ -978,7 +982,10 @@ class Game:
     def finish_off(self, target):
         """A creature dies: narration, news of the deed, experience, perhaps coin."""
         t, p, n = self.world.tiles[self.pos], self.player, self.narr
-        self.emit(n.death(target))
+        self.emit(FIGHT.death(self, target))
+        after = FIGHT.aftermath(self, target)
+        if after:
+            self.emit(after)
         if target in t.creatures:
             t.creatures.remove(target)
         self.deeds.append(dict(kind="boss" if target.boss else "kill",
@@ -1052,20 +1059,18 @@ class Game:
             bonus -= 2
         roll = self.rng.randint(1, 20) + c.atk - p.df + bonus
         if roll < 11:
-            self.emit(n.enemy_attack("enemy_miss", c, p.armour))
-            return
+            return self.emit(FIGHT.foe(self, c, "miss")[0])
         dmg = c.atk + self.rng.randint(-2, 1) - p.df
         if dmg <= 0:
-            self.emit(n.enemy_attack("enemy_block", c, p.armour))
-            return
+            return self.emit(FIGHT.foe(self, c, "block")[0])
         hard = roll >= 23
         if hard:
             dmg = int(dmg * 1.5)
         dmg, note = self.mitigate(c, dmg)
         p.hp -= dmg
         self._enemy_dmg = dmg
-        self.emit(n.enemy_attack("enemy_hard" if hard else "enemy_hit", c, p.armour) + (f" {note}" if note else "") +
-                  f" ({dmg} damage, HP {max(0, p.hp)}/{p.maxhp})")
+        line, beat = FIGHT.foe(self, c, "hard" if hard else "hit", dmg)
+        self.emit(" ".join(x for x in (line, note, beat) if x) + f" ({dmg} damage, HP {max(0, p.hp)}/{p.maxhp})")
         if p.hp <= 0:
             self.die(c)
 

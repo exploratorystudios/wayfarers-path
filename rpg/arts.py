@@ -615,7 +615,10 @@ def run(g, key, c):
     said = n.say(n.pick(a.get("fail") or a["say"]) if failed and a.get("fail") else n.pick(a["say"]), ctx)
     if dealt:
         lines.insert(0, f"({dealt} damage)")
-    g.emit(" ".join([said] + lines))
+    if fought:
+        from . import fight as FIGHT
+        lines.insert(0, FIGHT.after_art(g, c, dealt, school))
+    g.emit(" ".join(x for x in [said] + lines if x))
     if any(k == "escape" for k, _ in a["fx"]):
         return
     if fought:
